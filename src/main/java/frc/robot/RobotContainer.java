@@ -4,8 +4,12 @@
 
 package frc.robot;
 
-import frc.robot.Constants.ControllerConstants;
+import choreo.auto.AutoChooser;
+import choreo.auto.AutoFactory;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Subsystems.Drive;
+import frc.robot.Autos;
+import frc.robot.Constants.ControllerConstants;
 
 import java.util.function.DoubleSupplier;
 
@@ -13,43 +17,52 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.Subsystems.Vision;
 
 public class RobotContainer {
 
-  private Drive driveSubsystem;
-  private CommandXboxController driverController;
-  private CommandXboxController codriverController;
+  private final Autos autos;
+  private final Drive driveSubsystem;
+  private final Vision vision;
+  private final CommandXboxController driverController;
+  private final CommandXboxController codriverController;
 
   public RobotContainer() {
-    // Setup and Initalize Subsystems here
-    driveSubsystem = new Drive();
+    // Setup and initialize Subsystems here
+    this.driveSubsystem = new Drive();
+    this.vision = this.driveSubsystem.getVision();
+    this.autos = new Autos(this, this.driveSubsystem );
 
-    configureBindings();
+    // Configure all remote bindings
+    this.driverController = new CommandXboxController(0);
+    this.codriverController = new CommandXboxController(1);
+    this.configureBindings();
+    this.configureDriving();
+    SmartDashboard.putBoolean("Sim Running", false );
   }
 
   private void configureBindings() {
-    this.driverController = new CommandXboxController(0);
-    this.codriverController = new CommandXboxController(1);
   }
 
   public void configureDriving() {
-    DoubleSupplier getTranlationX = () -> MathUtil.applyDeadband(this.driverController.getLeftY(),
+    DoubleSupplier getTranslationX = () -> MathUtil.applyDeadband(this.driverController.getLeftY(),
         ControllerConstants.deadbandX);
-    DoubleSupplier getTranlationY = () -> MathUtil.applyDeadband(this.driverController.getLeftX(),
+    DoubleSupplier getTranslationY = () -> MathUtil.applyDeadband(this.driverController.getLeftX(),
         ControllerConstants.deadbandY);
-    DoubleSupplier getHeadingX = () -> this.driverController.getRightX();
-    DoubleSupplier getHeadingY = () -> this.driverController.getRightY();
+    DoubleSupplier getHeadingX = this.driverController::getRightX;
+    DoubleSupplier getHeadingY = this.driverController::getRightY;
 
     Command defaultDrive = driveSubsystem.driveCommand(
-        getTranlationX,
-        getTranlationY,
+        getTranslationX,
+        getTranslationY,
         getHeadingX,
-        getHeadingY);
+        getHeadingY
+    );
 
     this.driveSubsystem.setDefaultCommand(defaultDrive);
   }
 
   public Command getAutonomousCommand() {
-    return Commands.print("No autonomous command configured");
+    return this.autos.getAutonomousCommand();
   }
 }
