@@ -16,7 +16,7 @@ public class CSubsystem implements Subsystem {
     }
 
     // Creating a new command with a name
-    public CCommand cCommand_( String name ) {
+    public CCommand cCommand( String name ) {
         return new CCommand( name, this );
     }
 }
