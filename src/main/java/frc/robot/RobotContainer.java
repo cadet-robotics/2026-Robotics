@@ -6,7 +6,9 @@ package frc.robot;
 
 import choreo.auto.AutoChooser;
 import choreo.auto.AutoFactory;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Subsystems.Drive;
 import frc.robot.Autos;
 import frc.robot.Constants.ControllerConstants;
@@ -38,10 +40,11 @@ public class RobotContainer {
     this.codriverController = new CommandXboxController(1);
     this.configureBindings();
     this.configureDriving();
-    SmartDashboard.putBoolean("Sim Running", false );
   }
 
   private void configureBindings() {
+    //new Trigger( () -> this.driverController.getLeftX() != 0 ).whileTrue( this.driveSubsystem.dummyDrivePose() );
+    this.driverController.a().whileTrue( this.driveSubsystem.dummyDrivePose() );
   }
 
   public void configureDriving() {
@@ -49,8 +52,8 @@ public class RobotContainer {
         ControllerConstants.deadbandX);
     DoubleSupplier getTranslationY = () -> MathUtil.applyDeadband(this.driverController.getLeftX(),
         ControllerConstants.deadbandY);
-    DoubleSupplier getHeadingX = this.driverController::getRightX;
-    DoubleSupplier getHeadingY = this.driverController::getRightY;
+    DoubleSupplier getHeadingX = () -> -1 * this.driverController.getRightX();
+    DoubleSupplier getHeadingY = () -> -1 * this.driverController.getRightY();
 
     Command defaultDrive = driveSubsystem.driveCommand(
         getTranslationX,
@@ -63,6 +66,6 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    return this.autos.getAutonomousCommand();
+    return this.driveSubsystem.getDefaultCommand();
   }
 }

@@ -1,8 +1,12 @@
 package frc.robot.Subsystems;
 
+import edu.wpi.first.math.controller.HolonomicDriveController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.Constants.DriveSubsystem;
 import frc.robot.Libs.LimelightHelpers;
 
 public class Vision implements Subsystem {
@@ -20,13 +24,14 @@ public class Vision implements Subsystem {
         return offset != 0;
     }
 
+
     /**
      * Changes the pipeline on the limelight to the input id. This is used to switch filters/what ids are excepted.
      *
      * @param id Id of the pipeline
      */
     public void changeFilter( int id ) {
-        LimelightHelpers.getLimelightNTTable("limelight").getEntry("pipeline").setNumber(id);
+       this.table.getEntry("pipeline").setNumber(id);
     }
 
     /**
@@ -45,6 +50,8 @@ public class Vision implements Subsystem {
     public double getTy() {
         return this.table.getEntry("ty").getDouble(0.0);
     }
+
+    public double getTa() { return this.table.getEntry("ta").getDouble(0.0); }
 
     @Override
     public void periodic() {
