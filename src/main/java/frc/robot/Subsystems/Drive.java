@@ -67,22 +67,21 @@ public class Drive extends CSubsystem {
                 Meter.of(4)),
                 Rotation2d.fromDegrees(180))
                 : new Pose2d(new Translation2d(Meter.of(16),
-                Meter.of(4)),
-                Rotation2d.fromDegrees(0));
+                        Meter.of(4)),
+                        Rotation2d.fromDegrees(0));
 
-        this.configureSwerveObjects( startingPose );
-        Configs.DriveSubsystem.configurePathPlanner( this, this.swerveDrive, this.autoBuilder );
+        this.configureSwerveObjects(startingPose);
+        Configs.DriveSubsystem.configurePathPlanner(this, this.swerveDrive, this.autoBuilder);
 
-        TrapezoidProfile.Constraints constraints = new TrapezoidProfile.Constraints( 6.0, 3.0 );
-         this.visionTurnController = new ProfiledPIDController(5.0, 0.0, 0.0, constraints );
-         this.visionDriveController = new HolonomicDriveController(
+        TrapezoidProfile.Constraints constraints = new TrapezoidProfile.Constraints(6.0, 3.0);
+        this.visionTurnController = new ProfiledPIDController(5.0, 0.0, 0.0, constraints);
+        this.visionDriveController = new HolonomicDriveController(
                 this.xController,
                 this.yController,
-                this.visionTurnController
-         );
+                this.visionTurnController);
     }
 
-    public void configureSwerveObjects( Pose2d startingPose ) {
+    public void configureSwerveObjects(Pose2d startingPose) {
         // Initialize the swerve drive object with the configs in the deploy directory
         File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(), "swerve");
         try {
@@ -95,13 +94,13 @@ public class Drive extends CSubsystem {
         this.swerveDrive.resetOdometry(startingPose);
     }
 
-
-
     public Vision getVision() {
         return this.vision;
     }
 
-    public AutoBuilder getAutoBuilder() { return this.autoBuilder; }
+    public AutoBuilder getAutoBuilder() {
+        return this.autoBuilder;
+    }
 
     /**
      * Command to drive the robot using translate values and heading as a
@@ -114,10 +113,11 @@ public class Drive extends CSubsystem {
      * @return Drive command.
      */
     public Command driveCommand(DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier headingX,
-                                DoubleSupplier headingY) {
+            DoubleSupplier headingY) {
         return run(() -> {
 
-            Translation2d scaledInputs = SwerveMath.scaleTranslation(new Translation2d(translationX.getAsDouble(), translationY.getAsDouble()), 3);
+            Translation2d scaledInputs = SwerveMath
+                    .scaleTranslation(new Translation2d(translationX.getAsDouble(), translationY.getAsDouble()), 3);
             // Make the robot move
             this.swerveDrive.driveFieldOriented(
                     swerveDrive.swerveController.getTargetSpeeds(scaledInputs.getX(), scaledInputs.getY(),
@@ -137,7 +137,8 @@ public class Drive extends CSubsystem {
     }
 
     /**
-     * Takes in a pose from the limelight and uses it to update the swerve modules position.
+     * Takes in a pose from the limelight and uses it to update the swerve modules
+     * position.
      *
      * @param pose Current pose of the robot
      */
@@ -155,18 +156,16 @@ public class Drive extends CSubsystem {
      * @return Drive command.
      */
     public CCommand driveCommand(DoubleSupplier translationX, DoubleSupplier translationY,
-                                 DoubleSupplier angularRotationX) {
+            DoubleSupplier angularRotationX) {
         return this.cCommand("DriveSubsysem.DefaultDrive").onExecute(() -> {
             // Make the robot move
             swerveDrive.drive(
                     new Translation2d(
                             translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
-                            translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()
-                    ),
+                            translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()),
                     angularRotationX.getAsDouble() * swerveDrive.getMaximumChassisAngularVelocity(),
                     true,
-                    false
-            );
+                    false);
         });
     }
 
@@ -182,19 +181,16 @@ public class Drive extends CSubsystem {
     public CCommand halfDriveCommand(
             DoubleSupplier translationX,
             DoubleSupplier translationY,
-            DoubleSupplier angularRotationX
-    ) {
+            DoubleSupplier angularRotationX) {
         return this.driveCommand(translationX, translationY, angularRotationX)
                 .onInitialize(() -> {
                     this.swerveDrive.setMaximumAllowableSpeeds(
                             this.swerveDrive.getMaximumChassisVelocity() / 2,
-                            this.swerveDrive.getMaximumChassisAngularVelocity()
-                    );
+                            this.swerveDrive.getMaximumChassisAngularVelocity());
                 }).onEnd(() -> {
                     this.swerveDrive.setMaximumAllowableSpeeds(
                             this.swerveDrive.getMaximumChassisVelocity() / 2,
-                            this.swerveDrive.getMaximumChassisAngularVelocity()
-                    );
+                            this.swerveDrive.getMaximumChassisAngularVelocity());
                 });
     }
 
@@ -210,22 +206,22 @@ public class Drive extends CSubsystem {
                 target,
                 this.swerveDrive.getMaximumChassisVelocity(),
                 // 0,
-                target.getRotation()
-        );
+                target.getRotation());
     }
 
     public CCommand driveToTargetPose(Supplier<Pose2d> pose2dSupplier) {
-        //PathConstraints constraints = new PathConstraints(
-                //this.swerveDrive.getMaximumChassisVelocity(),
-                //1.5,
-                //this.swerveDrive.getMaximumChassisAngularVelocity() * Math.PI / 180,
-                //Math.pow( this.swerveDrive.getMaximumChassisAngularVelocity() * Math.PI / 180, 2 )
-        //);
-        //this.autoBuilder.pathfindToPose(
-                //pose2dSupplier.get(),
-                //constraints,
-                //0.0 // Target ending MPS, Goal is to not be moving.
-        //);
+        // PathConstraints constraints = new PathConstraints(
+        // this.swerveDrive.getMaximumChassisVelocity(),
+        // 1.5,
+        // this.swerveDrive.getMaximumChassisAngularVelocity() * Math.PI / 180,
+        // Math.pow( this.swerveDrive.getMaximumChassisAngularVelocity() * Math.PI /
+        // 180, 2 )
+        // );
+        // this.autoBuilder.pathfindToPose(
+        // pose2dSupplier.get(),
+        // constraints,
+        // 0.0 // Target ending MPS, Goal is to not be moving.
+        // );
         return this.cCommand("DriveSubsystem.DriveToTargetPoseCommand")
                 .onExecute(() -> {
                     ChassisSpeeds targetSpeeds = this.getSpeedsForTarget(pose2dSupplier.get());
@@ -244,12 +240,10 @@ public class Drive extends CSubsystem {
             swerveDrive.drive(
                     new Translation2d(
                             translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
-                            translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()
-                    ),
+                            translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()),
                     vision.getTx() * swerveDrive.getMaximumChassisAngularVelocity(),
                     true,
-                    false
-            );
+                    false);
         });
     }
 }
