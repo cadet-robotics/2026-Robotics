@@ -7,6 +7,9 @@ package frc.robot;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import swervelib.simulation.ironmaple.simulation.SimulatedArena;
+// 2026 field not yet available in Maple Sim - update when released
+// import swervelib.simulation.ironmaple.simulation.seasonspecific.reefscape2025.Arena2025Reefscape;
 
 public class Robot extends TimedRobot {
   private Command autonomousCommand;
@@ -14,7 +17,13 @@ public class Robot extends TimedRobot {
   private final RobotContainer robotContainer;
 
   public Robot() {
-    robotContainer = new RobotContainer();
+    // Initialize Maple Sim arena BEFORE creating subsystems (if in simulation)
+    if (isSimulation()) {
+      SimulatedArena.getInstance();
+      // Using generic arena - 2026 field will be added to Maple Sim in future update
+      // SimulatedArena.overrideInstance(new Arena2026(...));  // Update when available
+    }
+    this.robotContainer = new RobotContainer();
   }
 
   @Override
@@ -47,7 +56,6 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousExit() {}
-
   @Override
   public void teleopInit() {
     if (autonomousCommand != null) {
@@ -71,4 +79,14 @@ public class Robot extends TimedRobot {
 
   @Override
   public void testExit() {}
+
+  @Override
+  public void simulationInit() {
+    // Arena already initialized in constructor
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    SimulatedArena.getInstance().simulationPeriodic();
+  }
 }

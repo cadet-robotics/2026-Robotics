@@ -2,12 +2,9 @@ package frc.robot.Subsystems;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Optional;
-import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
-import choreo.trajectory.SwerveSample;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
@@ -17,9 +14,6 @@ import edu.wpi.first.math.controller.HolonomicDriveController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.units.AngularVelocityUnit;
-import edu.wpi.first.util.sendable.Sendable;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -27,10 +21,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Configs;
-import frc.robot.Constants;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
 import org.json.simple.parser.ParseException;
@@ -47,9 +39,6 @@ public class Drive extends CSubsystem {
     private static final double maxSpeed = Units.feetToMeters(6);
     private SwerveDrive swerveDrive;
     private Vision vision;
-
-    // PathPlanner Drive controller
-    private final AutoBuilder autoBuilder = new AutoBuilder();
 
     // Vision Pid Controllers
     private final PIDController xController = new PIDController(5, 0, 0);
@@ -71,7 +60,7 @@ public class Drive extends CSubsystem {
                         Rotation2d.fromDegrees(0));
 
         this.configureSwerveObjects(startingPose);
-        Configs.DriveSubsystem.configurePathPlanner(this, this.swerveDrive, this.autoBuilder);
+        Configs.DriveSubsystem.configurePathPlanner(this, this.swerveDrive);
 
         TrapezoidProfile.Constraints constraints = new TrapezoidProfile.Constraints(6.0, 3.0);
         this.visionTurnController = new ProfiledPIDController(5.0, 0.0, 0.0, constraints);
@@ -98,8 +87,8 @@ public class Drive extends CSubsystem {
         return this.vision;
     }
 
-    public AutoBuilder getAutoBuilder() {
-        return this.autoBuilder;
+    public SwerveDrive getSwerveDrive() {
+        return this.swerveDrive;
     }
 
     /**
@@ -158,12 +147,22 @@ public class Drive extends CSubsystem {
     public CCommand driveCommand(DoubleSupplier translationX, DoubleSupplier translationY,
             DoubleSupplier angularRotationX) {
         return this.cCommand("DriveSubsysem.DefaultDrive").onExecute(() -> {
+            double vX = translationX.getAsDouble();
+            double vY = translationY.getAsDouble();
+            double omega = angularRotationX.getAsDouble();
+            
+            // Debug output
+            edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/InputX", vX);
+            edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/InputY", vY);
+            edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/InputOmega", omega);
+            edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putBoolean("Drive/CommandRunning", true);
+            
             // Make the robot move
             swerveDrive.drive(
                     new Translation2d(
-                            translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
-                            translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()),
-                    angularRotationX.getAsDouble() * swerveDrive.getMaximumChassisAngularVelocity(),
+                            vX * swerveDrive.getMaximumChassisVelocity(),
+                            vY * swerveDrive.getMaximumChassisVelocity()),
+                    omega * swerveDrive.getMaximumChassisAngularVelocity(),
                     true,
                     false);
         });

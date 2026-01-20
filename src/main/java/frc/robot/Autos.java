@@ -1,39 +1,37 @@
 package frc.robot; 
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.commands.PathPlannerAuto;
+
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.RobotContainer;
 import frc.robot.Subsystems.Drive;
 
 public class Autos {
 
-   private final AutoBuilder autoBuilder;
-   private final Drive driveSubsystem;
+    private SendableChooser<Command> autoChooser;
 
-   public Autos( RobotContainer robotContainer, Drive driveSubsystem ) {
-       this.driveSubsystem = driveSubsystem;
+    public Autos( RobotContainer robotContainer, Drive driveSubsystem ) {
+        // AutoBuilder might not be configured if PathPlanner config has errors
+        try {
+            this.autoChooser = AutoBuilder.buildAutoChooser();
+        } catch (RuntimeException e) {
+            edu.wpi.first.wpilibj.DriverStation.reportWarning(
+                "Could not build auto chooser - PathPlanner may not be configured: " + e.getMessage(), 
+                false
+            );
+            this.autoChooser = null;
+        }
+    }
 
-       // Instead of Choreo, import Choreo paths into pathplanner
+    public Command getAutonomousCommand() {
+        if (this.autoChooser != null) {
+            return this.autoChooser.getSelected();
+        }
+        return null;
+    }
 
-       // Set up the Choreo AutoFactor
-       // Guide to using the AutoFactory https://choreo.autos/choreolib/auto-factory/
-       // this.autoFactory = new AutoFactory(
-       //         driveSubsystem::getPose,
-       //         driveSubsystem::resetOdometry,
-       //         driveSubsystem::followTrajectory,
-       //         true,
-       //         driveSubsystem
-       // );
-       // this.autoChooser = new AutoChooser();
-       this.autoBuilder = driveSubsystem.getAutoBuilder();
-
-   }
-
-   // public Command getAutonomousCommand() {
-   //   return this.autoBuilder.sel();
-   // }
-
-   // public Command example_auto() {
-   //   this.autoBuilder.
-   // }
+    public Command example_auto() {
+        return new PathPlannerAuto("Dummy1");
+    }
 }

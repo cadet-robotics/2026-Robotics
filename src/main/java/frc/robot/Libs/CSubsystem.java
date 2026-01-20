@@ -1,13 +1,13 @@
 // https://github.com/Greater-Rochester-Robotics/GRRBase/blob/main/src/main/java/org/team340/lib/util/command/GRRSubsystem.java
 package frc.robot.Libs;
 
-import edu.wpi.first.wpilibj2.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-public class CSubsystem implements Subsystem {
+public class CSubsystem extends SubsystemBase {
     
-    // Register the subsystem on creation
+    // Constructor - SubsystemBase handles registration
     public CSubsystem() {
-        register();
+        super();
     }
 
     // Creating a new command

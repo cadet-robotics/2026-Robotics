@@ -4,37 +4,37 @@
 
 package frc.robot;
 
-import choreo.auto.AutoChooser;
-import choreo.auto.AutoFactory;
-import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.Subsystems.Drive;
-import frc.robot.Autos;
+import frc.robot.Subsystems.*;
 import frc.robot.Constants.ControllerConstants;
 
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import frc.robot.Subsystems.Vision;
 
 public class RobotContainer {
 
   private final Autos autos;
-  private final Drive driveSubsystem;
-  private final Vision vision;
+  private final Drive drive_subsystem;
+  private final Vision vision_subsystem;
+  private final Intake intake_subsystem;
+  private final Indexer indexer_subsystem;
+  private final Shooter shooter_subsystem;
+
   private final CommandXboxController driverController;
   private final CommandXboxController codriverController;
 
   public RobotContainer() {
     // Setup and initialize Subsystems here
-    this.driveSubsystem = new Drive();
-    this.vision = this.driveSubsystem.getVision();
-    this.autos = new Autos(this, this.driveSubsystem );
+    this.drive_subsystem = new Drive();
+    this.vision_subsystem = this.drive_subsystem.getVision();
+    this.shooter_subsystem = new Shooter();
+    this.intake_subsystem = new Intake();
+    this.indexer_subsystem = new Indexer( this.shooter_subsystem, this.intake_subsystem );
 
+    this.autos = new Autos(this, this.drive_subsystem );
+    
     // Configure all remote bindings
     this.driverController = new CommandXboxController(0);
     this.codriverController = new CommandXboxController(1);
@@ -43,8 +43,8 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
-    //new Trigger( () -> this.driverController.getLeftX() != 0 ).whileTrue( this.driveSubsystem.dummyDrivePose() );
-    this.driverController.a().whileTrue( this.driveSubsystem.dummyDrivePose() );
+    //new Trigger( () -> this.driverController.getLeftX() != 0 ).whileTrue( this.drive_subsystem.dummyDrivePose() );
+    this.driverController.a().whileTrue( this.drive_subsystem.dummyDrivePose() );
   }
 
   public void configureDriving() {
@@ -55,17 +55,17 @@ public class RobotContainer {
     DoubleSupplier getHeadingX = () -> -1 * this.driverController.getRightX();
     DoubleSupplier getHeadingY = () -> -1 * this.driverController.getRightY();
 
-    Command defaultDrive = driveSubsystem.driveCommand(
+    Command defaultDrive = drive_subsystem.driveCommand(
         getTranslationX,
         getTranslationY,
         getHeadingX,
         getHeadingY
     );
 
-    this.driveSubsystem.setDefaultCommand(defaultDrive);
+    this.drive_subsystem.setDefaultCommand(defaultDrive);
   }
 
   public Command getAutonomousCommand() {
-    return this.driveSubsystem.getDefaultCommand();
+    return this.drive_subsystem.getDefaultCommand();
   }
 }

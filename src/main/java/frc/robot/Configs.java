@@ -17,10 +17,7 @@ import java.util.function.BooleanSupplier;
 public class Configs {
     public static final class DriveSubsystem {
 
-        public static void configurePathPlanner( Drive driveSubsystem, SwerveDrive swerveDrive, AutoBuilder autoBuilder ) {
-            if ( true ) {
-                return;
-            }
+        public static void configurePathPlanner(Drive driveSubsystem, SwerveDrive swerveDrive ) {
             RobotConfig config;
             try {
                 config = RobotConfig.fromGUISettings();
@@ -33,11 +30,21 @@ public class Configs {
                     );
                 } else if ( e instanceof ParseException ) {
                     DriverStation.reportError(
-                            "Unable to parse pathplanner config file " + e.getLocalizedMessage(),
+                            "Unable to parse pathplanner config file: " + e.getLocalizedMessage(),
                             printStackTrace
                     );
                 }
-                throw new RuntimeException(e);
+                // Don't throw - just disable PathPlanner auto
+                DriverStation.reportWarning("PathPlanner AutoBuilder not configured due to config file error", false);
+                return;
+            } catch (Exception e) {
+                // Catch any other exceptions (like NullPointerException from missing fields)
+                DriverStation.reportError(
+                        "Unexpected error loading PathPlanner config: " + e.getLocalizedMessage(),
+                        true
+                );
+                DriverStation.reportWarning("PathPlanner AutoBuilder not configured", false);
+                return;
             }
 
             BooleanSupplier isRedTeam = () -> {
@@ -48,7 +55,7 @@ public class Configs {
                 return false;
             };
 
-            autoBuilder.configure(
+            AutoBuilder.configure(
                 swerveDrive::getPose,
                 swerveDrive::resetOdometry,
                 swerveDrive::getRobotVelocity,
@@ -60,8 +67,8 @@ public class Configs {
                     );
                 },
                 new PPHolonomicDriveController(
-                        Constants.DriveSubsystem.translationPidConstants,
-                        Constants.DriveSubsystem.rotationPidConstants
+                        Constants.DriveSubsystemConstants.translationPidConstants,
+                        Constants.DriveSubsystemConstants.rotationPidConstants
                 ),
                 config,
                 isRedTeam,
