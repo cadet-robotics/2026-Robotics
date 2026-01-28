@@ -4,6 +4,8 @@ import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.SparkFlex;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
 import yams.gearing.GearBox;
@@ -11,8 +13,6 @@ import yams.gearing.MechanismGearing;
 import yams.motorcontrollers.SmartMotorController;
 import yams.motorcontrollers.SmartMotorControllerConfig;
 import yams.motorcontrollers.local.SparkWrapper;
-
-import java.net.http.HttpHeaders;
 
 import static edu.wpi.first.units.Units.*;
 
@@ -39,6 +39,8 @@ public class Intake extends CSubsystem {
 
     private final SmartMotorController intake_controller = new SparkWrapper( intake_motor_controller, DCMotor.getNeoVortex(1), smc_config);
 
+    // SysId routine for characterization
+    private final SysIdRoutine sysIdRoutine;
 
     public static enum IntakeState {
         On,
@@ -51,7 +53,27 @@ public class Intake extends CSubsystem {
     private IntakeState state = Intake.IntakeState.Off;
 
     public Intake() {
-       this.setDefaultCommand(this.intakeHandler());
+        // Initialize SysId routine
+        this.sysIdRoutine = new SysIdRoutine(
+            new SysIdRoutine.Config(),
+            new SysIdRoutine.Mechanism(
+                (volts) -> this.intake_controller.setVoltage(volts),
+                null, // No log consumer (can add if needed)
+                this
+            )
+        );
+        
+        // Register SysId commands with SmartDashboard
+        SmartDashboard.putData("Intake/SysId Quasistatic Forward", 
+            this.sysIdRoutine.quasistatic(SysIdRoutine.Direction.kForward));
+        SmartDashboard.putData("Intake/SysId Quasistatic Reverse", 
+            this.sysIdRoutine.quasistatic(SysIdRoutine.Direction.kReverse));
+        SmartDashboard.putData("Intake/SysId Dynamic Forward", 
+            this.sysIdRoutine.dynamic(SysIdRoutine.Direction.kForward));
+        SmartDashboard.putData("Intake/SysId Dynamic Reverse", 
+            this.sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse));
+        
+        this.setDefaultCommand(this.intakeHandler());
     }
 
     public CCommand SetIntakeOn() {
@@ -78,6 +100,11 @@ public class Intake extends CSubsystem {
                        case On:
                            this.current_state = Intake.IntakeState.On;
                            this.intake_controller.setVelocity(RPM.of(100));
+                           break;
+                       case Rev:
+                           this.current_state = Intake.IntakeState.Rev;
+                           // TODO: Implement reverse/barfing speed
+                           this.intake_controller.setVelocity(RPM.of(-100));
                            break;
                    }
                }

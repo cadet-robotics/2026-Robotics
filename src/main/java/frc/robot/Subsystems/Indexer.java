@@ -4,6 +4,8 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
 import yams.gearing.GearBox;
@@ -42,6 +44,9 @@ public class Indexer extends CSubsystem {
             this.smc_config
     );
 
+    // SysId routine for characterization
+    private final SysIdRoutine sysIdRoutine;
+
     private Shooter shooter_subsystem;
     private Intake intake_subsystem;
 
@@ -55,6 +60,27 @@ public class Indexer extends CSubsystem {
     public Indexer( Shooter shooter_subsystem, Intake intake_subsystem ) {
         this.shooter_subsystem = shooter_subsystem;
         this.intake_subsystem = intake_subsystem;
+        
+        // Initialize SysId routine
+        this.sysIdRoutine = new SysIdRoutine(
+            new SysIdRoutine.Config(),
+            new SysIdRoutine.Mechanism(
+                (volts) -> this.indexer_controller.setVoltage(volts),
+                null, // No log consumer (can add if needed)
+                this
+            )
+        );
+        
+        // Register SysId commands with SmartDashboard
+        SmartDashboard.putData("Indexer/SysId Quasistatic Forward", 
+            this.sysIdRoutine.quasistatic(SysIdRoutine.Direction.kForward));
+        SmartDashboard.putData("Indexer/SysId Quasistatic Reverse", 
+            this.sysIdRoutine.quasistatic(SysIdRoutine.Direction.kReverse));
+        SmartDashboard.putData("Indexer/SysId Dynamic Forward", 
+            this.sysIdRoutine.dynamic(SysIdRoutine.Direction.kForward));
+        SmartDashboard.putData("Indexer/SysId Dynamic Reverse", 
+            this.sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse));
+        
         this.setDefaultCommand(indexerHandler());
     }
 

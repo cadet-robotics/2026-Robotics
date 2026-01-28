@@ -10,23 +10,25 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.util.DriveFeedforwards;
-import edu.wpi.first.math.controller.HolonomicDriveController;
-import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Configs;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
+import frc.robot.Robot;
+import frc.robot.Subsystems.Vision.RealVision;
+import frc.robot.Subsystems.Vision.SimVision;
+import frc.robot.Subsystems.Vision.Vision;
+import org.ironmaple.simulation.SimulatedArena;
 import org.json.simple.parser.ParseException;
 import swervelib.SwerveDrive;
+import swervelib.SwerveDriveTest;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Config;
 import swervelib.math.SwerveMath;
 import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
@@ -40,15 +42,13 @@ public class Drive extends CSubsystem {
     private SwerveDrive swerveDrive;
     private Vision vision;
 
-    // Vision Pid Controllers
-    private final PIDController xController = new PIDController(5, 0, 0);
-    private final PIDController yController = new PIDController(5, 0, 0);
-    private ProfiledPIDController visionTurnController;
-    private HolonomicDriveController visionDriveController;
-
     public Drive() {
-        // For use when running a sim, disable otherwise
-        SwerveDriveTelemetry.verbosity = SwerveDriveTelemetry.TelemetryVerbosity.HIGH;
+
+        if (Robot.isReal()) {
+            this.vision = new RealVision(this);
+        } else {
+            this.vision = new SimVision(this);
+        }
 
         // Temp starting positions for sim
         boolean blueAlliance = false;
@@ -61,13 +61,6 @@ public class Drive extends CSubsystem {
 
         this.configureSwerveObjects(startingPose);
         Configs.DriveSubsystem.configurePathPlanner(this, this.swerveDrive);
-
-        TrapezoidProfile.Constraints constraints = new TrapezoidProfile.Constraints(6.0, 3.0);
-        this.visionTurnController = new ProfiledPIDController(5.0, 0.0, 0.0, constraints);
-        this.visionDriveController = new HolonomicDriveController(
-                this.xController,
-                this.yController,
-                this.visionTurnController);
     }
 
     public void configureSwerveObjects(Pose2d startingPose) {
@@ -81,6 +74,7 @@ public class Drive extends CSubsystem {
         }
 
         this.swerveDrive.resetOdometry(startingPose);
+        SwerveDriveTelemetry.verbosity = SwerveDriveTelemetry.TelemetryVerbosity.HIGH;
     }
 
     public Vision getVision() {
@@ -159,12 +153,12 @@ public class Drive extends CSubsystem {
             
             // Make the robot move
             swerveDrive.drive(
-                    new Translation2d(
-                            vX * swerveDrive.getMaximumChassisVelocity(),
-                            vY * swerveDrive.getMaximumChassisVelocity()),
-                    omega * swerveDrive.getMaximumChassisAngularVelocity(),
-                    true,
-                    false);
+                new Translation2d(
+                    vX * swerveDrive.getMaximumChassisVelocity(),
+                    vY * swerveDrive.getMaximumChassisVelocity()),
+                omega * swerveDrive.getMaximumChassisAngularVelocity(),
+                true,
+                false);
         });
     }
 
@@ -192,44 +186,64 @@ public class Drive extends CSubsystem {
                             this.swerveDrive.getMaximumChassisAngularVelocity());
                 });
     }
+    
+    /**
+     * Command to drive to a target pose using PathPlanner's pathfinding.
+     * 
+     * @param targetPose The target pose to drive to
+     * @param endVelocity The desired velocity at the end of the path (m/s)
+     * @return Command that pathfinds to the target pose
+     */
+    public Command driveToTargetPose(Pose2d targetPose, double endVelocity) {
+        PathConstraints constraints = new PathConstraints(
+            this.swerveDrive.getMaximumChassisVelocity(),      // Max velocity (m/s)
+            4.0,                                                // Max acceleration (m/s^2)
+            this.swerveDrive.getMaximumChassisAngularVelocity(), // Max angular velocity (rad/s)
+            Math.PI * 4.0                                       // Max angular acceleration (rad/s^2)
+        );
+        
+        return AutoBuilder.pathfindToPose(
+            targetPose,
+            constraints,
+            endVelocity  // Goal velocity at end
+        );
+    }
 
     /**
-     * Converts a target position into usable chassis speeds for the drivebase.
-     *
-     * @param target The target pose
-     * @return
+     * Command to drive to a target pose using PathPlanner's pathfinding.
+     * Supplier version for dynamic targets.
+     * 
+     * @param pose2dSupplier Supplier that provides the target pose
+     * @param endVelocity The desired velocity at the end of the path (m/s)
+     * @return Command that pathfinds to the target pose
      */
-    public ChassisSpeeds getSpeedsForTarget(Pose2d target) {
-        return this.visionDriveController.calculate(
-                this.swerveDrive.getPose(),
-                target,
-                this.swerveDrive.getMaximumChassisVelocity(),
-                // 0,
-                target.getRotation());
+    public Command driveToTargetPose(Supplier<Pose2d> pose2dSupplier, double endVelocity) {
+        PathConstraints constraints = new PathConstraints(
+            this.swerveDrive.getMaximumChassisVelocity(),
+            4.0,
+            this.swerveDrive.getMaximumChassisAngularVelocity(),
+            Math.PI * 4.0
+        );
+        
+        return AutoBuilder.pathfindToPose(
+            pose2dSupplier.get(),
+            constraints,
+            endVelocity
+        );
     }
 
-    public CCommand driveToTargetPose(Supplier<Pose2d> pose2dSupplier) {
-        // PathConstraints constraints = new PathConstraints(
-        // this.swerveDrive.getMaximumChassisVelocity(),
-        // 1.5,
-        // this.swerveDrive.getMaximumChassisAngularVelocity() * Math.PI / 180,
-        // Math.pow( this.swerveDrive.getMaximumChassisAngularVelocity() * Math.PI /
-        // 180, 2 )
-        // );
-        // this.autoBuilder.pathfindToPose(
-        // pose2dSupplier.get(),
-        // constraints,
-        // 0.0 // Target ending MPS, Goal is to not be moving.
-        // );
-        return this.cCommand("DriveSubsystem.DriveToTargetPoseCommand")
-                .onExecute(() -> {
-                    ChassisSpeeds targetSpeeds = this.getSpeedsForTarget(pose2dSupplier.get());
-                    swerveDrive.drive(targetSpeeds);
-                });
+    /**
+     * Command to drive to a target pose and stop.
+     * 
+     * @param pose2dSupplier Supplier that provides the target pose
+     * @return Command that pathfinds to the target pose and stops
+     */
+    public Command driveToTargetPose(Supplier<Pose2d> pose2dSupplier) {
+        return driveToTargetPose(pose2dSupplier, 0.0);
     }
 
-    public CCommand dummyDrivePose() {
-        return this.driveToTargetPose(() -> new Pose2d(12.42, 5.05, Rotation2d.fromDegrees(117.0)));
+    public Command dummyDrivePose() {
+        return this.driveToTargetPose(new Pose2d(12.42, 5.05, Rotation2d.fromDegrees(117.0)), 0.0);
     }
 
     public CCommand faceAprilTag(DoubleSupplier translationX, DoubleSupplier translationY) {
@@ -240,9 +254,17 @@ public class Drive extends CSubsystem {
                     new Translation2d(
                             translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
                             translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()),
-                    vision.getTx() * swerveDrive.getMaximumChassisAngularVelocity(),
+                    vision.getTx().orElse(0.0) * swerveDrive.getMaximumChassisAngularVelocity(),
                     true,
                     false);
         });
+    }
+
+    public Command sysIdDriveCommand() {
+        return SwerveDriveTest.generateSysIdCommand(
+                SwerveDriveTest.setDriveSysIdRoutine(
+                new Config(), this, this.swerveDrive, 12, true),
+                3.0,5.0,3.0
+        );
     }
 }
