@@ -18,10 +18,11 @@ public class RobotContainer {
 
   private final Autos autos;
   private final Drive drive_subsystem;
-  private final Vision vision_subsystem;
-  private final Intake intake_subsystem;
-  private final Indexer indexer_subsystem;
-  private final Shooter shooter_subsystem;
+
+  // private final Vision vision_subsystem;
+  // private final Intake intake_subsystem;
+  // private final Indexer indexer_subsystem;
+  // private final Shooter shooter_subsystem;
 
   private final CommandXboxController driverController;
   private final CommandXboxController codriverController;
@@ -29,10 +30,10 @@ public class RobotContainer {
   public RobotContainer() {
     // Setup and initialize Subsystems here
     this.drive_subsystem = new Drive();
-    this.vision_subsystem = this.drive_subsystem.getVision();
-    this.shooter_subsystem = new Shooter();
-    this.intake_subsystem = new Intake();
-    this.indexer_subsystem = new Indexer( this.shooter_subsystem, this.intake_subsystem );
+    // this.vision_subsystem = this.drive_subsystem.getVision();
+    // this.shooter_subsystem = new Shooter();
+    // this.intake_subsystem = new Intake();
+    // this.indexer_subsystem = new Indexer( this.shooter_subsystem, this.intake_subsystem );
 
     this.autos = new Autos(this, this.drive_subsystem );
     
@@ -49,9 +50,9 @@ public class RobotContainer {
   }
 
   public void configureDriving() {
-    DoubleSupplier getTranslationX = () -> MathUtil.applyDeadband(this.driverController.getLeftY(),
+    DoubleSupplier getTranslationX = () -> -1 * MathUtil.applyDeadband(this.driverController.getLeftY(),
         ControllerConstants.deadbandX);
-    DoubleSupplier getTranslationY = () -> MathUtil.applyDeadband(this.driverController.getLeftX(),
+    DoubleSupplier getTranslationY = () -> -1 * MathUtil.applyDeadband(this.driverController.getLeftX(),
         ControllerConstants.deadbandY);
     DoubleSupplier getHeadingX = () -> -1 * this.driverController.getRightX();
     DoubleSupplier getHeadingY = () -> -1 * this.driverController.getRightY();
