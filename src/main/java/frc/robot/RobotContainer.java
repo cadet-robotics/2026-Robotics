@@ -18,10 +18,11 @@ public class RobotContainer {
 
   private final Autos autos;
   private final Drive drive_subsystem;
-  private final Vision vision_subsystem;
-  private final Intake intake_subsystem;
-  private final Indexer indexer_subsystem;
-  private final Shooter shooter_subsystem;
+
+  // private final Vision vision_subsystem;
+  // private final Intake intake_subsystem;
+  // private final Indexer indexer_subsystem;
+  // private final Shooter shooter_subsystem;
 
   private final CommandXboxController driverController;
   private final CommandXboxController codriverController;
@@ -29,10 +30,10 @@ public class RobotContainer {
   public RobotContainer() {
     // Setup and initialize Subsystems here
     drive_subsystem = new Drive();
-    vision_subsystem = drive_subsystem.getVision();
-    shooter_subsystem = new Shooter();
-    intake_subsystem = new Intake();
-    indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem );
+    // vision_subsystem = drive_subsystem.getVision();
+    // shooter_subsystem = new Shooter();
+    // intake_subsystem = new Intake();
+    // indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem );
 
     autos = new Autos(this, drive_subsystem );
     
@@ -49,9 +50,9 @@ public class RobotContainer {
   }
 
   public void configureDriving() {
-    DoubleSupplier getTranslationX = () -> MathUtil.applyDeadband(driverController.getLeftY(),
+    DoubleSupplier getTranslationX = () -> -1 * MathUtil.applyDeadband(this.driverController.getLeftY(),
         ControllerConstants.deadbandX);
-    DoubleSupplier getTranslationY = () -> MathUtil.applyDeadband(driverController.getLeftX(),
+    DoubleSupplier getTranslationY = () -> -1 * MathUtil.applyDeadband(this.driverController.getLeftX(),
         ControllerConstants.deadbandY);
     DoubleSupplier getHeadingX = () -> -1 * driverController.getRightX();
     DoubleSupplier getHeadingY = () -> -1 * driverController.getRightY();

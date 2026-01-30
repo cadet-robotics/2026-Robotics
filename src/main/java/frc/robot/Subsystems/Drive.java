@@ -202,11 +202,12 @@ public class Drive extends CSubsystem {
             Math.PI * 4.0                                       // Max angular acceleration (rad/s^2)
         );
         
-        return AutoBuilder.pathfindToPose(
-            targetPose,
-            constraints,
-            endVelocity  // Goal velocity at end
-        );
+        // return AutoBuilder.pathfindToPose(
+        //     targetPose,
+        //     constraints,
+        //     endVelocity  // Goal velocity at end
+        // );
+        return cCommand();
     }
 
     /**

@@ -26,7 +26,7 @@ import yams.motorcontrollers.local.SparkWrapper;
  * and generate feedforward/feedback constants.
  */
 public class Shooter extends CSubsystem {
-    public SparkFlex shooter_motor_controller = new SparkFlex(3, SparkLowLevel.MotorType.kBrushless);
+    public SparkFlex shooter_motor_controller = new SparkFlex(10, SparkLowLevel.MotorType.kBrushless);
     public SmartMotorControllerConfig smc_config = new SmartMotorControllerConfig(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
         // Feedback Constants (PID Constants)
