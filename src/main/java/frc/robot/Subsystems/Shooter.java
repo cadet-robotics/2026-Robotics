@@ -4,6 +4,7 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
@@ -134,6 +135,48 @@ public class Shooter extends CSubsystem {
                     }
                 }
             });
+    }
+
+    public AngularVelocity flyShooterSpeedMath()
+    {
+        // TODO: Setup MegaTag2 localization
+        // hubDistance should be determined using limelight MegaTag2
+        double hubDistance; // ft
+        double flyWheelHeight = 18.5/12; // ft
+        double targetHeight = 4; // ft
+        double angle = 0.977384381; // in radians (56 degrees, adjust as necessary)
+        double gravity = 32.174; // ft/s^2
+
+        // Weight of the fuel
+        double projectileWeight = 0.5; // lb
+
+        // TODO: Configure when shooter is being put together
+        double flyWheelRadius; // in
+        double flyWheelWeight; // lb
+        double shooterRadius; // in
+        double shooterWeight; // lb
+
+        // Gear ratio of the vortex motors
+        double gearRatio;
+
+        // Calculate necessary velocity transfered to Fuel
+        double projectileSurfaceVelocity = Math.sqrt(((gravity) * Math.pow(hubDistance, 2)) / (2 * Math.pow(Math.cos(angle), 2)) * (hubDistance * Math.tan(angle) - (targetHeight - flyWheelHeight)));
+        
+        // Calculate moment of intertia
+        double flyWheelMass = flyWheelWeight / gravity;
+        double shooterMass = shooterWeight / gravity;
+
+        double flyWheelMOI = 0.5 * flyWheelMass * Math.pow(flyWheelRadius, 2) * Math.pow(gearRatio, 2);
+        double shooterMOI = 0.5 * shooterMass * Math.pow(shooterRadius, 2) * Math.pow(gearRatio, 2);
+        double totalMOI = flyWheelMOI + shooterMOI;
+        
+        // Calculate the necessary angular velocity of the shooter for the robot's distance
+        double speedTransferPercentage = (20 * totalMOI) / (7 * projectileWeight * Math.pow((shooterRadius / 2),2) + 40 * totalMOI);
+        double shooterSurfaceSpeed = projectileSurfaceVelocity / speedTransferPercentage;
+        double shooterRPM = shooterSurfaceSpeed / shooterRadius;
+
+        AngularVelocity velocity = RPM.of(shooterRPM);
+        return velocity;
     }
 
     @Override
