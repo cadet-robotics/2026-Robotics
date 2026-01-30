@@ -28,33 +28,33 @@ public class RobotContainer {
 
   public RobotContainer() {
     // Setup and initialize Subsystems here
-    this.drive_subsystem = new Drive();
-    this.vision_subsystem = this.drive_subsystem.getVision();
-    this.shooter_subsystem = new Shooter();
-    this.intake_subsystem = new Intake();
-    this.indexer_subsystem = new Indexer( this.shooter_subsystem, this.intake_subsystem );
+    drive_subsystem = new Drive();
+    vision_subsystem = drive_subsystem.getVision();
+    shooter_subsystem = new Shooter();
+    intake_subsystem = new Intake();
+    indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem );
 
-    this.autos = new Autos(this, this.drive_subsystem );
+    autos = new Autos(this, drive_subsystem );
     
     // Configure all remote bindings
-    this.driverController = new CommandXboxController(0);
-    this.codriverController = new CommandXboxController(1);
-    this.configureBindings();
-    this.configureDriving();
+    driverController = new CommandXboxController(0);
+    codriverController = new CommandXboxController(1);
+    configureBindings();
+    configureDriving();
   }
 
   private void configureBindings() {
-    //new Trigger( () -> this.driverController.getLeftX() != 0 ).whileTrue( this.drive_subsystem.dummyDrivePose() );
-    this.driverController.a().whileTrue( this.drive_subsystem.dummyDrivePose() );
+    //new Trigger( () -> driverController.getLeftX() != 0 ).whileTrue( drive_subsystem.dummyDrivePose() );
+    driverController.a().whileTrue( drive_subsystem.dummyDrivePose() );
   }
 
   public void configureDriving() {
-    DoubleSupplier getTranslationX = () -> MathUtil.applyDeadband(this.driverController.getLeftY(),
+    DoubleSupplier getTranslationX = () -> MathUtil.applyDeadband(driverController.getLeftY(),
         ControllerConstants.deadbandX);
-    DoubleSupplier getTranslationY = () -> MathUtil.applyDeadband(this.driverController.getLeftX(),
+    DoubleSupplier getTranslationY = () -> MathUtil.applyDeadband(driverController.getLeftX(),
         ControllerConstants.deadbandY);
-    DoubleSupplier getHeadingX = () -> -1 * this.driverController.getRightX();
-    DoubleSupplier getHeadingY = () -> -1 * this.driverController.getRightY();
+    DoubleSupplier getHeadingX = () -> -1 * driverController.getRightX();
+    DoubleSupplier getHeadingY = () -> -1 * driverController.getRightY();
 
     Command defaultDrive = drive_subsystem.driveCommand(
         getTranslationX,
@@ -63,10 +63,10 @@ public class RobotContainer {
         getHeadingY
     );
 
-    this.drive_subsystem.setDefaultCommand(defaultDrive);
+    drive_subsystem.setDefaultCommand(defaultDrive);
   }
 
   public Command getAutonomousCommand() {
-    return this.drive_subsystem.getDefaultCommand();
+    return drive_subsystem.getDefaultCommand();
   }
 }
