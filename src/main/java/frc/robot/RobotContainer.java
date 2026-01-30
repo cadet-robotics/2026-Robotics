@@ -51,9 +51,9 @@ public class RobotContainer {
   }
 
   public void configureDriving() {
-    DoubleSupplier getTranslationX = () -> -1 * MathUtil.applyDeadband(this.driverController.getLeftY(),
+    DoubleSupplier getTranslationX = () -> MathUtil.applyDeadband(this.driverController.getLeftY(),
         ControllerConstants.deadbandX);
-    DoubleSupplier getTranslationY = () -> -1 * MathUtil.applyDeadband(this.driverController.getLeftX(),
+    DoubleSupplier getTranslationY = () -> MathUtil.applyDeadband(this.driverController.getLeftX(),
         ControllerConstants.deadbandY);
     DoubleSupplier getHeadingX = () -> -1 * driverController.getRightX();
     DoubleSupplier getHeadingY = () -> -1 * driverController.getRightY();
