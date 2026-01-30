@@ -120,5 +120,3 @@ Notes:
 - `Drive.java` for how `driveCommand(...)`, `dummyDrivePose()`, and `getDefaultCommand()` are implemented.
 - `Autos.java` for autonomous routine registration and implementations.
 - `Configs.java` and `Constants.java` for controller deadbands, port mappings, and swerve config parsing.
-
-If you want, I can open `Drive.java` next and annotate the `driveCommand` implementation so you have the full picture of teleop -> subsystem flow.
