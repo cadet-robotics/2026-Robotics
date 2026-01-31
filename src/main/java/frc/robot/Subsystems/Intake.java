@@ -20,9 +20,27 @@ import yams.motorcontrollers.SmartMotorController;
 import yams.motorcontrollers.SmartMotorControllerConfig;
 import yams.motorcontrollers.local.SparkWrapper;
 
+/**
+ * Intake subsystem that controls the mechanism for collecting game pieces.
+ * Manages motor control for intake operations including on, off, and reverse states.
+ */
 public class Intake extends CSubsystem {
-    private final SparkFlex intake_motor_controller = new SparkFlex(2, SparkLowLevel.MotorType.kBrushless);
-    private final SmartMotorControllerConfig smc_config  = new SmartMotorControllerConfig(this)
+    /**
+     * Represents the operational state of the intake.
+     */
+    public static enum IntakeState {
+        /** Intake is running forward. */
+        On,
+        /** Intake is running in reverse (barfing). */
+        Rev,
+        /** Intake is off. */
+        Off,
+    }
+
+    /** Motor controller for the intake mechanism. */
+    private final SparkFlex intakeMotorController = new SparkFlex(2, SparkLowLevel.MotorType.kBrushless);
+    /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
+    private final SmartMotorControllerConfig smcConfig  = new SmartMotorControllerConfig(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
         // Feedback Constants (PID Constants)
         .withClosedLoopController(50, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
@@ -41,27 +59,34 @@ public class Intake extends CSubsystem {
         .withIdleMode(SmartMotorControllerConfig.MotorMode.COAST)
         .withStatorCurrentLimit(Amps.of(40));
 
-    private final SmartMotorController intake_controller = new SparkWrapper( intake_motor_controller, DCMotor.getNeoVortex(1), smc_config);
+    /** Smart motor controller wrapper for the intake motor. */
+    private final SmartMotorController intakeController = new SparkWrapper( intakeMotorController, DCMotor.getNeoVortex(1), smcConfig);
 
-    // SysId routine for characterization
+    /** SysId routine for motor characterization. */
     private final SysIdRoutine sysIdRoutine;
 
-    public static enum IntakeState {
-        On,
-        Rev, // Implement for barfing
-        Off,
-    }
-    public IntakeState getState() { return this.state; }
-
-    private IntakeState current_state = Intake.IntakeState.Off;
+    /** Current state of the intake mechanism. */
+    private IntakeState currentState = Intake.IntakeState.Off;
+    /** Target state of the intake mechanism. */
     private IntakeState state = Intake.IntakeState.Off;
 
+    /**
+     * Gets the current state of the intake.
+     * 
+     * @return the current intake state
+     */
+    public IntakeState getState() { return state; }
+
+    /**
+     * Constructs a new Intake subsystem.
+     * Initializes motor controller, SysId routine, and sets up default command.
+     */
     public Intake() {
         // Initialize SysId routine
-        this.sysIdRoutine = new SysIdRoutine(
+        sysIdRoutine = new SysIdRoutine(
             new SysIdRoutine.Config(),
             new SysIdRoutine.Mechanism(
-                (volts) -> this.intake_controller.setVoltage(volts),
+                (volts) -> intakeController.setVoltage(volts),
                 null, // No log consumer (can add if needed)
                 this
             )
@@ -69,59 +94,83 @@ public class Intake extends CSubsystem {
         
         // Register SysId commands with SmartDashboard
         SmartDashboard.putData("Intake/SysId Quasistatic Forward", 
-            this.sysIdRoutine.quasistatic(SysIdRoutine.Direction.kForward));
+            sysIdRoutine.quasistatic(SysIdRoutine.Direction.kForward));
         SmartDashboard.putData("Intake/SysId Quasistatic Reverse", 
-            this.sysIdRoutine.quasistatic(SysIdRoutine.Direction.kReverse));
+            sysIdRoutine.quasistatic(SysIdRoutine.Direction.kReverse));
         SmartDashboard.putData("Intake/SysId Dynamic Forward", 
-            this.sysIdRoutine.dynamic(SysIdRoutine.Direction.kForward));
+            sysIdRoutine.dynamic(SysIdRoutine.Direction.kForward));
         SmartDashboard.putData("Intake/SysId Dynamic Reverse", 
-            this.sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse));
+            sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse));
         
-        this.setDefaultCommand(this.intakeHandler());
+        setDefaultCommand(intakeHandler());
     }
 
+    /**
+     * Creates a command to turn the intake on.
+     * 
+     * @return command that sets intake state to On
+     */
     public CCommand SetIntakeOn() {
         return cCommand().onInitialize(() -> {
-            this.state = Intake.IntakeState.On;
+            state = Intake.IntakeState.On;
         });
     }
 
+    /**
+     * Creates a command to turn the intake off.
+     * 
+     * @return command that sets intake state to Off
+     */
     public CCommand SetIntakeOff() {
         return cCommand().onInitialize(() -> {
-            this.state = Intake.IntakeState.Off;
+            state = Intake.IntakeState.Off;
         });
     }
 
+    /**
+     * Creates the default command that handles intake state transitions.
+     * Monitors state changes and updates motor velocity accordingly.
+     * 
+     * @return command that handles automatic intake control
+     */
     public CCommand intakeHandler() {
        return cCommand("IntakeHandler")
            .onExecute(() -> {
-               if ( this.state != this.current_state ) {
-                   switch (this.state) {
+               if ( state != currentState ) {
+                   switch (state) {
                        case Off:
-                            this.current_state = Intake.IntakeState.Off;
-                            this.intake_controller.setVelocity(RPM.of(0));
+                            currentState = Intake.IntakeState.Off;
+                            intakeController.setVelocity(RPM.of(0));
                             break;
                        case On:
-                           this.current_state = Intake.IntakeState.On;
-                           this.intake_controller.setVelocity(RPM.of(100));
+                           currentState = Intake.IntakeState.On;
+                           intakeController.setVelocity(RPM.of(100));
                            break;
                        case Rev:
-                           this.current_state = Intake.IntakeState.Rev;
+                           currentState = Intake.IntakeState.Rev;
                            // TODO: Implement reverse/barfing speed
-                           this.intake_controller.setVelocity(RPM.of(-100));
+                           intakeController.setVelocity(RPM.of(-100));
                            break;
                    }
                }
            });
     }
 
+    /**
+     * Updates telemetry data for the intake motor controller.
+     * Called periodically by the command scheduler.
+     */
     @Override
     public void periodic() {
-        this.intake_controller.updateTelemetry();
+        intakeController.updateTelemetry();
     }
 
+    /**
+     * Iterates the motor controller simulation.
+     * Called periodically during simulation mode.
+     */
     @Override
     public void simulationPeriodic() {
-        this.intake_controller.simIterate();
+        intakeController.simIterate();
     }
 }
