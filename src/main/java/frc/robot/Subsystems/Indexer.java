@@ -21,9 +21,15 @@ import yams.motorcontrollers.SmartMotorController;
 import yams.motorcontrollers.SmartMotorControllerConfig;
 import yams.motorcontrollers.local.SparkWrapper;
 
+/**
+ * Indexer subsystem that moves game pieces between the intake and shooter.
+ * Controls a motor to transfer game pieces in both directions based on shooter and intake states.
+ */
 public class Indexer extends CSubsystem {
-    private final SparkFlex indexer_motor_controller = new SparkFlex(1, SparkLowLevel.MotorType.kBrushless);
-    private final SmartMotorControllerConfig smc_config = new SmartMotorControllerConfig(this)
+    /** Motor controller for the indexer mechanism. */
+    private final SparkFlex indexerMotorController = new SparkFlex(1, SparkLowLevel.MotorType.kBrushless);
+    /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
+    private final SmartMotorControllerConfig smcConfig = new SmartMotorControllerConfig(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
         // Feedback Constants (PID Constants)
         .withClosedLoopController(50, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
@@ -42,34 +48,51 @@ public class Indexer extends CSubsystem {
         .withIdleMode(SmartMotorControllerConfig.MotorMode.COAST)
         .withStatorCurrentLimit(Amps.of(40));
 
-    private final SmartMotorController indexer_controller = new SparkWrapper(
-            this.indexer_motor_controller,
+    /** Smart motor controller wrapper for the indexer motor. */
+    private final SmartMotorController indexerController = new SparkWrapper(
+            indexerMotorController,
             DCMotor.getNeoVortex(1),
-            this.smc_config
+            smcConfig
     );
 
-    // SysId routine for characterization
+    /** SysId routine for motor characterization. */
     private final SysIdRoutine sysIdRoutine;
 
-    private Shooter shooter_subsystem;
-    private Intake intake_subsystem;
+    /** Reference to the shooter subsystem. */
+    private Shooter shooterSubsystem;
+    /** Reference to the intake subsystem. */
+    private Intake intakeSubsystem;
 
+    /**
+     * Represents the operational state of the indexer.
+     */
     private static enum IndexerState {
+        /** Indexing towards the shooter. */
         Shooter,
+        /** Indexing towards the hopper/storage. */
         Hopper,
+        /** Indexer is off. */
         Off
     }
-    private IndexerState state = IndexerState.Off;
+    /** Current state of the indexer. */
+    private IndexerState indexerState= IndexerState.Off;
 
-    public Indexer( Shooter shooter_subsystem, Intake intake_subsystem ) {
-        this.shooter_subsystem = shooter_subsystem;
-        this.intake_subsystem = intake_subsystem;
+    /**
+     * Constructs a new Indexer subsystem.
+     * Initializes motor controllers, SysId routine, and sets up default command.
+     * 
+     * @param shooterSubsystem the shooter subsystem instance
+     * @param intakeSubsystem the intake subsystem instance
+     */
+    public Indexer( Shooter shooterSubsystem, Intake intakeSubsystem ) {
+        this.shooterSubsystem = shooterSubsystem;
+        this.intakeSubsystem = intakeSubsystem;
         
         // Initialize SysId routine
-        this.sysIdRoutine = new SysIdRoutine(
+        sysIdRoutine = new SysIdRoutine(
             new SysIdRoutine.Config(),
             new SysIdRoutine.Mechanism(
-                (volts) -> this.indexer_controller.setVoltage(volts),
+                (volts) -> indexerController.setVoltage(volts),
                 null, // No log consumer (can add if needed)
                 this
             )
@@ -77,55 +100,84 @@ public class Indexer extends CSubsystem {
         
         // Register SysId commands with SmartDashboard
         SmartDashboard.putData("Indexer/SysId Quasistatic Forward", 
-            this.sysIdRoutine.quasistatic(SysIdRoutine.Direction.kForward));
+            sysIdRoutine.quasistatic(SysIdRoutine.Direction.kForward));
         SmartDashboard.putData("Indexer/SysId Quasistatic Reverse", 
-            this.sysIdRoutine.quasistatic(SysIdRoutine.Direction.kReverse));
+            sysIdRoutine.quasistatic(SysIdRoutine.Direction.kReverse));
         SmartDashboard.putData("Indexer/SysId Dynamic Forward", 
-            this.sysIdRoutine.dynamic(SysIdRoutine.Direction.kForward));
+            sysIdRoutine.dynamic(SysIdRoutine.Direction.kForward));
         SmartDashboard.putData("Indexer/SysId Dynamic Reverse", 
-            this.sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse));
+            sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse));
         
-        this.setDefaultCommand(indexerHandler());
+        setDefaultCommand(indexerHandler());
     }
 
+    /**
+     * Creates a command to run the indexer towards the shooter.
+     * 
+     * @return command that sets indexer state to Shooter
+     */
     public CCommand shooterIndexing() {
         return cCommand( "ShootingIndexing")
-                .onInitialize(() -> state = Indexer.IndexerState.Shooter);
+                .onInitialize(() -> indexerState = Indexer.IndexerState.Shooter);
     }
 
+    /**
+     * Creates a command to run the indexer towards the hopper/storage.
+     * 
+     * @return command that sets indexer state to Hopper
+     */
     public CCommand hopperIndexing() {
         return cCommand( "HopperIndexing")
-                .onInitialize(() -> state = Indexer.IndexerState.Hopper);
+                .onInitialize(() -> indexerState = Indexer.IndexerState.Hopper);
     }
 
+    /**
+     * Creates a command to stop the indexer.
+     * 
+     * @return command that sets indexer state to Off
+     */
     public CCommand stopIndexer() {
         return cCommand( "StopIndexer")
-                .onInitialize(() -> state = Indexer.IndexerState.Off);
+                .onInitialize(() -> indexerState = Indexer.IndexerState.Off);
     }
 
+    /**
+     * Creates the default command that automatically controls the indexer based on subsystem states.
+     * Runs towards shooter when shooter is on, towards hopper when intake is on, otherwise stops.
+     * 
+     * @return command that handles automatic indexer control
+     */
     public CCommand indexerHandler() {
         return cCommand("IndexerHandler")
                 .onExecute(() -> {
-                   if ( this.shooter_subsystem.getState() == Shooter.ShooterState.On ) {
-                       this.state = Indexer.IndexerState.Shooter;
-                       this.indexer_controller.setVelocity(IndexerSubsystemConstants.forwardsOnSpeeds);
-                   } else if ( this.intake_subsystem.getState() == Intake.IntakeState.On ) {
-                       this.state = Indexer.IndexerState.Hopper;
-                       this.indexer_controller.setVelocity(IndexerSubsystemConstants.backwardsOnSpeeds);
+                   if ( shooterSubsystem.getState() == Shooter.ShooterState.On ) {
+                       indexerState = Indexer.IndexerState.Shooter;
+                       indexerController.setVelocity(IndexerSubsystemConstants.forwardsOnSpeeds);
+                   } else if ( intakeSubsystem.getState() == Intake.IntakeState.On ) {
+                       indexerState = Indexer.IndexerState.Hopper;
+                       indexerController.setVelocity(IndexerSubsystemConstants.backwardsOnSpeeds);
                    } else {
-                       this.state = Indexer.IndexerState.Off;
-                       this.indexer_controller.setVelocity(RPM.of(0));
+                       indexerState = Indexer.IndexerState.Off;
+                       indexerController.setVelocity(RPM.of(0));
                    }
                 });
     }
 
+    /**
+     * Updates telemetry data for the indexer motor controller.
+     * Called periodically by the command scheduler.
+     */
     @Override
     public void periodic() {
-        this.indexer_controller.updateTelemetry();
+        indexerController.updateTelemetry();
     }
 
+    /**
+     * Iterates the motor controller simulation.
+     * Called periodically during simulation mode.
+     */
     @Override
     public void simulationPeriodic() {
-        this.indexer_controller.simIterate();
+        indexerController.simIterate();
     }
 }
