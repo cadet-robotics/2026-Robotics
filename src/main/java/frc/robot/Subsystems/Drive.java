@@ -31,18 +31,29 @@ import swervelib.math.SwerveMath;
 import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
 
+/**
+ * Drive subsystem that controls the swerve drive system.
+ * Manages robot movement, odometry, vision integration, and autonomous pathfinding.
+ */
 public class Drive extends CSubsystem {
+    /** Maximum speed of the robot in meters per second. */
     // TODO: Configure robot details
     private static final double maxSpeed = Units.feetToMeters(6);
+    /** The swerve drive object that manages the swerve modules. */
     private SwerveDrive swerveDrive;
+    /** Vision subsystem for processing camera data and vision measurements. */
     private Vision vision;
 
+    /**
+     * Constructs a new Drive subsystem.
+     * Initializes vision (real or simulated based on robot mode) and configures swerve drive.
+     */
     public Drive() {
 
         if (Robot.isReal()) {
-            this.vision = new RealVision(this);
+            vision = new RealVision(this);
         } else {
-            this.vision = new SimVision(this);
+            vision = new SimVision(this);
         }
 
         // Temp starting positions for sim
@@ -54,30 +65,46 @@ public class Drive extends CSubsystem {
                         Meter.of(4)),
                         Rotation2d.fromDegrees(0));
 
-        this.configureSwerveObjects(startingPose);
-        DriveSubsystemConfiguration.configurePathPlanner(this, this.swerveDrive);
+        configureSwerveObjects(startingPose);
+        DriveSubsystemConfiguration.configurePathPlanner(this, swerveDrive);
     }
 
+    /**
+     * Configures and initializes the swerve drive objects from JSON configuration files.
+     * 
+     * @param startingPose the initial pose of the robot on the field
+     * @throws RuntimeException if the swerve configuration files cannot be loaded
+     */
     public void configureSwerveObjects(Pose2d startingPose) {
         // Initialize the swerve drive object with the configs in the deploy directory
         File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(), "swerve");
         try {
-            this.swerveDrive = new SwerveParser(swerveJsonDirectory).createSwerveDrive(Drive.maxSpeed, startingPose);
+            swerveDrive = new SwerveParser(swerveJsonDirectory).createSwerveDrive(Drive.maxSpeed, startingPose);
         } catch (IOException e) {
             System.out.println("Failed to load necessary files for swerve drive.");
             throw new RuntimeException(e);
         }
 
-        this.swerveDrive.resetOdometry(startingPose);
+        swerveDrive.resetOdometry(startingPose);
         SwerveDriveTelemetry.verbosity = SwerveDriveTelemetry.TelemetryVerbosity.HIGH;
     }
 
+    /**
+     * Gets the vision subsystem.
+     * 
+     * @return the vision subsystem instance
+     */
     public Vision getVision() {
-        return this.vision;
+        return vision;
     }
 
+    /**
+     * Gets the swerve drive object.
+     * 
+     * @return the swerve drive instance
+     */
     public SwerveDrive getSwerveDrive() {
-        return this.swerveDrive;
+        return swerveDrive;
     }
 
     /**
@@ -97,7 +124,7 @@ public class Drive extends CSubsystem {
             Translation2d scaledInputs = SwerveMath
                     .scaleTranslation(new Translation2d(translationX.getAsDouble(), translationY.getAsDouble()), 3);
             // Make the robot move
-            this.swerveDrive.driveFieldOriented(
+            swerveDrive.driveFieldOriented(
                     swerveDrive.swerveController.getTargetSpeeds(scaledInputs.getX(), scaledInputs.getY(),
                             headingX.getAsDouble(),
                             headingY.getAsDouble(),
@@ -106,10 +133,20 @@ public class Drive extends CSubsystem {
         });
     }
 
+    /**
+     * Gets the current pose of the robot.
+     * 
+     * @return the current pose from odometry
+     */
     public Pose2d getPose() {
         return swerveDrive.getPose();
     }
 
+    /**
+     * Resets the odometry to a specified pose.
+     * 
+     * @param pose2d the new pose to reset to
+     */
     public void resetOdometry(Pose2d pose2d) {
         swerveDrive.resetOdometry(pose2d);
     }
@@ -135,7 +172,7 @@ public class Drive extends CSubsystem {
      */
     public CCommand driveCommand(DoubleSupplier translationX, DoubleSupplier translationY,
             DoubleSupplier angularRotationX) {
-        return this.cCommand("DriveSubsysem.DefaultDrive").onExecute(() -> {
+        return cCommand("DriveSubsysem.DefaultDrive").onExecute(() -> {
             double vX = translationX.getAsDouble();
             double vY = translationY.getAsDouble();
             double omega = angularRotationX.getAsDouble();
@@ -170,15 +207,15 @@ public class Drive extends CSubsystem {
             DoubleSupplier translationX,
             DoubleSupplier translationY,
             DoubleSupplier angularRotationX) {
-        return this.driveCommand(translationX, translationY, angularRotationX)
+        return driveCommand(translationX, translationY, angularRotationX)
                 .onInitialize(() -> {
-                    this.swerveDrive.setMaximumAllowableSpeeds(
-                            this.swerveDrive.getMaximumChassisVelocity() / 2,
-                            this.swerveDrive.getMaximumChassisAngularVelocity());
+                    swerveDrive.setMaximumAllowableSpeeds(
+                            swerveDrive.getMaximumChassisVelocity() / 2,
+                            swerveDrive.getMaximumChassisAngularVelocity());
                 }).onEnd(() -> {
-                    this.swerveDrive.setMaximumAllowableSpeeds(
-                            this.swerveDrive.getMaximumChassisVelocity() / 2,
-                            this.swerveDrive.getMaximumChassisAngularVelocity());
+                    swerveDrive.setMaximumAllowableSpeeds(
+                            swerveDrive.getMaximumChassisVelocity() / 2,
+                            swerveDrive.getMaximumChassisAngularVelocity());
                 });
     }
     
@@ -191,9 +228,9 @@ public class Drive extends CSubsystem {
      */
     public Command driveToTargetPose(Pose2d targetPose, double endVelocity) {
         PathConstraints constraints = new PathConstraints(
-            this.swerveDrive.getMaximumChassisVelocity(),      // Max velocity (m/s)
+            swerveDrive.getMaximumChassisVelocity(),      // Max velocity (m/s)
             4.0,                                                // Max acceleration (m/s^2)
-            this.swerveDrive.getMaximumChassisAngularVelocity(), // Max angular velocity (rad/s)
+            swerveDrive.getMaximumChassisAngularVelocity(), // Max angular velocity (rad/s)
             Math.PI * 4.0                                       // Max angular acceleration (rad/s^2)
         );
         
@@ -215,9 +252,9 @@ public class Drive extends CSubsystem {
      */
     public Command driveToTargetPose(Supplier<Pose2d> pose2dSupplier, double endVelocity) {
         PathConstraints constraints = new PathConstraints(
-            this.swerveDrive.getMaximumChassisVelocity(),
+            swerveDrive.getMaximumChassisVelocity(),
             4.0,
-            this.swerveDrive.getMaximumChassisAngularVelocity(),
+            swerveDrive.getMaximumChassisAngularVelocity(),
             Math.PI * 4.0
         );
         
@@ -238,13 +275,26 @@ public class Drive extends CSubsystem {
         return driveToTargetPose(pose2dSupplier, 0.0);
     }
 
+    /**
+     * Creates a command that drives to a dummy test pose.
+     * 
+     * @return command that drives to position (12.42, 5.05) with 117 degree rotation
+     */
     public Command dummyDrivePose() {
-        return this.driveToTargetPose(new Pose2d(12.42, 5.05, Rotation2d.fromDegrees(117.0)), 0.0);
+        return driveToTargetPose(new Pose2d(12.42, 5.05, Rotation2d.fromDegrees(117.0)), 0.0);
     }
 
+    /**
+     * Command to drive while automatically rotating to face an AprilTag.
+     * Uses vision TX (horizontal angle) to calculate rotation.
+     * 
+     * @param translationX translation speed in the X direction
+     * @param translationY translation speed in the Y direction
+     * @return command that drives and rotates to face the target
+     */
     public CCommand faceAprilTag(DoubleSupplier translationX, DoubleSupplier translationY) {
         // Positive TX means tag is to the right of the robot
-        return this.cCommand("DriveSubsysem.DefaultDrive").onExecute(() -> {
+        return cCommand("DriveSubsysem.DefaultDrive").onExecute(() -> {
             // Make the robot move
             swerveDrive.drive(
                     new Translation2d(
@@ -256,6 +306,12 @@ public class Drive extends CSubsystem {
         });
     }
 
+    /**
+     * Creates a SysId characterization command for the drive system.
+     * Used to determine motor constants and system characteristics.
+     * 
+     * @return SysId routine command for drive characterization
+     */
     public Command sysIdDriveCommand() {
         return SwerveDriveTest.generateSysIdCommand(
                 SwerveDriveTest.setDriveSysIdRoutine(
