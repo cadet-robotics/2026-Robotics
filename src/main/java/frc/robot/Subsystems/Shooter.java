@@ -14,7 +14,7 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.Constants;
+import frc.robot.Constants.RobotConstants;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
 import yams.gearing.GearBox;
@@ -37,15 +37,15 @@ public class Shooter extends CSubsystem {
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
         // Feedback Constants (PID Constants)
         .withClosedLoopController(
-            Constants.ShooterSubsystemConstants.SHOOTER_KP, 
-            Constants.ShooterSubsystemConstants.SHOOTER_KI, 
-            Constants.ShooterSubsystemConstants.SHOOTER_KD, 
+            RobotConstants.ShooterSubsystemConstants.SHOOTER_KP, 
+            RobotConstants.ShooterSubsystemConstants.SHOOTER_KI, 
+            RobotConstants.ShooterSubsystemConstants.SHOOTER_KD, 
             DegreesPerSecond.of(90), 
             DegreesPerSecondPerSecond.of(45))
         .withSimClosedLoopController(
-            Constants.ShooterSubsystemConstants.SHOOTER_KP, 
-            Constants.ShooterSubsystemConstants.SHOOTER_KI, 
-            Constants.ShooterSubsystemConstants.SHOOTER_KD, 
+            RobotConstants.ShooterSubsystemConstants.SHOOTER_KP, 
+            RobotConstants.ShooterSubsystemConstants.SHOOTER_KI, 
+            RobotConstants.ShooterSubsystemConstants.SHOOTER_KD, 
             DegreesPerSecond.of(90), 
             DegreesPerSecondPerSecond.of(45))
         // Feedforward Constants
@@ -130,12 +130,12 @@ public class Shooter extends CSubsystem {
                             break;
                         case On:
                             this.current_state = Shooter.ShooterState.On;
-                            this.shooter_controller.setSpeed(Constants.ShooterSubsystemConstants.forwardsOnSpeeds);
+                            this.shooter_controller.setSpeed(RobotConstants.ShooterSubsystemConstants.forwardsOnSpeeds);
                             break;
                         case Rev:
                             this.current_state = Shooter.ShooterState.Rev;
                             // Rev state - could be used for different speed (half of forward speed)
-                            this.shooter_controller.setSpeed(RPM.of(Constants.ShooterSubsystemConstants.forwardsOnSpeeds.in(RPM) / 2));
+                            this.shooter_controller.setSpeed(RPM.of(RobotConstants.ShooterSubsystemConstants.forwardsOnSpeeds.in(RPM) / 2));
                             break;
                     }
                 }

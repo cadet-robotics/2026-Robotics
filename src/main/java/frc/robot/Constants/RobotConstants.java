@@ -1,4 +1,4 @@
-package frc.robot;
+package frc.robot.Constants;
 
 import com.pathplanner.lib.config.PIDConstants;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -9,7 +9,7 @@ import static edu.wpi.first.units.Units.RPM;
  * Container class for all robot constants.
  * Constants are organized into nested classes by subsystem or component.
  */
-public class Constants {
+public class RobotConstants {
     /**
      * Constants for Xbox controller configuration.
      * Defines deadband values to prevent stick drift and unintended movement.
