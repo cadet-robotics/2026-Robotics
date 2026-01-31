@@ -12,6 +12,7 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Constants.IndexerState;
 import frc.robot.Constants.RobotConstants.IndexerSubsystemConstants;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
@@ -26,18 +27,6 @@ import yams.motorcontrollers.local.SparkWrapper;
  * Controls a motor to transfer game pieces in both directions based on shooter and intake states.
  */
 public class Indexer extends CSubsystem {
-    /**
-     * Represents the operational state of the indexer.
-     */
-    private static enum IndexerState {
-        /** Indexing towards the shooter. */
-        Shooter,
-        /** Indexing towards the hopper/storage. */
-        Hopper,
-        /** Indexer is off. */
-        Off
-    }
-
     /** Motor controller for the indexer mechanism. */
     private final SparkFlex indexerMotorController = new SparkFlex(1, SparkLowLevel.MotorType.kBrushless);
     /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
@@ -76,7 +65,7 @@ public class Indexer extends CSubsystem {
     private Intake intakeSubsystem;
 
     /** Current state of the indexer. */
-    private IndexerState indexerState = IndexerState.Off;
+    private IndexerState indexerState = IndexerState.OFF;
 
     /**
      * Constructs a new Indexer subsystem.
@@ -119,7 +108,7 @@ public class Indexer extends CSubsystem {
      */
     public CCommand shooterIndexing() {
         return cCommand( "ShootingIndexing")
-                .onInitialize(() -> indexerState = Indexer.IndexerState.Shooter);
+                .onInitialize(() -> indexerState = IndexerState.SHOOTER);
     }
 
     /**
@@ -129,7 +118,7 @@ public class Indexer extends CSubsystem {
      */
     public CCommand hopperIndexing() {
         return cCommand( "HopperIndexing")
-                .onInitialize(() -> indexerState = Indexer.IndexerState.Hopper);
+                .onInitialize(() -> indexerState = IndexerState.HOPPER);
     }
 
     /**
@@ -139,7 +128,7 @@ public class Indexer extends CSubsystem {
      */
     public CCommand stopIndexer() {
         return cCommand( "StopIndexer")
-                .onInitialize(() -> indexerState = Indexer.IndexerState.Off);
+                .onInitialize(() -> indexerState = IndexerState.OFF);
     }
 
     /**
@@ -152,13 +141,13 @@ public class Indexer extends CSubsystem {
         return cCommand("IndexerHandler")
                 .onExecute(() -> {
                    if ( shooterSubsystem.getState() == Shooter.ShooterState.On ) {
-                       indexerState = Indexer.IndexerState.Shooter;
+                       indexerState = IndexerState.SHOOTER;
                        indexerController.setVelocity(IndexerSubsystemConstants.forwardsOnSpeeds);
                    } else if ( intakeSubsystem.getState() == Intake.IntakeState.On ) {
-                       indexerState = Indexer.IndexerState.Hopper;
+                       indexerState = IndexerState.HOPPER;
                        indexerController.setVelocity(IndexerSubsystemConstants.backwardsOnSpeeds);
                    } else {
-                       indexerState = Indexer.IndexerState.Off;
+                       indexerState = IndexerState.OFF;
                        indexerController.setVelocity(RPM.of(0));
                    }
                 });
