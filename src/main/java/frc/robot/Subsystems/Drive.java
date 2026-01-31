@@ -1,40 +1,35 @@
 package frc.robot.Subsystems;
 
+import static edu.wpi.first.units.Units.Meter;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.config.RobotConfig;
-import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
-import com.pathplanner.lib.util.DriveFeedforwards;
-import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.Timer;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Config;
+import frc.robot.Robot;
 import frc.robot.Configuration.DriveSubsystemConfiguration;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
-import frc.robot.Robot;
 import frc.robot.Subsystems.Vision.RealVision;
 import frc.robot.Subsystems.Vision.SimVision;
 import frc.robot.Subsystems.Vision.Vision;
-import org.ironmaple.simulation.SimulatedArena;
-import org.json.simple.parser.ParseException;
 import swervelib.SwerveDrive;
 import swervelib.SwerveDriveTest;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Config;
 import swervelib.math.SwerveMath;
 import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
-import com.pathplanner.lib.pathfinding.Pathfinder;
-
-import static edu.wpi.first.units.Units.*;
 
 public class Drive extends CSubsystem {
     // TODO: Configure robot details

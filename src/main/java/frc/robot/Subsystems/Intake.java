@@ -1,7 +1,13 @@
 package frc.robot.Subsystems;
 
-import com.revrobotics.spark.SparkLowLevel;
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
+import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
+import static edu.wpi.first.units.Units.RPM;
+
 import com.revrobotics.spark.SparkFlex;
+import com.revrobotics.spark.SparkLowLevel;
+
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -13,8 +19,6 @@ import yams.gearing.MechanismGearing;
 import yams.motorcontrollers.SmartMotorController;
 import yams.motorcontrollers.SmartMotorControllerConfig;
 import yams.motorcontrollers.local.SparkWrapper;
-
-import static edu.wpi.first.units.Units.*;
 
 public class Intake extends CSubsystem {
     private final SparkFlex intake_motor_controller = new SparkFlex(2, SparkLowLevel.MotorType.kBrushless);
