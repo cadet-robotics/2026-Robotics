@@ -4,6 +4,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Subsystems.Drive;
 
@@ -25,6 +26,7 @@ public class Autos {
         // AutoBuilder might not be configured if PathPlanner config has errors
         try {
             autoChooser = AutoBuilder.buildAutoChooser();
+            SmartDashboard.putData("Auto Chooser", autoChooser);
         } catch (RuntimeException e) {
             edu.wpi.first.wpilibj.DriverStation.reportWarning(
                 "Could not build auto chooser - PathPlanner may not be configured: " + e.getMessage(), 

@@ -6,10 +6,7 @@ import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.config.RobotConfig;
-import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
-import com.pathplanner.lib.util.DriveFeedforwards;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.Timer;
@@ -24,15 +21,12 @@ import frc.robot.Robot;
 import frc.robot.Subsystems.Vision.RealVision;
 import frc.robot.Subsystems.Vision.SimVision;
 import frc.robot.Subsystems.Vision.Vision;
-import org.ironmaple.simulation.SimulatedArena;
-import org.json.simple.parser.ParseException;
 import swervelib.SwerveDrive;
 import swervelib.SwerveDriveTest;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Config;
 import swervelib.math.SwerveMath;
 import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
-import com.pathplanner.lib.pathfinding.Pathfinder;
 
 import static edu.wpi.first.units.Units.*;
 
@@ -202,12 +196,11 @@ public class Drive extends CSubsystem {
             Math.PI * 4.0                                       // Max angular acceleration (rad/s^2)
         );
         
-        // return AutoBuilder.pathfindToPose(
-        //     targetPose,
-        //     constraints,
-        //     endVelocity  // Goal velocity at end
-        // );
-        return cCommand();
+        return AutoBuilder.pathfindToPose(
+            targetPose,
+            constraints,
+            endVelocity  // Goal velocity at end
+        );
     }
 
     /**
@@ -264,7 +257,7 @@ public class Drive extends CSubsystem {
     public Command sysIdDriveCommand() {
         return SwerveDriveTest.generateSysIdCommand(
                 SwerveDriveTest.setDriveSysIdRoutine(
-                new Config(), this, this.swerveDrive, 12, true),
+                new Config(), this, this.swerveDrive, 12, false),
                 3.0,5.0,3.0
         );
     }

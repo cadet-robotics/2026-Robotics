@@ -3,6 +3,7 @@ package frc.robot.Configuration;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.pathfinding.Pathfinding;
 import com.pathplanner.lib.util.DriveFeedforwards;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -21,29 +22,12 @@ public final class DriveSubsystemConfiguration {
         RobotConfig config;
         try {
             config = RobotConfig.fromGUISettings();
-        } catch (IOException | ParseException e ) {
-            boolean printStackTrace = true;
-            if ( e instanceof IOException ) {
-                DriverStation.reportError(
-                        "Unable to read pathplanner config file: " + e.getLocalizedMessage(),
-                        printStackTrace
-                );
-            } else if ( e instanceof ParseException ) {
-                DriverStation.reportError(
-                        "Unable to parse pathplanner config file: " + e.getLocalizedMessage(),
-                        printStackTrace
-                );
-            }
-            // Don't throw - just disable PathPlanner auto
-            DriverStation.reportWarning("PathPlanner AutoBuilder not configured due to config file error", false);
-            return;
         } catch (Exception e) {
-            // Catch any other exceptions (like NullPointerException from missing fields)
+            // If config file loading fails, report and return without configuring
             DriverStation.reportError(
-                    "Unexpected error loading PathPlanner config: " + e.getLocalizedMessage(),
-                    true
+                    "Failed to load PathPlanner config: " + e.getMessage(),
+                    e.getStackTrace()
             );
-            DriverStation.reportWarning("PathPlanner AutoBuilder not configured", false);
             return;
         }
 
@@ -54,6 +38,9 @@ public final class DriveSubsystemConfiguration {
             }
             return false;
         };
+
+        // Set the pathfinding implementation to use ADStar
+        Pathfinding.setPathfinder(new com.pathplanner.lib.pathfinding.LocalADStar());
 
         AutoBuilder.configure(
             swerveDrive::getPose,
