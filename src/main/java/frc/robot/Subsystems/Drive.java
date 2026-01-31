@@ -10,7 +10,6 @@ import java.util.function.Supplier;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -33,6 +32,8 @@ import swervelib.SwerveDriveTest;
 import swervelib.math.SwerveMath;
 import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
+
+import static edu.wpi.first.units.Units.*;
 
 /**
  * Drive subsystem that controls the swerve drive system.
@@ -237,12 +238,11 @@ public class Drive extends CSubsystem {
             Math.PI * 4.0                                       // Max angular acceleration (rad/s^2)
         );
         
-        // return AutoBuilder.pathfindToPose(
-        //     targetPose,
-        //     constraints,
-        //     endVelocity  // Goal velocity at end
-        // );
-        return cCommand();
+        return AutoBuilder.pathfindToPose(
+            targetPose,
+            constraints,
+            endVelocity  // Goal velocity at end
+        );
     }
 
     /**
@@ -346,7 +346,7 @@ public class Drive extends CSubsystem {
     public Command sysIdDriveCommand() {
         return SwerveDriveTest.generateSysIdCommand(
                 SwerveDriveTest.setDriveSysIdRoutine(
-                new Config(), this, this.swerveDrive, 12, true),
+                new Config(), this, this.swerveDrive, 12, false),
                 3.0,5.0,3.0
         );
     }

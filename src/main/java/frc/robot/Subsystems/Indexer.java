@@ -30,7 +30,7 @@ import frc.robot.Constants.ShooterState;
  */
 public class Indexer extends CSubsystem {
     /** Motor controller for the indexer mechanism. */
-    private final SparkFlex indexerMotorController = new SparkFlex(1, SparkLowLevel.MotorType.kBrushless);
+    private final SparkFlex indexerMotorController = new SparkFlex(15, SparkLowLevel.MotorType.kBrushless);
     /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
     private final SmartMotorControllerConfig smcConfig = new SmartMotorControllerConfig(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
@@ -45,7 +45,7 @@ public class Indexer extends CSubsystem {
         // Gearing from the motor rotor to final shaft.
         // In this example GearBox.fromReductionStages(3,4) is the same as GearBox.fromStages("3:1","4:1") which corresponds to the gearbox attached to your motor.
         // You could also use .withGearing(12) which does the same thing.
-        .withGearing(new MechanismGearing(GearBox.fromReductionStages(3, 4)))
+        .withGearing(new MechanismGearing(GearBox.fromReductionStages(1, 16)))
         // Motor properties to prevent over currenting.
         .withMotorInverted(false)
         .withIdleMode(SmartMotorControllerConfig.MotorMode.COAST)
@@ -134,6 +134,26 @@ public class Indexer extends CSubsystem {
     }
 
     /**
+     * Creates a command to manually run the indexer forward at slow speed.
+     * 
+     * @return command that sets indexer state to manual forward
+     */
+    public CCommand manualForward() {
+        return cCommand("ManualForward")
+                .onInitialize(() -> indexerState = IndexerState.MANUAL_FORWARD);
+    }
+
+    /**
+     * Creates a command to manually run the indexer backward at slow speed.
+     * 
+     * @return command that sets indexer state to manual backward
+     */
+    public CCommand manualBackward() {
+        return cCommand("ManualBackward")
+                .onInitialize(() -> indexerState = IndexerState.MANUAL_BACKWARD);
+    }
+
+    /**
      * Creates the default command that automatically controls the indexer based on subsystem states.
      * Runs towards shooter when shooter is on, towards hopper when intake is on, otherwise stops.
      * 
@@ -142,7 +162,11 @@ public class Indexer extends CSubsystem {
     public CCommand indexerHandler() {
         return cCommand("IndexerHandler")
                 .onExecute(() -> {
-                   if ( shooterSubsystem.getState() == ShooterState.ON ) {
+                   if ( indexerState == IndexerState.MANUAL_FORWARD ) {
+                       indexerController.setVelocity(IndexerSubsystemConstants.manualSpeed);
+                   } else if ( indexerState == IndexerState.MANUAL_BACKWARD ) {
+                       indexerController.setVelocity(RPM.of(-IndexerSubsystemConstants.manualSpeed.in(RPM)));
+                   } else if ( shooterSubsystem.getState() == ShooterState.On ) {
                        indexerState = IndexerState.SHOOTER;
                        indexerController.setVelocity(IndexerSubsystemConstants.forwardsOnSpeeds);
                    } else if ( intakeSubsystem.getState() == IntakeState.ON ) {

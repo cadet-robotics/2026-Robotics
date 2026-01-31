@@ -11,6 +11,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.RobotConstants.ControllerConstants;
 import frc.robot.Subsystems.Drive;
+import frc.robot.Subsystems.Indexer;
+import frc.robot.Subsystems.Intake;
+import frc.robot.Subsystems.Shooter;
 
 public class RobotContainer {
 
@@ -19,9 +22,9 @@ public class RobotContainer {
 
 
   // private final Vision vision_subsystem;
-  // private final Intake intake_subsystem;
-  // private final Indexer indexer_subsystem;
-  // private final Shooter shooter_subsystem;
+  private final Intake intake_subsystem;
+  private final Indexer indexer_subsystem;
+  private final Shooter shooter_subsystem;
 
   private final CommandXboxController driverController;
   private final CommandXboxController codriverController;
@@ -30,9 +33,9 @@ public class RobotContainer {
     // Setup and initialize Subsystems here
     drive_subsystem = new Drive();
     // vision_subsystem = drive_subsystem.getVision();
-    // shooter_subsystem = new Shooter();
-    // intake_subsystem = new Intake();
-    // indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem );
+    shooter_subsystem = new Shooter();
+    intake_subsystem = new Intake();
+    indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem );
 
     autos = new Autos(this, drive_subsystem );
     
@@ -44,8 +47,41 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
-    //new Trigger( () -> driverController.getLeftX() != 0 ).whileTrue( drive_subsystem.dummyDrivePose() );
-    driverController.a().whileTrue( drive_subsystem.dummyDrivePose() );
+    // Pathfinding command to drive to a specific pose on button press
+    driverController.a().whileTrue( 
+      edu.wpi.first.wpilibj2.command.Commands.deferredProxy(
+        () -> drive_subsystem.dummyDrivePose()
+      )
+    ); 
+
+    // Shooter bindings on codriver controller
+    // Left trigger - shoot forwards
+    codriverController.leftTrigger().whileTrue(shooter_subsystem.Shoot())
+                                    .onFalse(shooter_subsystem.StopShooting());
+    
+    // Right trigger - shoot backwards
+    codriverController.rightTrigger().whileTrue(shooter_subsystem.ShootBackwards())
+                                     .onFalse(shooter_subsystem.StopShooting());
+    
+    // Y button - stop shooter
+    codriverController.y().onTrue(shooter_subsystem.StopShooting());
+    
+    // Left D-pad - manual spin forward at low speed
+    codriverController.povLeft().whileTrue(shooter_subsystem.ManualSpinForward())
+                                .onFalse(shooter_subsystem.StopShooting());
+    
+    // Right D-pad - manual spin backward at low speed
+    codriverController.povRight().whileTrue(shooter_subsystem.ManualSpinBackward())
+                                 .onFalse(shooter_subsystem.StopShooting());
+
+    // Indexer bindings on codriver controller
+    // Left bumper - manual indexer forward (slow)
+    codriverController.leftBumper().whileTrue(indexer_subsystem.manualForward())
+                                   .onFalse(indexer_subsystem.stopIndexer());
+    
+    // Right bumper - manual indexer backward (slow)
+    codriverController.rightBumper().whileTrue(indexer_subsystem.manualBackward())
+                                    .onFalse(indexer_subsystem.stopIndexer());
   }
 
   public void configureDriving() {
@@ -67,6 +103,8 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    return drive_subsystem.getDefaultCommand();
+    Command autoCommand = autos.getAutonomousCommand();
+    // If no auto is selected, return the default command
+    return autoCommand != null ? autoCommand : drive_subsystem.getDefaultCommand();
   }
 }

@@ -9,5 +9,9 @@ public enum IndexerState {
     /** Indexing towards the hopper/storage. */
     HOPPER,
     /** Indexer is off. */
-    OFF
+    OFF,
+    /** Manual slow forward. */
+    MANUAL_FORWARD,
+    /** Manual slow backward. */
+    MANUAL_BACKWARD
 }
