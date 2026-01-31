@@ -4,15 +4,13 @@
 
 package frc.robot;
 
-import frc.robot.Subsystems.*;
-import frc.robot.Constants.ControllerConstants;
-
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import frc.robot.Subsystems.Vision.Vision;
+import frc.robot.Constants.RobotConstants.ControllerConstants;
+import frc.robot.Subsystems.Drive;
 
 public class RobotContainer {
 
