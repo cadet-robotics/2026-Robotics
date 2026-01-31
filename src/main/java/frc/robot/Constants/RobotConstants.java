@@ -79,5 +79,7 @@ public class RobotConstants {
         public static final AngularVelocity forwardsOnSpeeds = RPM.of(100);
         /** Motor speed in RPM when reversing/ejecting game pieces (backwards operation). */
         public static final AngularVelocity backwardsOnSpeeds = RPM.of(100);
+        /** Manual slow speed in RPM for manual control. */
+        public static final AngularVelocity manualSpeed = RPM.of(20);
     }
 }
