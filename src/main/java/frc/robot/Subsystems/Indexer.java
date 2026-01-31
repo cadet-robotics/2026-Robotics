@@ -26,6 +26,18 @@ import yams.motorcontrollers.local.SparkWrapper;
  * Controls a motor to transfer game pieces in both directions based on shooter and intake states.
  */
 public class Indexer extends CSubsystem {
+    /**
+     * Represents the operational state of the indexer.
+     */
+    private static enum IndexerState {
+        /** Indexing towards the shooter. */
+        Shooter,
+        /** Indexing towards the hopper/storage. */
+        Hopper,
+        /** Indexer is off. */
+        Off
+    }
+
     /** Motor controller for the indexer mechanism. */
     private final SparkFlex indexerMotorController = new SparkFlex(1, SparkLowLevel.MotorType.kBrushless);
     /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
@@ -38,7 +50,7 @@ public class Indexer extends CSubsystem {
         .withFeedforward(new SimpleMotorFeedforward(0, 0, 0))
         .withSimFeedforward(new SimpleMotorFeedforward(0, 0, 0))
         // Telemetry name and verbosity level
-        .withTelemetry("IndexerMotor",SmartMotorControllerConfig.TelemetryVerbosity.HIGH)
+        .withTelemetry("IndexerMotor", SmartMotorControllerConfig.TelemetryVerbosity.HIGH)
         // Gearing from the motor rotor to final shaft.
         // In this example GearBox.fromReductionStages(3,4) is the same as GearBox.fromStages("3:1","4:1") which corresponds to the gearbox attached to your motor.
         // You could also use .withGearing(12) which does the same thing.
@@ -63,19 +75,8 @@ public class Indexer extends CSubsystem {
     /** Reference to the intake subsystem. */
     private Intake intakeSubsystem;
 
-    /**
-     * Represents the operational state of the indexer.
-     */
-    private static enum IndexerState {
-        /** Indexing towards the shooter. */
-        Shooter,
-        /** Indexing towards the hopper/storage. */
-        Hopper,
-        /** Indexer is off. */
-        Off
-    }
     /** Current state of the indexer. */
-    private IndexerState indexerState= IndexerState.Off;
+    private IndexerState indexerState = IndexerState.Off;
 
     /**
      * Constructs a new Indexer subsystem.
