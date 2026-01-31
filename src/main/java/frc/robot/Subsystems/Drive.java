@@ -315,6 +315,17 @@ public class Drive extends CSubsystem {
         return Math.sqrt((Math.pow(xDistance, 2) + Math.pow(yDistance, 2))) / 12;
     }
 
+    // Calculate the distance that the robot is from our alliance's HUB
+    public double hubAngle() {
+        Translation2d allianceHub = getHub();
+        Pose2d currentPose = getPose();
+
+        double xDistance = Math.abs(currentPose.getX() - allianceHub.getX());
+        double yDistance = Math.abs(currentPose.getY() - allianceHub.getY());
+        
+        return Math.atan( yDistance / xDistance );
+    }
+
     /**
      * Command to drive while automatically rotating to face an AprilTag.
      * Uses vision TX (horizontal angle) to calculate rotation.
