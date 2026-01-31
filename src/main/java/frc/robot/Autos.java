@@ -40,7 +40,7 @@ public class Autos {
      * @return the selected autonomous command, or null if no chooser is available
      */
     public Command getAutonomousCommand() {
-        autoChooser != null ? autoChooser.getSelected() : null;
+        return (autoChooser != null) ? autoChooser.getSelected() : null;
     }
 
     /**

@@ -1,4 +1,4 @@
-package frc.robot;
+package frc.robot.Configuration;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.RobotConfig;
@@ -9,12 +9,13 @@ import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.Subsystems.Drive;
 import org.json.simple.parser.ParseException;
 import swervelib.SwerveDrive;
+import frc.robot.Constants.DriveSubsystemConstants;
 
 import java.io.IOException;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
-public static final class DriveSubsystemConfiguration {
+public final class DriveSubsystemConfiguration {
 
     public static void configurePathPlanner(Drive driveSubsystem, SwerveDrive swerveDrive ) {
         RobotConfig config;
@@ -66,8 +67,8 @@ public static final class DriveSubsystemConfiguration {
                 );
             },
             new PPHolonomicDriveController(
-                    Constants.DriveSubsystemConstants.translationPidConstants,
-                    Constants.DriveSubsystemConstants.rotationPidConstants
+                    DriveSubsystemConstants.translationPidConstants,
+                    DriveSubsystemConstants.rotationPidConstants
             ),
             config,
             isRedTeam,
