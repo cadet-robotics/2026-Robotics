@@ -12,6 +12,7 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Constants.IntakeState;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
 import yams.gearing.GearBox;
@@ -25,18 +26,6 @@ import yams.motorcontrollers.local.SparkWrapper;
  * Manages motor control for intake operations including on, off, and reverse states.
  */
 public class Intake extends CSubsystem {
-    /**
-     * Represents the operational state of the intake.
-     */
-    public static enum IntakeState {
-        /** Intake is running forward. */
-        On,
-        /** Intake is running in reverse (barfing). */
-        Rev,
-        /** Intake is off. */
-        Off,
-    }
-
     /** Motor controller for the intake mechanism. */
     private final SparkFlex intakeMotorController = new SparkFlex(2, SparkLowLevel.MotorType.kBrushless);
     /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
@@ -66,9 +55,9 @@ public class Intake extends CSubsystem {
     private final SysIdRoutine sysIdRoutine;
 
     /** Current state of the intake mechanism. */
-    private IntakeState currentState = Intake.IntakeState.Off;
+    private IntakeState currentState = IntakeState.OFF;
     /** Target state of the intake mechanism. */
-    private IntakeState state = Intake.IntakeState.Off;
+    private IntakeState state = IntakeState.OFF;
 
     /**
      * Gets the current state of the intake.
@@ -112,7 +101,7 @@ public class Intake extends CSubsystem {
      */
     public CCommand SetIntakeOn() {
         return cCommand().onInitialize(() -> {
-            state = Intake.IntakeState.On;
+            state = IntakeState.ON;
         });
     }
 
@@ -123,7 +112,7 @@ public class Intake extends CSubsystem {
      */
     public CCommand SetIntakeOff() {
         return cCommand().onInitialize(() -> {
-            state = Intake.IntakeState.Off;
+            state = IntakeState.OFF;
         });
     }
 
@@ -138,16 +127,16 @@ public class Intake extends CSubsystem {
            .onExecute(() -> {
                if ( state != currentState ) {
                    switch (state) {
-                       case Off:
-                            currentState = Intake.IntakeState.Off;
+                       case OFF:
+                            currentState = IntakeState.OFF;
                             intakeController.setVelocity(RPM.of(0));
                             break;
-                       case On:
-                           currentState = Intake.IntakeState.On;
+                       case ON:
+                           currentState = IntakeState.ON;
                            intakeController.setVelocity(RPM.of(100));
                            break;
-                       case Rev:
-                           currentState = Intake.IntakeState.Rev;
+                       case REV:
+                           currentState = IntakeState.REV;
                            // TODO: Implement reverse/barfing speed
                            intakeController.setVelocity(RPM.of(-100));
                            break;

@@ -21,6 +21,7 @@ import yams.gearing.MechanismGearing;
 import yams.motorcontrollers.SmartMotorController;
 import yams.motorcontrollers.SmartMotorControllerConfig;
 import yams.motorcontrollers.local.SparkWrapper;
+import frc.robot.Constants.IntakeState;
 
 /**
  * Indexer subsystem that moves game pieces between the intake and shooter.
@@ -143,7 +144,7 @@ public class Indexer extends CSubsystem {
                    if ( shooterSubsystem.getState() == Shooter.ShooterState.On ) {
                        indexerState = IndexerState.SHOOTER;
                        indexerController.setVelocity(IndexerSubsystemConstants.forwardsOnSpeeds);
-                   } else if ( intakeSubsystem.getState() == Intake.IntakeState.On ) {
+                   } else if ( intakeSubsystem.getState() == IntakeState.ON ) {
                        indexerState = IndexerState.HOPPER;
                        indexerController.setVelocity(IndexerSubsystemConstants.backwardsOnSpeeds);
                    } else {
