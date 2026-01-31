@@ -22,7 +22,7 @@ import yams.motorcontrollers.SmartMotorController;
 import yams.motorcontrollers.SmartMotorControllerConfig;
 import yams.motorcontrollers.local.SparkWrapper;
 import frc.robot.Constants.IntakeState;
-import frc.robot.Subsystems.Shooter.ShooterState;
+import frc.robot.Constants.ShooterState;
 
 /**
  * Indexer subsystem that moves game pieces between the intake and shooter.

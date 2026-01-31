@@ -11,6 +11,7 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.config.SparkFlexConfig;
+
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -60,9 +61,7 @@ public class Shooter extends CSubsystem {
         // Telemetry name and verbosity level
         .withTelemetry("ShooterMotor",SmartMotorControllerConfig.TelemetryVerbosity.HIGH)
         // Gearing from the motor rotor to final shaft.
-        // In this example GearBox.fromReductionStages(3,4) is the same as GearBox.fromStages("3:1","4:1") which corresponds to the gearbox attached to your motor.
-        // You could also use .withGearing(12) which does the same thing.
-        .withGearing(new MechanismGearing(GearBox.fromReductionStages(3, 4)))
+        .withGearing(1)
         // Motor properties to prevent over currenting.
         .withMotorInverted(false)
         .withIdleMode(SmartMotorControllerConfig.MotorMode.COAST)
@@ -81,19 +80,10 @@ public class Shooter extends CSubsystem {
     /** SysId routine for motor characterization. */
     private final SysIdRoutine sysIdRoutine;
 
-    public static enum ShooterState {
-        On,
-        Rev, // Unused but may come up if jamming happens
-        Off,
-        Backwards,
-        ManualForward,
-        ManualBackward,
-    }
-
     /** Current state of the shooter mechanism. */
-    private ShooterState current_state = ShooterState.OFF;
+    private ShooterState current_state = ShooterState.Off;
     /** Target state of the shooter mechanism. */
-    private ShooterState state = ShooterState.OFF;
+    private ShooterState state = ShooterState.Off;
 
     /**
      * Constructs a new Shooter subsystem.
@@ -143,49 +133,28 @@ public class Shooter extends CSubsystem {
     public CCommand Shoot() {
         return cCommand("StartShooting")
                 .onInitialize(() -> {
-                    state = ShooterState.ON;
+                    state = ShooterState.On;
                 });
     }
 
     public CCommand ShootBackwards() {
         return cCommand("ShootBackwards")
                 .onInitialize(() -> {
-                    this.state = Shooter.ShooterState.Backwards;
+                    this.state = ShooterState.Backwards;
                 });
     }
 
     public CCommand ManualSpinForward() {
         return cCommand("ManualSpinForward")
                 .onInitialize(() -> {
-                    this.state = Shooter.ShooterState.ManualForward;
-                });
-    }
-
-    public CCommand ShootBackwards() {
-        return cCommand("ShootBackwards")
-                .onInitialize(() -> {
-                    this.state = Shooter.ShooterState.Backwards;
-                });
-    }
-
-    public CCommand ManualSpinForward() {
-        return cCommand("ManualSpinForward")
-                .onInitialize(() -> {
-                    this.state = Shooter.ShooterState.ManualForward;
+                    this.state = ShooterState.ManualForward;
                 });
     }
 
     public CCommand ManualSpinBackward() {
         return cCommand("ManualSpinBackward")
                 .onInitialize(() -> {
-                    this.state = Shooter.ShooterState.ManualBackward;
-                });
-    }
-
-    public CCommand ManualSpinBackward() {
-        return cCommand("ManualSpinBackward")
-                .onInitialize(() -> {
-                    this.state = Shooter.ShooterState.ManualBackward;
+                    this.state = ShooterState.ManualBackward;
                 });
     }
 
@@ -197,7 +166,7 @@ public class Shooter extends CSubsystem {
     public CCommand StopShooting() {
         return cCommand("StopShooting")
                 .onInitialize(() -> {
-                    state = ShooterState.OFF;
+                    state = ShooterState.Off;
                 });
     }
 
@@ -212,28 +181,28 @@ public class Shooter extends CSubsystem {
             .onExecute(() -> {
                 if ( state != current_state ) {
                     switch (state) {
-                        case OFF:
-                            current_state = ShooterState.OFF;
+                        case Off:
+                            current_state = ShooterState.Off;
                             shooter_controller.setSpeed(RPM.of(0));
                             break;
-                        case ON:
-                            current_state = ShooterState.ON;
+                        case On:
+                            current_state = ShooterState.On;
                             shooter_controller.setSpeed(RobotConstants.ShooterSubsystemConstants.forwardsOnSpeeds);
                             break;
                         case Backwards:
-                            this.current_state = Shooter.ShooterState.Backwards;
-                            this.shooter_controller.setSpeed(Constants.ShooterSubsystemConstants.backwardsOnSpeeds);
+                            this.current_state = ShooterState.Backwards;
+                            this.shooter_controller.setSpeed(RobotConstants.ShooterSubsystemConstants.backwardsOnSpeeds);
                             break;
                         case ManualForward:
-                            this.current_state = Shooter.ShooterState.ManualForward;
-                            this.shooter_controller.setSpeed(Constants.ShooterSubsystemConstants.manualSpinSpeed);
+                            this.current_state = ShooterState.ManualForward;
+                            this.shooter_controller.setSpeed(RobotConstants.ShooterSubsystemConstants.manualSpinSpeed);
                             break;
                         case ManualBackward:
-                            this.current_state = Shooter.ShooterState.ManualBackward;
-                            this.shooter_controller.setSpeed(RPM.of(-Constants.ShooterSubsystemConstants.manualSpinSpeed.in(RPM)));
+                            this.current_state = ShooterState.ManualBackward;
+                            this.shooter_controller.setSpeed(RPM.of(-RobotConstants.ShooterSubsystemConstants.manualSpinSpeed.in(RPM)));
                             break;
-                        case REV:
-                            current_state = ShooterState.REV;
+                        case Rev:
+                            current_state = ShooterState.Rev;
                             // Rev state - could be used for different speed (half of forward speed)
                             shooter_controller.setSpeed(RPM.of(RobotConstants.ShooterSubsystemConstants.forwardsOnSpeeds.in(RPM) / 2));
                             break;
