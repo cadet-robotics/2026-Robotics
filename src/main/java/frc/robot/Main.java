@@ -6,9 +6,18 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.RobotBase;
 
+/**
+ * Main class for the robot application.
+ * This class should not be instantiated and serves as the entry point for the robot program.
+ */
 public final class Main {
   private Main() {}
 
+  /**
+   * Main initialization function. Do not perform any initialization here.
+   * 
+   * @param args command line arguments (not used)
+   */
   public static void main(String... args) {
     RobotBase.startRobot(Robot::new);
   }
