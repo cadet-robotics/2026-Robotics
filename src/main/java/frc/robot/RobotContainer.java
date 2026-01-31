@@ -11,6 +11,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.RobotConstants.ControllerConstants;
 import frc.robot.Subsystems.Drive;
+import frc.robot.Subsystems.Indexer;
+import frc.robot.Subsystems.Intake;
+import frc.robot.Subsystems.Shooter;
 
 public class RobotContainer {
 
@@ -19,8 +22,8 @@ public class RobotContainer {
 
 
   // private final Vision vision_subsystem;
-  // private final Intake intake_subsystem;
-  // private final Indexer indexer_subsystem;
+  private final Intake intake_subsystem;
+  private final Indexer indexer_subsystem;
   private final Shooter shooter_subsystem;
 
   private final CommandXboxController driverController;
@@ -31,8 +34,8 @@ public class RobotContainer {
     drive_subsystem = new Drive();
     // vision_subsystem = drive_subsystem.getVision();
     shooter_subsystem = new Shooter();
-    // intake_subsystem = new Intake();
-    // indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem );
+    intake_subsystem = new Intake();
+    indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem );
 
     autos = new Autos(this, drive_subsystem );
     
@@ -70,6 +73,15 @@ public class RobotContainer {
     // Right D-pad - manual spin backward at low speed
     codriverController.povRight().whileTrue(shooter_subsystem.ManualSpinBackward())
                                  .onFalse(shooter_subsystem.StopShooting());
+
+    // Indexer bindings on codriver controller
+    // Left bumper - manual indexer forward (slow)
+    codriverController.leftBumper().whileTrue(indexer_subsystem.manualForward())
+                                   .onFalse(indexer_subsystem.stopIndexer());
+    
+    // Right bumper - manual indexer backward (slow)
+    codriverController.rightBumper().whileTrue(indexer_subsystem.manualBackward())
+                                    .onFalse(indexer_subsystem.stopIndexer());
   }
 
   public void configureDriving() {
