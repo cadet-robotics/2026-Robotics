@@ -15,6 +15,7 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.RobotConstants;
+import frc.robot.Constants.ShooterState;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
 import yams.gearing.GearBox;
@@ -32,7 +33,9 @@ import yams.motorcontrollers.local.SparkWrapper;
  * and generate feedforward/feedback constants.
  */
 public class Shooter extends CSubsystem {
+    /** Motor controller for the shooter mechanism. */
     public SparkFlex shooter_motor_controller = new SparkFlex(10, SparkLowLevel.MotorType.kBrushless);
+    /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
     public SmartMotorControllerConfig smc_config = new SmartMotorControllerConfig(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
         // Feedback Constants (PID Constants)
@@ -62,29 +65,33 @@ public class Shooter extends CSubsystem {
         .withIdleMode(SmartMotorControllerConfig.MotorMode.COAST)
         .withStatorCurrentLimit(Amps.of(40));
 
+    /** Smart motor controller wrapper for the shooter motor. */
     public SmartMotorController smc = new SparkWrapper(shooter_motor_controller, DCMotor.getNeoVortex(1), smc_config);
+    /** Configuration for the flywheel mechanism including diameter and mass. */
     public FlyWheelConfig shooter_config = new FlyWheelConfig(smc)
         .withDiameter(Inches.of(4))  // Example: 4 inch diameter flywheel
         .withMass(Pounds.of(1));      // Example: 1 pound flywheel
+    /** Flywheel controller for managing shooter wheel velocity. */
     public FlyWheel shooter_controller = new FlyWheel(shooter_config);
     
-    // SysId routine for characterization
+    /** SysId routine for motor characterization. */
     private final SysIdRoutine sysIdRoutine;
 
-    public static enum ShooterState {
-        On,
-        Rev, // Unused but may come up if jamming happens
-        Off,
-    }
-    private ShooterState current_state = Shooter.ShooterState.Off;
-    private ShooterState state = Shooter.ShooterState.Off;
+    /** Current state of the shooter mechanism. */
+    private ShooterState current_state = ShooterState.OFF;
+    /** Target state of the shooter mechanism. */
+    private ShooterState state = ShooterState.OFF;
 
+    /**
+     * Constructs a new Shooter subsystem.
+     * Initializes motor controllers, flywheel, SysId routine, and sets up default command.
+     */
     public Shooter() {
         // Initialize SysId routine
-        this.sysIdRoutine = new SysIdRoutine(
+        sysIdRoutine = new SysIdRoutine(
             new SysIdRoutine.Config(),
             new SysIdRoutine.Mechanism(
-                (volts) -> this.smc.setVoltage(volts),
+                (volts) -> smc.setVoltage(volts),
                 null, // No log consumer (can add if needed)
                 this
             )
@@ -92,64 +99,93 @@ public class Shooter extends CSubsystem {
         
         // Register SysId commands with SmartDashboard
         SmartDashboard.putData("Shooter/SysId Quasistatic Forward", 
-            this.sysIdRoutine.quasistatic(SysIdRoutine.Direction.kForward));
+            sysIdRoutine.quasistatic(SysIdRoutine.Direction.kForward));
         SmartDashboard.putData("Shooter/SysId Quasistatic Reverse", 
-            this.sysIdRoutine.quasistatic(SysIdRoutine.Direction.kReverse));
+            sysIdRoutine.quasistatic(SysIdRoutine.Direction.kReverse));
         SmartDashboard.putData("Shooter/SysId Dynamic Forward", 
-            this.sysIdRoutine.dynamic(SysIdRoutine.Direction.kForward));
+            sysIdRoutine.dynamic(SysIdRoutine.Direction.kForward));
         SmartDashboard.putData("Shooter/SysId Dynamic Reverse", 
-            this.sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse));
+            sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse));
         
-        this.setDefaultCommand(shooterHandler());
+        setDefaultCommand(shooterHandler());
     }
 
-    public ShooterState getState() { return this.state; }
+    /**
+     * Gets the current state of the shooter.
+     * 
+     * @return the current shooter state
+     */
+    public ShooterState getState() { return state; }
 
+    /**
+     * Creates a command to start the shooter at full speed.
+     * 
+     * @return command that sets shooter state to On
+     */
     public CCommand Shoot() {
         return cCommand("StartShooting")
                 .onInitialize(() -> {
-                    this.state = Shooter.ShooterState.On;
+                    state = ShooterState.ON;
                 });
     }
 
+    /**
+     * Creates a command to stop the shooter.
+     * 
+     * @return command that sets shooter state to Off
+     */
     public CCommand StopShooting() {
         return cCommand("StopShooting")
                 .onInitialize(() -> {
-                    this.state = Shooter.ShooterState.Off;
+                    state = ShooterState.OFF;
                 });
     }
 
+    /**
+     * Creates the default command that handles shooter state transitions.
+     * Monitors state changes and updates flywheel velocity accordingly.
+     * 
+     * @return command that handles automatic shooter control
+     */
     public CCommand shooterHandler() {
         return cCommand()
             .onExecute(() -> {
-                if ( this.state != this.current_state ) {
-                    switch (this.state) {
-                        case Off:
-                            this.current_state = Shooter.ShooterState.Off;
-                            this.shooter_controller.setSpeed(RPM.of(0));
+                if ( state != current_state ) {
+                    switch (state) {
+                        case OFF:
+                            current_state = ShooterState.OFF;
+                            shooter_controller.setSpeed(RPM.of(0));
                             break;
-                        case On:
-                            this.current_state = Shooter.ShooterState.On;
-                            this.shooter_controller.setSpeed(RobotConstants.ShooterSubsystemConstants.forwardsOnSpeeds);
+                        case ON:
+                            current_state = ShooterState.ON;
+                            shooter_controller.setSpeed(RobotConstants.ShooterSubsystemConstants.forwardsOnSpeeds);
                             break;
-                        case Rev:
-                            this.current_state = Shooter.ShooterState.Rev;
+                        case REV:
+                            current_state = ShooterState.REV;
                             // Rev state - could be used for different speed (half of forward speed)
-                            this.shooter_controller.setSpeed(RPM.of(RobotConstants.ShooterSubsystemConstants.forwardsOnSpeeds.in(RPM) / 2));
+                            shooter_controller.setSpeed(RPM.of(RobotConstants.ShooterSubsystemConstants.forwardsOnSpeeds.in(RPM) / 2));
                             break;
                     }
                 }
             });
     }
 
+    /**
+     * Updates telemetry data for the shooter controller.
+     * Called periodically by the command scheduler.
+     */
     @Override
     public void periodic() {
         // Update telemetry
-        this.shooter_controller.updateTelemetry();
+        shooter_controller.updateTelemetry();
     }
 
+    /**
+     * Iterates the shooter controller simulation.
+     * Called periodically during simulation mode.
+     */
     @Override
     public void simulationPeriodic() {
-        this.shooter_controller.simIterate();
+        shooter_controller.simIterate();
     }
 }
