@@ -63,7 +63,7 @@ public class RobotConstants {
         
         // PID Constants
         /** Proportional gain for shooter velocity PID control. */
-        public static final double SHOOTER_KP = 50.0;
+        public static final double SHOOTER_KP = 50;
         /** Integral gain for shooter velocity PID control. */
         public static final double SHOOTER_KI = 0.0;
         /** Derivative gain for shooter velocity PID control. */

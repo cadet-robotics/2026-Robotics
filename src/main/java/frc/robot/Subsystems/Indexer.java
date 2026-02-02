@@ -7,6 +7,7 @@ import static edu.wpi.first.units.Units.RPM;
 
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
+import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -30,12 +31,12 @@ import frc.robot.Constants.ShooterState;
  */
 public class Indexer extends CSubsystem {
     /** Motor controller for the indexer mechanism. */
-    private final SparkFlex indexerMotorController = new SparkFlex(15, SparkLowLevel.MotorType.kBrushless);
+    private final SparkMax indexerMotorController = new SparkMax(15, SparkLowLevel.MotorType.kBrushless);
     /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
     private final SmartMotorControllerConfig smcConfig = new SmartMotorControllerConfig(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
         // Feedback Constants (PID Constants)
-        .withClosedLoopController(50, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
+        .withClosedLoopController(1, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
         .withSimClosedLoopController(50, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
         // Feedforward Constants
         .withFeedforward(new SimpleMotorFeedforward(0, 0, 0))
@@ -45,7 +46,7 @@ public class Indexer extends CSubsystem {
         // Gearing from the motor rotor to final shaft.
         // In this example GearBox.fromReductionStages(3,4) is the same as GearBox.fromStages("3:1","4:1") which corresponds to the gearbox attached to your motor.
         // You could also use .withGearing(12) which does the same thing.
-        .withGearing(new MechanismGearing(GearBox.fromReductionStages(1, 16)))
+        .withGearing(new MechanismGearing(GearBox.fromReductionStages(4,4)))
         // Motor properties to prevent over currenting.
         .withMotorInverted(false)
         .withIdleMode(SmartMotorControllerConfig.MotorMode.COAST)
@@ -100,7 +101,7 @@ public class Indexer extends CSubsystem {
         SmartDashboard.putData("Indexer/SysId Dynamic Reverse", 
             sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse));
         
-        setDefaultCommand(indexerHandler());
+        // setDefaultCommand(indexerHandler());
     }
 
     /**
@@ -140,7 +141,12 @@ public class Indexer extends CSubsystem {
      */
     public CCommand manualForward() {
         return cCommand("ManualForward")
-                .onInitialize(() -> indexerState = IndexerState.MANUAL_FORWARD);
+                .onInitialize(() -> {
+                    this.indexerController.setVelocity(RPM.of(20));
+                })
+                .onEnd(() -> {
+                    this.indexerController.setVelocity(RPM.of(0));
+                });
     }
 
     /**
@@ -150,7 +156,12 @@ public class Indexer extends CSubsystem {
      */
     public CCommand manualBackward() {
         return cCommand("ManualBackward")
-                .onInitialize(() -> indexerState = IndexerState.MANUAL_BACKWARD);
+                .onInitialize(() -> {
+                    this.indexerController.setVelocity(RPM.of(-20));
+                })
+                .onEnd(() -> {
+                    this.indexerController.setVelocity(RPM.of(0));
+                });
     }
 
     /**

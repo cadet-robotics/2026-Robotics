@@ -56,32 +56,28 @@ public class RobotContainer {
 
     // Shooter bindings on codriver controller
     // Left trigger - shoot forwards
-    codriverController.leftTrigger().whileTrue(shooter_subsystem.Shoot())
-                                    .onFalse(shooter_subsystem.StopShooting());
+    // codriverController.leftTrigger().whileTrue(shooter_subsystem.Shoot())
+    //                                 .onFalse(shooter_subsystem.StopShooting());
     
-    // Right trigger - shoot backwards
-    codriverController.rightTrigger().whileTrue(shooter_subsystem.ShootBackwards())
-                                     .onFalse(shooter_subsystem.StopShooting());
+    // // Right trigger - shoot backwards
+    // codriverController.rightTrigger().whileTrue(shooter_subsystem.ShootBackwards())
+    //                                  .onFalse(shooter_subsystem.StopShooting());
     
     // Y button - stop shooter
-    codriverController.y().onTrue(shooter_subsystem.StopShooting());
+    // codriverController.y().onTrue(shooter_subsystem.StopShooting());
     
     // Left D-pad - manual spin forward at low speed
-    codriverController.povLeft().whileTrue(shooter_subsystem.ManualSpinForward())
-                                .onFalse(shooter_subsystem.StopShooting());
+    driverController.leftBumper().whileTrue(shooter_subsystem.ManualSpinForward());
     
     // Right D-pad - manual spin backward at low speed
-    codriverController.povRight().whileTrue(shooter_subsystem.ManualSpinBackward())
-                                 .onFalse(shooter_subsystem.StopShooting());
+    driverController.rightBumper().whileTrue(shooter_subsystem.ManualSpinBackward());
 
     // Indexer bindings on codriver controller
     // Left bumper - manual indexer forward (slow)
-    codriverController.leftBumper().whileTrue(indexer_subsystem.manualForward())
-                                   .onFalse(indexer_subsystem.stopIndexer());
+    codriverController.leftBumper().whileTrue(indexer_subsystem.manualForward());
     
     // Right bumper - manual indexer backward (slow)
-    codriverController.rightBumper().whileTrue(indexer_subsystem.manualBackward())
-                                    .onFalse(indexer_subsystem.stopIndexer());
+    codriverController.rightBumper().whileTrue(indexer_subsystem.manualBackward());
   }
 
   public void configureDriving() {
@@ -99,7 +95,7 @@ public class RobotContainer {
         getHeadingY
     );
 
-    drive_subsystem.setDefaultCommand(defaultDrive);
+    // drive_subsystem.setDefaultCommand(defaultDrive);
   }
 
   public Command getAutonomousCommand() {

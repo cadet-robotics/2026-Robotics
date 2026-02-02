@@ -6,6 +6,8 @@ import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.Volt;
+import static edu.wpi.first.units.Units.Volts;
 
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
@@ -14,6 +16,7 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.wpilibj.DutyCycle;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.RobotConstants;
@@ -115,7 +118,7 @@ public class Shooter extends CSubsystem {
         SmartDashboard.putData("Shooter/SysId Dynamic Reverse", 
             sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse));
         
-        setDefaultCommand(shooterHandler());
+        // setDefaultCommand(shooterHandler());
     }
 
     /**
@@ -146,15 +149,29 @@ public class Shooter extends CSubsystem {
 
     public CCommand ManualSpinForward() {
         return cCommand("ManualSpinForward")
-                .onInitialize(() -> {
-                    this.state = ShooterState.ManualForward;
+                .onExecute(() -> {
+                    SmartDashboard.putString("Shooter/Command", "ManualSpinForward");
+                    SmartDashboard.putNumber("Shooter/VoltageCommand", 6.0);
+                    this.shooter_controller.setVoltage(Volts.of(6));
+                })
+                .onEnd(() -> {
+                    SmartDashboard.putString("Shooter/Command", "Stopped");
+                    SmartDashboard.putNumber("Shooter/VoltageCommand", 0.0);
+                    this.shooter_controller.setVoltage(Volts.of(0));
                 });
     }
 
     public CCommand ManualSpinBackward() {
         return cCommand("ManualSpinBackward")
-                .onInitialize(() -> {
-                    this.state = ShooterState.ManualBackward;
+                .onExecute(() -> {
+                    SmartDashboard.putString("Shooter/Command", "ManualSpinBackward");
+                    SmartDashboard.putNumber("Shooter/VoltageCommand", -6.0);
+                    this.shooter_controller.setVoltage(Volts.of(-6));
+                })
+                .onEnd(() -> {
+                    SmartDashboard.putString("Shooter/Command", "Stopped");
+                    SmartDashboard.putNumber("Shooter/VoltageCommand", 0.0);
+                    this.shooter_controller.setVoltage(Volts.of(0));
                 });
     }
 
