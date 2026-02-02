@@ -9,20 +9,27 @@ import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Volt;
 import static edu.wpi.first.units.Units.Volts;
 
+import java.util.Optional;
+
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.DutyCycle;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.ShooterState;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
+import frc.robot.Subsystems.Drive;
 import yams.gearing.GearBox;
 import yams.gearing.MechanismGearing;
 import yams.mechanisms.config.FlyWheelConfig;

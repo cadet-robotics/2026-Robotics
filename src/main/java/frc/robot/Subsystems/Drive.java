@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Meter;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -13,6 +14,8 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -282,6 +285,66 @@ public class Drive extends CSubsystem {
      */
     public Command dummyDrivePose() {
         return driveToTargetPose(new Pose2d(12.42, 5.05, Rotation2d.fromDegrees(117.0)), 0.0);
+    }
+
+    // Find our alliance's HUB and the location
+    public Translation2d getHub() {
+        Optional<Alliance> alliance = DriverStation.getAlliance();
+        Translation2d allianceHub = new Translation2d(0,0);
+        if(alliance.isPresent()) {
+            if(alliance.get() == Alliance.Blue) {
+                allianceHub = new Translation2d(182.11, 158.84);
+            }
+            if(alliance.get() == Alliance.Red) {
+                allianceHub = new Translation2d(469.11, 158.84);
+            }
+        }
+
+        return allianceHub;
+    }
+
+    // Calculate the distance that the robot is from our alliance's HUB
+    public double hubDistance() {
+        Translation2d allianceHub = getHub();
+        Pose2d currentPose = getPose();
+
+        double xDistance = Math.abs(currentPose.getX() - allianceHub.getX());
+        double yDistance = Math.abs(currentPose.getY() - allianceHub.getY());
+
+        // return the horizontal distance of the robot from the HUB in feet
+        return Math.sqrt((Math.pow(xDistance, 2) + Math.pow(yDistance, 2))) / 12;
+    }
+
+    // Calculate the angular distance in degree that the robot is facing from our alliance's HUB
+    public double hubAngle() {
+        Translation2d allianceHub = getHub();
+        Pose2d currentPose = getPose();
+
+        double xDistance = Math.abs(currentPose.getX() - allianceHub.getX());
+        double yDistance = Math.abs(currentPose.getY() - allianceHub.getY());
+        
+        return Math.toDegrees(Math.PI - (((Math.PI / 2) - currentPose.getRotation().getRadians()) + ((Math.PI / 2) - Math.atan( yDistance / xDistance ))));
+    }
+
+    /**
+     * Command to drive while automatically rotating to face an AprilTag.
+     * Uses hubAngle to calculate rotation.
+     * 
+     * @param translationX translation speed in the X direction
+     * @param translationY translation speed in the Y direction
+     * @return command that drives and rotates to face the target
+     */
+    public CCommand faceHub(DoubleSupplier translationX, DoubleSupplier translationY) {
+        return cCommand( "DriveSubsysem.DefaultDrive").onExecute(() -> {
+            //Make the robot move
+            swerveDrive.drive(
+                new Translation2d(
+                            translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
+                            translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()),
+                hubAngle() * swerveDrive.getMaximumChassisAngularVelocity(),
+                true,
+                false);
+        });
     }
 
     /**
