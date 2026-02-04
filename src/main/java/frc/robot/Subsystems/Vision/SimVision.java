@@ -3,6 +3,7 @@ package frc.robot.Subsystems.Vision;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.estimation.TargetModel;
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
@@ -40,7 +41,7 @@ public class SimVision implements Vision, Subsystem {
         this.driveSubsystem = driveSubsystem;
 
         // Load the 2025 Reefscape field AprilTag layout
-        this.fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeWelded);
+        this.fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
 
         // Create PhotonCamera instance
         this.camera = new PhotonCamera("SimCamera");
@@ -61,7 +62,7 @@ public class SimVision implements Vision, Subsystem {
         this.poseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
 
         // Create vision system simulation
-        this.visionSim = new VisionSystemSim("SimVision");
+        this.visionSim = new VisionSystemSim("main");
         this.visionSim.addAprilTags(this.fieldLayout);
 
         // Configure simulated camera properties
@@ -74,6 +75,7 @@ public class SimVision implements Vision, Subsystem {
         
         // Create camera simulation
         this.cameraSim = new PhotonCameraSim(this.camera, cameraProps);
+        this.cameraSim.enableProcessedStream(true);
         
         // Add camera to vision system
         this.visionSim.addCamera(this.cameraSim, this.robotToCamera);

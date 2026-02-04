@@ -36,7 +36,7 @@ public class Indexer extends CSubsystem {
     private final SmartMotorControllerConfig smcConfig = new SmartMotorControllerConfig(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
         // Feedback Constants (PID Constants)
-        .withClosedLoopController(1, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
+        .withClosedLoopController(0.001, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
         .withSimClosedLoopController(50, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
         // Feedforward Constants
         .withFeedforward(new SimpleMotorFeedforward(0, 0, 0))
@@ -142,7 +142,8 @@ public class Indexer extends CSubsystem {
     public CCommand manualForward() {
         return cCommand("ManualForward")
                 .onInitialize(() -> {
-                    this.indexerController.setVelocity(RPM.of(20));
+                    // this.indexerController.setVelocity(RPM.of(200));
+                    this.indexerMotorController.setVoltage(3);
                 })
                 .onEnd(() -> {
                     this.indexerController.setVelocity(RPM.of(0));
@@ -157,7 +158,8 @@ public class Indexer extends CSubsystem {
     public CCommand manualBackward() {
         return cCommand("ManualBackward")
                 .onInitialize(() -> {
-                    this.indexerController.setVelocity(RPM.of(-20));
+                    // this.indexerController.setVelocity(RPM.of(-200));
+                    this.indexerMotorController.setVoltage(-3);
                 })
                 .onEnd(() -> {
                     this.indexerController.setVelocity(RPM.of(0));

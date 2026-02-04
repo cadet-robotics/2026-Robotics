@@ -4,9 +4,11 @@ import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.Volts;
 
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
+import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -27,7 +29,7 @@ import yams.motorcontrollers.local.SparkWrapper;
  */
 public class Intake extends CSubsystem {
     /** Motor controller for the intake mechanism. */
-    private final SparkFlex intakeMotorController = new SparkFlex(13, SparkLowLevel.MotorType.kBrushless);
+    private final SparkFlex intakeMotorController = new SparkMax(13, SparkLowLevel.MotorType.kBrushless);
     /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
     private final SmartMotorControllerConfig smcConfig  = new SmartMotorControllerConfig(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
@@ -42,7 +44,7 @@ public class Intake extends CSubsystem {
         // Gearing from the motor rotor to final shaft.
         // In this example GearBox.fromReductionStages(3,4) is the same as GearBox.fromStages("3:1","4:1") which corresponds to the gearbox attached to your motor.
         // You could also use .withGearing(12) which does the same thing.
-        .withGearing(new MechanismGearing(GearBox.fromReductionStages(3, 4)))
+        .withGearing(new MechanismGearing(GearBox.fromReductionStages(4, 4)))
             // Motor properties to prevent over currenting.
             .withMotorInverted(false)
         .withIdleMode(SmartMotorControllerConfig.MotorMode.COAST)
@@ -91,7 +93,7 @@ public class Intake extends CSubsystem {
         SmartDashboard.putData("Intake/SysId Dynamic Reverse", 
             sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse));
         
-        setDefaultCommand(intakeHandler());
+        // setDefaultCommand(intakeHandler());
     }
 
     /**
@@ -101,7 +103,8 @@ public class Intake extends CSubsystem {
      */
     public CCommand SetIntakeOn() {
         return cCommand().onInitialize(() -> {
-            state = IntakeState.ON;
+            // state = IntakeState.ON;
+            this.intakeController.setVoltage(Volts.of(3));
         });
     }
 
@@ -112,7 +115,8 @@ public class Intake extends CSubsystem {
      */
     public CCommand SetIntakeOff() {
         return cCommand().onInitialize(() -> {
-            state = IntakeState.OFF;
+            // state = IntakeState.OFF;
+            this.intakeController.setVoltage(Volts.of(0));
         });
     }
 

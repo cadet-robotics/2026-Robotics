@@ -174,7 +174,7 @@ public class Shooter extends CSubsystem {
         return cCommand("ManualSpinForward")
                 .onExecute(() -> {
                     state = ShooterState.ManualForward;
-                    shooter_motor_controller.setVoltage(6.0);
+                    shooter_motor_controller.setVoltage(3.0);
                 })
                 .onEnd(() -> {
                     state = ShooterState.Off;
@@ -191,7 +191,7 @@ public class Shooter extends CSubsystem {
         return cCommand("ManualSpinBackward")
                 .onExecute(() -> {
                     state = ShooterState.ManualBackward;
-                    shooter_motor_controller.setVoltage(-6.0);
+                    shooter_motor_controller.setVoltage(-3.0);
                 })
                 .onEnd(() -> {
                     state = ShooterState.Off;

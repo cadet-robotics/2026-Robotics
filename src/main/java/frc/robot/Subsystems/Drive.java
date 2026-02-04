@@ -57,7 +57,6 @@ public class Drive extends CSubsystem {
         if (Robot.isReal()) {
             vision = new RealVision(this);
         } else {
-            vision = new SimVision(this);
         }
 
         // Temp starting positions for sim
