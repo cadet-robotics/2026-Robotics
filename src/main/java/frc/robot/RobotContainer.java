@@ -14,14 +14,15 @@ import frc.robot.Subsystems.Drive;
 import frc.robot.Subsystems.Indexer;
 import frc.robot.Subsystems.Intake;
 import frc.robot.Subsystems.Shooter;
+import frc.robot.Subsystems.Vision.Vision;
 
 public class RobotContainer {
 
-  // private final Autos autos;
-  // private final Drive drive_subsystem;
+  private final Autos autos;
+  private final Drive drive_subsystem;
 
 
-  // private final Vision vision_subsystem;
+  private final Vision vision_subsystem;
   private final Intake intake_subsystem;
   private final Indexer indexer_subsystem;
   private final Shooter shooter_subsystem;
@@ -31,19 +32,19 @@ public class RobotContainer {
 
   public RobotContainer() {
     // Setup and initialize Subsystems here
-    // drive_subsystem = new Drive();
-    // vision_subsystem = drive_subsystem.getVision();
+    drive_subsystem = new Drive();
+    vision_subsystem = drive_subsystem.getVision();
     shooter_subsystem = new Shooter();
     intake_subsystem = new Intake();
     indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem );
 
-    // autos = new Autos(this, drive_subsystem );
+    autos = new Autos(this, drive_subsystem );
     
     // Configure all remote bindings
     driverController = new CommandXboxController(0);
-    // codriverController = new CommandXboxController(1);
+    codriverController = new CommandXboxController(1);
     configureBindings();
-    // configureDriving();
+    configureDriving();
   }
 
   private void configureBindings() {
@@ -84,23 +85,23 @@ public class RobotContainer {
 
   }
 
-  // public void configureDriving() {
-  //   DoubleSupplier getTranslationX = () -> MathUtil.applyDeadband(this.driverController.getLeftY(),
-  //       ControllerConstants.deadbandX);
-  //   DoubleSupplier getTranslationY = () -> MathUtil.applyDeadband(this.driverController.getLeftX(),
-  //       ControllerConstants.deadbandY);
-  //   DoubleSupplier getHeadingX = () -> -1 * driverController.getRightX();
-  //   DoubleSupplier getHeadingY = () -> -1 * driverController.getRightY();
+  public void configureDriving() {
+    DoubleSupplier getTranslationX = () -> MathUtil.applyDeadband(this.driverController.getLeftY(),
+        ControllerConstants.deadbandX);
+    DoubleSupplier getTranslationY = () -> MathUtil.applyDeadband(this.driverController.getLeftX(),
+        ControllerConstants.deadbandY);
+    DoubleSupplier getHeadingX = () -> -1 * driverController.getRightX();
+    DoubleSupplier getHeadingY = () -> -1 * driverController.getRightY();
 
-  //   Command defaultDrive = drive_subsystem.driveCommand(
-  //       getTranslationX,
-  //       getTranslationY,
-  //       getHeadingX,
-  //       getHeadingY
-  //   );
+    Command defaultDrive = drive_subsystem.driveCommand(
+        getTranslationX,
+        getTranslationY,
+        getHeadingX,
+        getHeadingY
+    );
 
-  //   drive_subsystem.setDefaultCommand(defaultDrive);
-  // }
+    drive_subsystem.setDefaultCommand(defaultDrive);
+  }
 
   public Command getAutonomousCommand() {
     Command autoCommand = autos.getAutonomousCommand();
