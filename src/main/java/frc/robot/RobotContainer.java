@@ -68,21 +68,22 @@ public class RobotContainer {
     // codriverController.y().onTrue(shooter_subsystem.StopShooting());
     
     // Left D-pad - manual spin forward at low speed
-    driverController.leftBumper().whileTrue(shooter_subsystem.ManualSpinForward());
+    // driverController.leftBumper().whileTrue(shooter_subsystem.ManualSpinForward());
     
-    // Right D-pad - manual spin backward at low speed
-    driverController.rightBumper().whileTrue(shooter_subsystem.ManualSpinBackward());
+    // // Right D-pad - manual spin backward at low speed
+    // driverController.rightBumper().whileTrue(shooter_subsystem.ManualSpinBackward());
 
-    // Indexer bindings on codriver controller
-    // Left bumper - manual indexer forward (slow)
-    driverController.leftTrigger().whileTrue(indexer_subsystem.manualForward());
+    // // Indexer bindings on codriver controller
+    // // Left bumper - manual indexer forward (slow)
+    // driverController.leftTrigger().whileTrue(indexer_subsystem.manualForward());
     
-    // Right bumper - manual indexer backward (slow)
-    driverController.rightTrigger().whileTrue(indexer_subsystem.manualBackward());
+    // // Right bumper - manual indexer backward (slow)
+    // driverController.rightTrigger().whileTrue(indexer_subsystem.manualBackward());
 
-    driverController.x().whileTrue(this.intake_subsystem.SetIntakeOn());
-    driverController.b().whileTrue(this.intake_subsystem.SetIntakeOff());
+    // driverController.x().whileTrue(this.intake_subsystem.SetIntakeOn());
+    // driverController.b().whileTrue(this.intake_subsystem.SetIntakeOff());
 
+    
   }
 
   public void configureDriving() {
@@ -101,6 +102,8 @@ public class RobotContainer {
     );
 
     drive_subsystem.setDefaultCommand(defaultDrive);
+
+    driverController.a().whileTrue(this.drive_subsystem.faceHub(getTranslationX, getTranslationY));
   }
 
   public Command getAutonomousCommand() {

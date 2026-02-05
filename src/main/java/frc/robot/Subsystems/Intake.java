@@ -29,7 +29,7 @@ import yams.motorcontrollers.local.SparkWrapper;
  */
 public class Intake extends CSubsystem {
     /** Motor controller for the intake mechanism. */
-    private final SparkFlex intakeMotorController = new SparkMax(13, SparkLowLevel.MotorType.kBrushless);
+    private final SparkMax intakeMotorController = new SparkMax(13, SparkLowLevel.MotorType.kBrushless);
     /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
     private final SmartMotorControllerConfig smcConfig  = new SmartMotorControllerConfig(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
