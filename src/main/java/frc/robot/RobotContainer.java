@@ -23,9 +23,9 @@ public class RobotContainer {
 
 
   private final Vision vision_subsystem;
-  private final Intake intake_subsystem;
-  private final Indexer indexer_subsystem;
-  private final Shooter shooter_subsystem;
+  // private final Intake intake_subsystem;
+  // private final Indexer indexer_subsystem;
+  // private final Shooter shooter_subsystem;
 
   private final CommandXboxController driverController;
   private final CommandXboxController codriverController;
@@ -34,9 +34,9 @@ public class RobotContainer {
     // Setup and initialize Subsystems here
     drive_subsystem = new Drive();
     vision_subsystem = drive_subsystem.getVision();
-    shooter_subsystem = new Shooter();
-    intake_subsystem = new Intake();
-    indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem );
+    // shooter_subsystem = new Shooter();
+    // intake_subsystem = new Intake();
+    // indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem );
 
     autos = new Autos(this, drive_subsystem );
     
@@ -103,7 +103,7 @@ public class RobotContainer {
 
     drive_subsystem.setDefaultCommand(defaultDrive);
 
-    driverController.a().whileTrue(this.drive_subsystem.faceHub(getTranslationX, getTranslationY));
+    // driverController.a().whileTrue(this.drive_subsystem.faceHub(getTranslationX, getTranslationY));
   }
 
   public Command getAutonomousCommand() {

@@ -17,8 +17,10 @@ public class RealVision implements Vision, Subsystem {
 
     public RealVision(Drive driveSubsystem) {
         this.driveSubsystem = driveSubsystem;
-        this.front_limelight = new Limelight("front_limelight");
-        this.back_limelight = new Limelight("back_limelight");
+        // this.front_limelight = new Limelight("front_limelight");
+        // this.back_limelight = new Limelight("back_limelight");
+        this.front_limelight = new Limelight("limelight-tfront");
+        this.back_limelight = new Limelight("limelight-trear");
     }
 
     public boolean seesAprilTag() {
