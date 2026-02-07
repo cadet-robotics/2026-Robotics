@@ -143,7 +143,7 @@ public class Indexer extends CSubsystem {
         return cCommand("ManualForward")
                 .onInitialize(() -> {
                     // this.indexerController.setVelocity(RPM.of(200));
-                    this.indexerMotorController.setVoltage(3);
+                    this.indexerMotorController.setVoltage(9);
                 })
                 .onEnd(() -> {
                     this.indexerController.setVelocity(RPM.of(0));
@@ -159,7 +159,7 @@ public class Indexer extends CSubsystem {
         return cCommand("ManualBackward")
                 .onInitialize(() -> {
                     // this.indexerController.setVelocity(RPM.of(-200));
-                    this.indexerMotorController.setVoltage(-3);
+                    this.indexerMotorController.setVoltage(-9);
                 })
                 .onEnd(() -> {
                     this.indexerController.setVelocity(RPM.of(0));

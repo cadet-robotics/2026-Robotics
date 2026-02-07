@@ -29,12 +29,12 @@ import yams.motorcontrollers.local.SparkWrapper;
  */
 public class Intake extends CSubsystem {
     /** Motor controller for the intake mechanism. */
-    private final SparkFlex intakeMotorController = new SparkMax(13, SparkLowLevel.MotorType.kBrushless);
+    private final SparkMax intakeMotorController = new SparkMax(13, SparkLowLevel.MotorType.kBrushless);
     /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
     private final SmartMotorControllerConfig smcConfig  = new SmartMotorControllerConfig(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
         // Feedback Constants (PID Constants)
-        .withClosedLoopController(50, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
+        .withClosedLoopController(0.001, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
         .withSimClosedLoopController(50, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
         // Feedforward Constants
         .withFeedforward(new SimpleMotorFeedforward(0, 0, 0))
@@ -104,7 +104,7 @@ public class Intake extends CSubsystem {
     public CCommand SetIntakeOn() {
         return cCommand().onInitialize(() -> {
             // state = IntakeState.ON;
-            this.intakeController.setVoltage(Volts.of(3));
+            this.intakeController.setVoltage(Volts.of(9));
         });
     }
 
