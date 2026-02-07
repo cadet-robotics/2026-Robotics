@@ -1,10 +1,6 @@
 package frc.robot.Subsystems.Vision;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.wpilibj2.command.Subsystem;
-import frc.robot.Libs.LimelightHelpers;
-import frc.robot.Subsystems.Drive;
 
 import java.util.Optional;
 
@@ -48,5 +44,12 @@ public interface Vision {
      * @return Optional containing the ta value (percent of image), or empty if no target is visible
      */
     public Optional<Double> getTa();
+
+    /**
+     * Get the robot's pose on the field using vision.
+     * Uses the front limelight as primary and back limelight as backup.
+     * @return Optional containing the robot's Pose2d, or empty if no valid pose is available
+     */
+    public Optional<Pose2d> getRobotPose();
 
 }

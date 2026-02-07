@@ -3,7 +3,6 @@ package frc.robot.Subsystems.Vision;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
-import org.photonvision.estimation.TargetModel;
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
@@ -137,6 +136,18 @@ public class SimVision implements Vision, Subsystem {
             .filter(PhotonPipelineResult::hasTargets)
             .map(PhotonPipelineResult::getBestTarget)
             .map(PhotonTrackedTarget::getArea);  // Target area as percentage of image
+    }
+
+    @Override
+    public Optional<Pose2d> getRobotPose() {
+        // Get the latest result from the camera
+        Optional<PhotonPipelineResult> result = getLatestResult();
+        if (result.isPresent() && result.get().hasTargets()) {
+            // Use the pose estimator to get the robot's pose
+            return this.poseEstimator.update(result.get())
+                .map(estimatedPose -> estimatedPose.estimatedPose.toPose2d());
+        }
+        return Optional.empty();
     }
 
     @Override

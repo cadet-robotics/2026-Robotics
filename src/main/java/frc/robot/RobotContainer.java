@@ -51,11 +51,11 @@ public class RobotContainer {
 
   private void configureBindings() {
     // Pathfinding command to drive to a specific pose on button press
-    // driverController.a().whileTrue( 
-    //   edu.wpi.first.wpilibj2.command.Commands.deferredProxy(
-    //     () -> drive_subsystem.dummyDrivePose()
-    //   )
-    // ); 
+    driverController.a().whileTrue( 
+      edu.wpi.first.wpilibj2.command.Commands.deferredProxy(
+        () -> drive_subsystem.dummyDrivePose()
+      )
+    ); 
 
     // Shooter bindings on codriver controller
     // Left trigger - shoot forwards

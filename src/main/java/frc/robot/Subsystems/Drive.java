@@ -283,7 +283,7 @@ public class Drive extends CSubsystem {
      * @return command that drives to position (12.42, 5.05) with 117 degree rotation
      */
     public Command dummyDrivePose() {
-        return driveToTargetPose(new Pose2d(12.42, 5.05, Rotation2d.fromDegrees(117.0)), 0.0);
+        return driveToTargetPose(new Pose2d(10,4,Rotation2d.fromDegrees(10)), 0.0);
     }
 
     // Find our alliance's HUB and the location
@@ -380,5 +380,21 @@ public class Drive extends CSubsystem {
                 new Config(), this, this.swerveDrive, 12, false),
                 3.0,5.0,3.0
         );
+    }
+
+    /**
+     * Periodic method called every robot loop (20ms).
+     * Calls the vision subsystem's periodic method to update vision data.
+     */
+    @Override
+    public void periodic() {
+        if (vision != null) {
+            // Call vision subsystem's periodic to update SmartDashboard values
+            if (vision instanceof RealVision) {
+                ((RealVision) vision).periodic();
+            } else if (vision instanceof SimVision) {
+                ((SimVision) vision).periodic();
+            }
+        }
     }
 }
