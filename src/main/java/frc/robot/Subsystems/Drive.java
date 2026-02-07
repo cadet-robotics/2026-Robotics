@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -25,15 +26,12 @@ import frc.robot.Configuration.DriveSubsystemConfiguration;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
 import frc.robot.Subsystems.Vision.RealVision;
-import frc.robot.Subsystems.Vision.SimVision;
 import frc.robot.Subsystems.Vision.Vision;
 import swervelib.SwerveDrive;
 import swervelib.SwerveDriveTest;
 import swervelib.math.SwerveMath;
 import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
-
-import static edu.wpi.first.units.Units.*;
 
 /**
  * Drive subsystem that controls the swerve drive system.
