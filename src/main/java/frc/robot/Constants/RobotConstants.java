@@ -1,6 +1,7 @@
 package frc.robot.Constants;
 
 import com.pathplanner.lib.config.PIDConstants;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.AngularVelocity;
 
 import static edu.wpi.first.units.Units.RPM;
@@ -23,6 +24,17 @@ public class RobotConstants {
     }
 
     /**
+     * Constants for field positions and landmarks.
+     * All positions are in inches from the origin.
+     */
+    public static final class FieldConstants {
+        /** Blue alliance hub/speaker position (x, y) in inches. */
+        public static final Translation2d BLUE_HUB_POSITION = new Translation2d(182.11, 158.84);
+        /** Red alliance hub/speaker position (x, y) in inches. */
+        public static final Translation2d RED_HUB_POSITION = new Translation2d(469.11, 158.84);
+    }
+
+    /**
      * Constants for the swerve drive subsystem.
      * Includes maximum speeds and PID constants for translation and rotation control.
      */
@@ -34,9 +46,9 @@ public class RobotConstants {
         public static final double maxSpeed = 6; // Meters per second
 
         /** PID constants for translational (x, y) movement control. */
-        public static final PIDConstants translationPidConstants = new PIDConstants(10, 0, 0);
+        public static final PIDConstants translationPidConstants = new PIDConstants(0.00000104, 0, 0);
         /** PID constants for rotational (theta) movement control. */
-        public static final PIDConstants rotationPidConstants = new PIDConstants(8, 0, 0);
+        public static final PIDConstants rotationPidConstants = new PIDConstants(0.000000005, 0, 0);
     }
 
     /**
