@@ -166,7 +166,7 @@ public class SimVision implements Vision, Subsystem {
                 this.poseEstimator.update(latestResult).ifPresent(estimatedPose -> {
                     // Update drive subsystem with vision-based pose estimate
                     Pose2d visionPose = estimatedPose.estimatedPose.toPose2d();
-                    this.driveSubsystem.updatePose(visionPose);
+                    this.driveSubsystem.updatePose(visionPose, estimatedPose.timestampSeconds);
                 });
             }
         }

@@ -42,7 +42,7 @@ public class Autos {
      * @return the selected autonomous command, or null if no chooser is available
      */
     public Command getAutonomousCommand() {
-        return (autoChooser != null) ? autoChooser.getSelected() : null;
+        return new PathPlannerAuto("Test1");
     }
 
     /**

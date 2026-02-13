@@ -18,11 +18,11 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Config;
 import frc.robot.Robot;
 import frc.robot.Configuration.DriveSubsystemConfiguration;
+import frc.robot.Constants.RobotConstants;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
 import frc.robot.Subsystems.Vision.RealVision;
@@ -153,13 +153,36 @@ public class Drive extends CSubsystem {
     }
 
     /**
-     * Takes in a pose from the limelight and uses it to update the swerve modules
-     * position.
+     * Takes in a pose from vision and uses it to update the swerve odometry.
+     * This method should be called with the proper timestamp from the vision system.
      *
-     * @param pose Current pose of the robot
+     * @param pose Current pose of the robot from vision
+     * @param timestampSeconds The timestamp when the pose was captured (in seconds)
      */
-    public void updatePose(Pose2d pose) {
-        swerveDrive.addVisionMeasurement(pose, Timer.getFPGATimestamp());
+    public void updatePose(Pose2d pose, double timestampSeconds) {
+        swerveDrive.addVisionMeasurement(pose, timestampSeconds);
+    }
+
+    /**
+     * Command to reset odometry using the current Limelight pose.
+     * Only resets if a valid vision pose is available.
+     * 
+     * @return Command that resets odometry to the current vision pose
+     */
+    public Command resetOdometryWithVision() {
+        return runOnce(() -> {
+            if (vision != null) {
+                Optional<Pose2d> visionPose = vision.getRobotPose();
+                if (visionPose.isPresent()) {
+                    resetOdometry(visionPose.get());
+                    edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putString("Drive/Odometry Reset", 
+                        "Reset to vision pose: " + visionPose.get().toString());
+                } else {
+                    edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putString("Drive/Odometry Reset", 
+                        "No valid vision pose available");
+                }
+            }
+        });
     }
 
     /**
@@ -232,7 +255,7 @@ public class Drive extends CSubsystem {
             swerveDrive.getMaximumChassisVelocity(),      // Max velocity (m/s)
             4.0,                                                // Max acceleration (m/s^2)
             swerveDrive.getMaximumChassisAngularVelocity(), // Max angular velocity (rad/s)
-            Math.PI * 4.0                                       // Max angular acceleration (rad/s^2)
+            Math.PI * 11                                       // Max angular acceleration (rad/s^2)
         );
         
         return AutoBuilder.pathfindToPose(
@@ -278,26 +301,27 @@ public class Drive extends CSubsystem {
     /**
      * Creates a command that drives to a dummy test pose.
      * 
-     * @return command that drives to position (12.42, 5.05) with 117 degree rotation
+     * @return command that drives to position (10.3, 4.3) with 10 degree rotation
      */
     public Command dummyDrivePose() {
-        return driveToTargetPose(new Pose2d(10,4,Rotation2d.fromDegrees(10)), 0.0);
+        return driveToTargetPose(new Pose2d(10.3, 4.3, Rotation2d.fromDegrees(10)), 0.0)
+            .beforeStarting(() -> {
+                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putString("PathPlanner/Status", "Starting pathfind");
+                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putString("PathPlanner/Target", 
+                    String.format("(%.2f, %.2f, %.1f°)", 10.3, 4.3, 10.0));
+            })
+            .andThen(() -> {
+                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putString("PathPlanner/Status", "Pathfind complete");
+            });
     }
 
     // Find our alliance's HUB and the location
     public Translation2d getHub() {
-        Optional<Alliance> alliance = DriverStation.getAlliance();
-        Translation2d allianceHub = new Translation2d(0,0);
-        if(alliance.isPresent()) {
-            if(alliance.get() == Alliance.Blue) {
-                allianceHub = new Translation2d(182.11, 158.84);
+            if (DriverStation.getAlliance().get() == Alliance.Blue) {
+                return RobotConstants.FieldConstants.BLUE_HUB_POSITION;
+            } else {
+                return RobotConstants.FieldConstants.RED_HUB_POSITION;
             }
-            if(alliance.get() == Alliance.Red) {
-                allianceHub = new Translation2d(469.11, 158.84);
-            }
-        }
-
-        return allianceHub;
     }
 
     // Calculate the distance that the robot is from our alliance's HUB
@@ -382,17 +406,11 @@ public class Drive extends CSubsystem {
 
     /**
      * Periodic method called every robot loop (20ms).
-     * Calls the vision subsystem's periodic method to update vision data.
+     * Vision subsystem has its own periodic method that runs automatically via CommandScheduler.
      */
     @Override
     public void periodic() {
-        if (vision != null) {
-            // Call vision subsystem's periodic to update SmartDashboard values
-            if (vision instanceof RealVision) {
-                ((RealVision) vision).periodic();
-            } else if (vision instanceof SimVision) {
-                ((SimVision) vision).periodic();
-            }
-        }
+        // Vision subsystem periodic is called automatically by CommandScheduler
+        // No need to manually call it here
     }
 }

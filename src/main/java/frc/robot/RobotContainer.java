@@ -57,6 +57,9 @@ public class RobotContainer {
       )
     ); 
 
+    // Reset odometry to current Limelight pose
+    driverController.b().onTrue(drive_subsystem.resetOdometryWithVision());
+
     // Shooter bindings on codriver controller
     // Left trigger - shoot forwards
     // codriverController.leftTrigger().whileTrue(shooter_subsystem.Shoot())
@@ -106,9 +109,6 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    // Command autoCommand = autos.getAutonomousCommand();
-    // // If no auto is selected, return the default command
-    // return autoCommand != null ? autoCommand : drive_subsystem.getDefaultCommand();
-    return null;
+    return this.autos.getAutonomousCommand();
   }
 }

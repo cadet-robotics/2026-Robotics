@@ -2,18 +2,13 @@ package frc.robot.Subsystems.Vision;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.Libs.LimelightHelpers;
 import frc.robot.Subsystems.Drive;
 import limelight.Limelight;
 import limelight.networktables.LimelightResults;
-import limelight.networktables.AngularVelocity3d;
-import limelight.networktables.Orientation3d;
 import limelight.networktables.target.AprilTagFiducial;
-
-import static edu.wpi.first.units.Units.DegreesPerSecond;
 
 import java.util.Optional;
 
@@ -117,7 +112,7 @@ public class RealVision implements Vision, Subsystem {
     @Override
     public Optional<Pose2d> getRobotPose() {
         // Try front limelight first using LimelightHelpers for MegaTag2 WPIBlue
-        double[] front_pose = LimelightHelpers.getBotPose_wpiBlue("limelight-front");
+        double[] front_pose = LimelightHelpers.getBotPose("limelight-front");
         
         SmartDashboard.putBoolean("Vision/Front Data Null", front_pose == null);
         
@@ -151,7 +146,7 @@ public class RealVision implements Vision, Subsystem {
         }
         
         // Fall back to back limelight
-        double[] back_pose = LimelightHelpers.getBotPose_wpiBlue("limelight-rear");
+        double[] back_pose = LimelightHelpers.getBotPose("limelight-rear");
         
         SmartDashboard.putBoolean("Vision/Back Data Null", back_pose == null);
         
@@ -198,44 +193,67 @@ public class RealVision implements Vision, Subsystem {
         SmartDashboard.putNumber("Vision/Drive Pose Y", currentDrivePose.getY());
         SmartDashboard.putNumber("Vision/Drive Pose Rotation", currentDrivePose.getRotation().getDegrees());
         
-        // Send robot orientation to limelights for MegaTag2
-        // Convert Rotation2d to Rotation3d (Z-axis rotation only)
-        Rotation3d robotOrientation = new Rotation3d(0, 0, currentDrivePose.getRotation().getRadians());
-        SmartDashboard.putNumber("Vision/Sending Rotation (rad)", robotOrientation.getZ());
-        SmartDashboard.putNumber("Vision/Sending Rotation (deg)", Math.toDegrees(robotOrientation.getZ()));
+        // Update robot orientation in NetworkTables for both limelights BEFORE fetching pose estimates
+        // This ensures MegaTag2 has the latest odometry data
+        double yawDegrees = currentDrivePose.getRotation().getDegrees();
+        LimelightHelpers.SetRobotOrientation("limelight-front", yawDegrees, 0, 0, 0, 0, 0);
+        LimelightHelpers.SetRobotOrientation("limelight-rear", yawDegrees, 0, 0, 0, 0, 0);
         
-        // Create angular velocity (all zeros since we don't have velocity data)
-        AngularVelocity3d angularVel = new AngularVelocity3d(
-            DegreesPerSecond.of(0),  // roll velocity
-            DegreesPerSecond.of(0),  // pitch velocity
-            DegreesPerSecond.of(0)   // yaw velocity
-        );
+        SmartDashboard.putNumber("Vision/Sending Rotation (deg)", yawDegrees);
         
-        // Update both limelights with robot orientation
-        front_limelight.getSettings()
-            .withRobotOrientation(new Orientation3d(robotOrientation, angularVel))
-            .save();
+        // Try to get pose estimate from front limelight using MegaTag2
+        LimelightHelpers.PoseEstimate frontEstimate = 
+            LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-front");
+        
+        if (frontEstimate != null && frontEstimate.tagCount > 0 && 
+            (frontEstimate.pose.getX() != 0 || frontEstimate.pose.getY() != 0)) {
             
-        back_limelight.getSettings()
-            .withRobotOrientation(new Orientation3d(robotOrientation, angularVel))
-            .save();
-        
-        Optional<Pose2d> robotPose = getRobotPose();
-        
-        if (robotPose.isPresent()) {
-            Pose2d pose = robotPose.get();
+            // Update odometry with vision measurement using the estimate's timestamp
+            driveSubsystem.getSwerveDrive().addVisionMeasurement(
+                frontEstimate.pose, 
+                frontEstimate.timestampSeconds
+            );
             
-            this.driveSubsystem.updatePose(pose);
-            
-            // Publish pose to SmartDashboard as a single pose element
+            // Publish pose to SmartDashboard
+            SmartDashboard.putString("Vision/Active Limelight", "Front");
             SmartDashboard.putNumberArray("Vision/Robot Pose", new double[] {
-                pose.getX(),
-                pose.getY(),
-                pose.getRotation().getRadians()
+                frontEstimate.pose.getX(),
+                frontEstimate.pose.getY(),
+                frontEstimate.pose.getRotation().getRadians()
             });
+            SmartDashboard.putNumber("Vision/Timestamp", frontEstimate.timestampSeconds);
+            SmartDashboard.putNumber("Vision/Tag Count", frontEstimate.tagCount);
             SmartDashboard.putBoolean("Vision/Has Valid Pose", true);
+            
         } else {
-            SmartDashboard.putBoolean("Vision/Has Valid Pose", false);
+            // Try back limelight as fallback
+            LimelightHelpers.PoseEstimate backEstimate = 
+                LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-rear");
+            
+            if (backEstimate != null && backEstimate.tagCount > 0 && 
+                (backEstimate.pose.getX() != 0 || backEstimate.pose.getY() != 0)) {
+                
+                // Update odometry with vision measurement using the estimate's timestamp
+                driveSubsystem.getSwerveDrive().addVisionMeasurement(
+                    backEstimate.pose, 
+                    backEstimate.timestampSeconds
+                );
+                
+                // Publish pose to SmartDashboard
+                SmartDashboard.putString("Vision/Active Limelight", "Back");
+                SmartDashboard.putNumberArray("Vision/Robot Pose", new double[] {
+                    backEstimate.pose.getX(),
+                    backEstimate.pose.getY(),
+                    backEstimate.pose.getRotation().getRadians()
+                });
+                SmartDashboard.putNumber("Vision/Timestamp", backEstimate.timestampSeconds);
+                SmartDashboard.putNumber("Vision/Tag Count", backEstimate.tagCount);
+                SmartDashboard.putBoolean("Vision/Has Valid Pose", true);
+                
+            } else {
+                SmartDashboard.putString("Vision/Active Limelight", "None");
+                SmartDashboard.putBoolean("Vision/Has Valid Pose", false);
+            }
         }
     }
 }
