@@ -4,10 +4,15 @@
 
 package frc.robot;
 
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import swervelib.simulation.ironmaple.simulation.SimulatedArena;
+import frc.robot.Libs.MatchTime;
+
 // 2026 field not yet available in Maple Sim - update when released
 // import swervelib.simulation.ironmaple.simulation.seasonspecific.reefscape2025.Arena2025Reefscape;
 
@@ -15,6 +20,12 @@ public class Robot extends TimedRobot {
   private Command autonomousCommand;
 
   private final RobotContainer robotContainer;
+  private final MatchTime matchTime = new MatchTime(2026);
+    private final StructPublisher<MatchTime> matchTimeTopic =
+      NetworkTableInstance.getDefault()
+        .getTable("Robot")
+        .getStructTopic("MatchTime", MatchTime.struct)
+        .publish();
 
   /**
    * Constructor for the Robot class.
@@ -28,6 +39,8 @@ public class Robot extends TimedRobot {
       // Using generic arena - 2026 field will be added to Maple Sim in future update
       // SimulatedArena.overrideInstance(new Arena2026(...));  // Update when available
     }
+    
+    
     this.robotContainer = new RobotContainer();
   }
 
@@ -35,6 +48,9 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
+    
+    matchTime.update(MatchTime.kGameData2026.get());
+    matchTimeTopic.set(matchTime);
   }
 
 
