@@ -31,7 +31,7 @@ import frc.robot.Constants.ShooterState;
  */
 public class Indexer extends CSubsystem {
     /** Motor controller for the indexer mechanism. */
-    private final SparkMax indexerMotorController = new SparkMax(15, SparkLowLevel.MotorType.kBrushless);
+    private final SparkMax indexerMotorController = new SparkMax(20, SparkLowLevel.MotorType.kBrushless);
     /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
     private final SmartMotorControllerConfig smcConfig = new SmartMotorControllerConfig(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
@@ -101,27 +101,7 @@ public class Indexer extends CSubsystem {
         SmartDashboard.putData("Indexer/SysId Dynamic Reverse", 
             sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse));
         
-        // setDefaultCommand(indexerHandler());
-    }
-
-    /**
-     * Creates a command to run the indexer towards the shooter.
-     * 
-     * @return command that sets indexer state to Shooter
-     */
-    public CCommand shooterIndexing() {
-        return cCommand( "ShootingIndexing")
-                .onInitialize(() -> indexerState = IndexerState.SHOOTER);
-    }
-
-    /**
-     * Creates a command to run the indexer towards the hopper/storage.
-     * 
-     * @return command that sets indexer state to Hopper
-     */
-    public CCommand hopperIndexing() {
-        return cCommand( "HopperIndexing")
-                .onInitialize(() -> indexerState = IndexerState.HOPPER);
+        setDefaultCommand(indexerHandler());
     }
 
     /**
@@ -135,60 +115,46 @@ public class Indexer extends CSubsystem {
     }
 
     /**
-     * Creates a command to manually run the indexer forward at slow speed.
-     * 
-     * @return command that sets indexer state to manual forward
-     */
-    public CCommand manualForward() {
-        return cCommand("ManualForward")
-                .onInitialize(() -> {
-                    // this.indexerController.setVelocity(RPM.of(200));
-                    this.indexerMotorController.setVoltage(9);
-                })
-                .onEnd(() -> {
-                    this.indexerController.setVelocity(RPM.of(0));
-                });
-    }
-
-    /**
-     * Creates a command to manually run the indexer backward at slow speed.
-     * 
-     * @return command that sets indexer state to manual backward
-     */
-    public CCommand manualBackward() {
-        return cCommand("ManualBackward")
-                .onInitialize(() -> {
-                    // this.indexerController.setVelocity(RPM.of(-200));
-                    this.indexerMotorController.setVoltage(-9);
-                })
-                .onEnd(() -> {
-                    this.indexerController.setVelocity(RPM.of(0));
-                });
-    }
-
-    /**
      * Creates the default command that automatically controls the indexer based on subsystem states.
-     * Runs towards shooter when shooter is on, towards hopper when intake is on, otherwise stops.
+     * Runs towards shooter when shooter is on AND up to speed, towards hopper when intake is on, otherwise stops.
+     * Uses voltage control: +11V to feed shooter, -11V to feed hopper, 0V when stopped.
      * 
      * @return command that handles automatic indexer control
      */
     public CCommand indexerHandler() {
         return cCommand("IndexerHandler")
                 .onExecute(() -> {
-                   if ( indexerState == IndexerState.MANUAL_FORWARD ) {
-                       indexerController.setVelocity(IndexerSubsystemConstants.manualSpeed);
-                   } else if ( indexerState == IndexerState.MANUAL_BACKWARD ) {
-                       indexerController.setVelocity(RPM.of(-IndexerSubsystemConstants.manualSpeed.in(RPM)));
-                   } else if ( shooterSubsystem.getState() == ShooterState.On ) {
-                       indexerState = IndexerState.SHOOTER;
-                       indexerController.setVelocity(IndexerSubsystemConstants.forwardsOnSpeeds);
-                   } else if ( intakeSubsystem.getState() == IntakeState.ON ) {
-                       indexerState = IndexerState.HOPPER;
-                       indexerController.setVelocity(IndexerSubsystemConstants.backwardsOnSpeeds);
-                   } else {
-                       indexerState = IndexerState.OFF;
-                       indexerController.setVelocity(RPM.of(0));
-                   }
+                    // Get current states from subsystems
+                    ShooterState shooterState = shooterSubsystem.getState();
+                    IntakeState intakeState = intakeSubsystem.getState();
+                    boolean shooterUpToSpeed = shooterSubsystem.isUpToSpeed();
+                    
+                    // Log input states
+                    SmartDashboard.putString("Indexer/Handler/ShooterState", shooterState.toString());
+                    SmartDashboard.putString("Indexer/Handler/IntakeState", intakeState.toString());
+                    SmartDashboard.putBoolean("Indexer/Handler/ShooterUpToSpeed", shooterUpToSpeed);
+                    
+                    // Determine indexer action based on subsystem states
+                    // Only feed shooter if it's on AND up to speed
+                    if ( (shooterState == ShooterState.On && shooterUpToSpeed) || intakeState == IntakeState.REV ) {
+                        indexerState = IndexerState.SHOOTER;
+                        indexerController.setVoltage(edu.wpi.first.units.Units.Volts.of(-11));
+                        SmartDashboard.putString("Indexer/Handler/Action", "Feeding Shooter");
+                        SmartDashboard.putNumber("Indexer/Handler/Voltage", -11.0);
+                    } else if ( intakeState == IntakeState.ON ) {
+                        indexerState = IndexerState.HOPPER;
+                        indexerController.setVoltage(edu.wpi.first.units.Units.Volts.of(11));
+                        SmartDashboard.putString("Indexer/Handler/Action", "Feeding Hopper");
+                        SmartDashboard.putNumber("Indexer/Handler/Voltage", 11.0);
+                    } else {
+                        indexerState = IndexerState.OFF;
+                        indexerController.setVoltage(edu.wpi.first.units.Units.Volts.of(0));
+                        SmartDashboard.putString("Indexer/Handler/Action", "Stopped");
+                        SmartDashboard.putNumber("Indexer/Handler/Voltage", 0.0);
+                    }
+                    
+                    // Log current indexer state
+                    SmartDashboard.putString("Indexer/Handler/IndexerState", indexerState.toString());
                 });
     }
 

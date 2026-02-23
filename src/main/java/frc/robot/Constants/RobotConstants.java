@@ -1,10 +1,11 @@
 package frc.robot.Constants;
 
+import static edu.wpi.first.units.Units.RPM;
+
 import com.pathplanner.lib.config.PIDConstants;
+
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.AngularVelocity;
-
-import static edu.wpi.first.units.Units.RPM;
 
 /**
  * Container class for all robot constants.
@@ -67,15 +68,15 @@ public class RobotConstants {
      */
     public static final class ShooterSubsystemConstants {
         /** Flywheel motor speed in RPM when shooting game pieces (forwards operation). */
-        public static final AngularVelocity forwardsOnSpeeds = RPM.of(100);
+        public static final AngularVelocity forwardsOnSpeeds = RPM.of(3000);
         /** Flywheel motor speed in RPM when shooting game pieces backwards (reverse operation). */
-        public static final AngularVelocity backwardsOnSpeeds = RPM.of(-100);
+        public static final AngularVelocity backwardsOnSpeeds = RPM.of(-3000);
         /** Manual spin speed in RPM for slow manual control. */
         public static final AngularVelocity manualSpinSpeed = RPM.of(20);
         
         // PID Constants
         /** Proportional gain for shooter velocity PID control. */
-        public static final double SHOOTER_KP = 50;
+        public static final double SHOOTER_KP = 1;
         /** Integral gain for shooter velocity PID control. */
         public static final double SHOOTER_KI = 0.0;
         /** Derivative gain for shooter velocity PID control. */
@@ -88,10 +89,24 @@ public class RobotConstants {
      */
     public static final class IndexerSubsystemConstants {
         /** Motor speed in RPM when indexing game pieces towards shooter (forwards operation). */
-        public static final AngularVelocity forwardsOnSpeeds = RPM.of(100);
+        public static final AngularVelocity forwardsOnSpeeds = RPM.of(1000);
         /** Motor speed in RPM when reversing/ejecting game pieces (backwards operation). */
-        public static final AngularVelocity backwardsOnSpeeds = RPM.of(100);
+        public static final AngularVelocity backwardsOnSpeeds = RPM.of(1000);
         /** Manual slow speed in RPM for manual control. */
         public static final AngularVelocity manualSpeed = RPM.of(1000);
     }
+
+    /**
+     * Constants for the climber subsystem.
+     * Defines position limits for the climbing mechanism.
+     */
+    public static final class ClimberSubsystemConstants {
+        /** Zero/retracted position of the climber (rotations). */
+        public static final float ZERO_POSITION = 0;
+        /** Climbing position of the climber - between zero and max (rotations). Tune on robot. */
+        public static final float CLIMB_POSITION = 0.5f;
+        /** Maximum extended position of the climber (rotations). Tune on robot. */
+        public static final float MAX_POSITION = 1;
+    }
 }
+

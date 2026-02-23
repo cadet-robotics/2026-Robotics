@@ -8,11 +8,14 @@ import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.RobotConstants.ControllerConstants;
+import frc.robot.Subsystems.Climber;
 import frc.robot.Subsystems.Drive;
 import frc.robot.Subsystems.Indexer;
 import frc.robot.Subsystems.Intake;
+import frc.robot.Subsystems.Shaker;
 import frc.robot.Subsystems.Shooter;
 import frc.robot.Subsystems.Vision.RealVision;
 import frc.robot.Subsystems.Vision.SimVision;
@@ -25,69 +28,84 @@ public class RobotContainer {
 
 
   private final Vision vision_subsystem;
-  // private final Intake intake_subsystem;
-  // private final Indexer indexer_subsystem;
-  // private final Shooter shooter_subsystem;
+  private final Intake intake_subsystem;
+  private final Indexer indexer_subsystem;
+  private final Shooter shooter_subsystem;
+  private final Climber climber_subsystem;
+  // private final Shaker shaker_subsystem;
 
-  private final CommandXboxController driverController;
-  // private final CommandXboxController codriverController;
+  private final CommandXboxController driverController = new CommandXboxController(0);
+  private final CommandXboxController codriverController = new CommandXboxController(1);
 
   public RobotContainer() {
     // Setup and initialize Subsystems here
     drive_subsystem = new Drive();
     vision_subsystem = drive_subsystem.getVision();
-    // shooter_subsystem = new Shooter();
-    // intake_subsystem = new Intake();
-    // indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem );
+    shooter_subsystem = new Shooter();
+    intake_subsystem = new Intake(shooter_subsystem);
+    indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem );
+    climber_subsystem = new Climber();
+    // shaker_subsystem = new Shaker();
 
     autos = new Autos(this, drive_subsystem );
-    
-    // Configure all remote bindings
-    driverController = new CommandXboxController(0);
-    // codriverController = new CommandXboxController(1);
+
     configureBindings();
     configureDriving();
   }
 
   private void configureBindings() {
     // Pathfinding command to drive to a specific pose on button press
-    driverController.a().whileTrue( 
-      edu.wpi.first.wpilibj2.command.Commands.deferredProxy(
-        () -> drive_subsystem.dummyDrivePose()
-      )
-    ); 
+    // driverController.a().whileTrue( 
+    //   edu.wpi.first.wpilibj2.command.Commands.deferredProxy(
+    //     () -> drive_subsystem.dummyDrivePose()
+    //   )
+    // ); 
+
+    // SysId complete routine for shooter characterization - runs all 4 tests in sequence
+    driverController.a().onTrue(shooter_subsystem.getCompleteSysIdRoutine());
 
     // Reset odometry to current Limelight pose
-    driverController.b().onTrue(drive_subsystem.resetOdometryWithVision());
+    // driverController.b().onTrue(drive_subsystem.resetOdometryWithVision());
 
     // Shooter bindings on codriver controller
     // Left trigger - shoot forwards
-    // codriverController.leftTrigger().whileTrue(shooter_subsystem.Shoot())
-    //                                 .onFalse(shooter_subsystem.StopShooting());
+    // driverController.leftTrigger().whileTrue( new ParallelCommandGroup(
+    //     shooter_subsystem.Shoot(),
+    //     shaker_subsystem.shake()
+    // ));
     
     // // Right trigger - shoot backwards
-    // codriverController.rightTrigger().whileTrue(shooter_subsystem.ShootBackwards())
-    //                                  .onFalse(shooter_subsystem.StopShooting());
+    // driverController.rightTrigger().whileTrue( new ParallelCommandGroup( shooter_subsystem.ShootBackwards(), shaker_subsystem.shake()));
     
-    // Y button - stop shooter
-    // codriverController.y().onTrue(shooter_subsystem.StopShooting());
+    // // Intake controls on codriver bumpers
+    // driverController.leftBumper().whileTrue(intake_subsystem.IntakeOn());
     
-    // Left D-pad - manual spin forward at low speed
-    // driverController.leftBumper().whileTrue(shooter_subsystem.ManualSpinForward());
+    // driverController.rightBumper().whileTrue( new ParallelCommandGroup( intake_subsystem.IntakeBarf(), shaker_subsystem.shake()));
+    driverController.leftTrigger().whileTrue( new ParallelCommandGroup(
+        shooter_subsystem.Shoot()
+    ));
     
-    // Right D-pad - manual spin backward at low speed
-    // driverController.rightBumper().whileTrue(shooter_subsystem.ManualSpinBackward());
+    // Right trigger - shoot backwards
+    driverController.rightTrigger().whileTrue( new ParallelCommandGroup( shooter_subsystem.ShootBackwards()));
+    
+    // Intake controls on codriver bumpers
+    driverController.leftBumper().whileTrue(intake_subsystem.IntakeOn());
+    
+    driverController.rightBumper().whileTrue( new ParallelCommandGroup( intake_subsystem.IntakeBarf()));
 
-    // Indexer bindings on codriver controller
-    // Left bumper - manual indexer forward (slow)
-    // driverController.leftTrigger().whileTrue(indexer_subsystem.manualForward());
+
+    // Climber controls on codriver X, Y, and B
+    codriverController.x().whileTrue(climber_subsystem.climbUp());
     
-    // Right bumper - manual indexer backward (slow)
-    // driverController.rightTrigger().whileTrue(indexer_subsystem.manualBackward());
+    // Y button - climb to climbing position (middle position)
+    codriverController.y().whileTrue(climber_subsystem.climb());
+    
+    // B button - climb down
+    codriverController.b().whileTrue(climber_subsystem.climbZero());
 
-    // driverController.x().whileTrue(this.intake_subsystem.SetIntakeOn());
-    // driverController.b().whileTrue(this.intake_subsystem.SetIntakeOff());
-
+    // Manual voltage control for climber on codriver triggers
+    codriverController.leftTrigger().whileTrue(climber_subsystem.manualClimbUpVoltage());
+    codriverController.rightTrigger().whileTrue(climber_subsystem.manualClimbDownVoltage());
   }
 
   public void configureDriving() {

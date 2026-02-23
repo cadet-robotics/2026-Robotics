@@ -1,6 +1,6 @@
 {
    "drive": {
-      "type": "sparkmax",
+      "type": "sparkflex",
       "id": 3,
       "canbus": null
    },

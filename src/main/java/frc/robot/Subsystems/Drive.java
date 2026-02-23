@@ -52,10 +52,10 @@ public class Drive extends CSubsystem {
      */
     public Drive() {
 
-        if (Robot.isReal()) {
-            vision = new RealVision(this);
-        } else {
-        }
+        // if (Robot.isReal()) {
+        //     vision = new RealVision(this);
+        // } else {
+        // }
 
         // Temp starting positions for sim
         boolean blueAlliance = false;

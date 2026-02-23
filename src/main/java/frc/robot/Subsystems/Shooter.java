@@ -24,8 +24,11 @@ import edu.wpi.first.wpilibj.DutyCycle;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.RobotConstants;
+import frc.robot.Constants.RobotConstants.ShooterSubsystemConstants;
 import frc.robot.Constants.ShooterState;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
@@ -51,19 +54,15 @@ public class Shooter extends CSubsystem {
     /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
     public SmartMotorControllerConfig smc_config = new SmartMotorControllerConfig(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
-        // Feedback Constants (PID Constants)
+        // Feedback Constants (PID Constants) - no motion profiling for shooter
         .withClosedLoopController(
             RobotConstants.ShooterSubsystemConstants.SHOOTER_KP, 
             RobotConstants.ShooterSubsystemConstants.SHOOTER_KI, 
-            RobotConstants.ShooterSubsystemConstants.SHOOTER_KD, 
-            DegreesPerSecond.of(90), 
-            DegreesPerSecondPerSecond.of(45))
+            RobotConstants.ShooterSubsystemConstants.SHOOTER_KD)
         .withSimClosedLoopController(
             RobotConstants.ShooterSubsystemConstants.SHOOTER_KP, 
             RobotConstants.ShooterSubsystemConstants.SHOOTER_KI, 
-            RobotConstants.ShooterSubsystemConstants.SHOOTER_KD, 
-            DegreesPerSecond.of(90), 
-            DegreesPerSecondPerSecond.of(45))
+            RobotConstants.ShooterSubsystemConstants.SHOOTER_KD)
         // Feedforward Constants
         .withFeedforward(new SimpleMotorFeedforward(0, 0, 0))
         .withSimFeedforward(new SimpleMotorFeedforward(0, 0, 0))
@@ -101,12 +100,26 @@ public class Shooter extends CSubsystem {
     public Shooter() {
         // Configure the follower motor using SparkFlexConfig to follow the leader motor inverted
         
-        // Initialize SysId routine
+        // Initialize SysId routine with 7V max voltage and data logging
         sysIdRoutine = new SysIdRoutine(
-            new SysIdRoutine.Config(),
+            new SysIdRoutine.Config(
+                edu.wpi.first.units.Units.Volts.of(1).per(edu.wpi.first.units.Units.Second), // Ramp rate: 1V per second
+                edu.wpi.first.units.Units.Volts.of(7), // Max voltage: 7V
+                null, // Default timeout (no timeout)
+                null  // Default log state
+            ),
             new SysIdRoutine.Mechanism(
                 (volts) -> smc.setVoltage(volts),
-                null, // No log consumer (can add if needed)
+                log -> {
+                    // Log motor data for SysId analysis
+                    log.motor("shooter")
+                        .voltage(edu.wpi.first.units.Units.Volts.mutable(
+                            shooter_motor_controller.getAppliedOutput() * shooter_motor_controller.getBusVoltage()))
+                        .angularPosition(edu.wpi.first.units.Units.Rotations.mutable(
+                            shooter_motor_controller.getEncoder().getPosition()))
+                        .angularVelocity(edu.wpi.first.units.Units.RotationsPerSecond.mutable(
+                            shooter_motor_controller.getEncoder().getVelocity() / 60.0));
+                },
                 this
             )
         );
@@ -125,11 +138,81 @@ public class Shooter extends CSubsystem {
     }
 
     /**
+     * Gets the SysId quasistatic forward routine command.
+     * 
+     * @return command that runs the SysId quasistatic forward test
+     */
+    public Command getSysIdQuasistaticForward() {
+        return sysIdRoutine.quasistatic(SysIdRoutine.Direction.kForward);
+    }
+
+    /**
+     * Gets the SysId dynamic forward routine command.
+     * 
+     * @return command that runs the SysId dynamic forward test
+     */
+    public Command getSysIdDynamicForward() {
+        return sysIdRoutine.dynamic(SysIdRoutine.Direction.kForward);
+    }
+
+    /**
+     * Gets the complete SysId routine that runs all four tests in sequence.
+     * Runs: Quasistatic Forward → Quasistatic Reverse → Dynamic Forward → Dynamic Reverse
+     * 
+     * @return command that runs the complete SysId characterization routine
+     */
+    public Command getCompleteSysIdRoutine() {
+        return sysIdRoutine.quasistatic(SysIdRoutine.Direction.kForward)
+            .andThen(sysIdRoutine.quasistatic(SysIdRoutine.Direction.kReverse))
+            .andThen(sysIdRoutine.dynamic(SysIdRoutine.Direction.kForward))
+            .andThen(sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse));
+    }
+
+    /**
      * Gets the current state of the shooter.
      * 
      * @return the current shooter state
      */
     public ShooterState getState() { return state; }
+
+    /**
+     * Checks if the shooter is up to speed.
+     * Compares current velocity to target velocity with a tolerance.
+     * 
+     * @return true if shooter is at or above target speed (within 5% tolerance), false otherwise
+     */
+    public boolean isUpToSpeed() {
+        if (state == ShooterState.Off) {
+            return false;
+        }
+        
+        // Get current velocity in RPM from the motor controller encoder
+        double currentVelocityRPM = shooter_motor_controller.getEncoder().getVelocity();
+        
+        // Get target velocity based on current state
+        double targetVelocityRPM;
+        if (state == ShooterState.On) {
+            targetVelocityRPM = ShooterSubsystemConstants.forwardsOnSpeeds.in(RPM);
+        } else if (state == ShooterState.Backwards) {
+            targetVelocityRPM = ShooterSubsystemConstants.backwardsOnSpeeds.in(RPM);
+        } else {
+            return false;
+        }
+        
+        // Calculate tolerance (5% of target speed)
+        double tolerance = Math.abs(targetVelocityRPM * 0.10);
+        
+        // Check if within tolerance
+        boolean atSpeed = Math.abs(currentVelocityRPM - targetVelocityRPM) <= tolerance;
+        
+        // Log to SmartDashboard
+        SmartDashboard.putBoolean("Shooter/IsUpToSpeed", atSpeed);
+        SmartDashboard.putNumber("Shooter/CurrentVelocityRPM", currentVelocityRPM);
+        SmartDashboard.putNumber("Shooter/TargetVelocityRPM", targetVelocityRPM);
+        SmartDashboard.putNumber("Shooter/VelocityError", Math.abs(currentVelocityRPM - targetVelocityRPM));
+        
+        return atSpeed;
+    }
 
     /**
      * Creates a command to start the shooter at full speed.
@@ -138,9 +221,9 @@ public class Shooter extends CSubsystem {
      */
     public CCommand Shoot() {
         return cCommand("StartShooting")
-                .onExecute(() -> {
+                .onInitialize(() -> {
                     state = ShooterState.On;
-                    shooter_controller.setSpeed(RobotConstants.ShooterSubsystemConstants.forwardsOnSpeeds);
+                    shooter_controller.setMechanismVelocitySetpoint(ShooterSubsystemConstants.forwardsOnSpeeds);
                 })
                 .onEnd(() -> {
                     state = ShooterState.Off;
@@ -151,47 +234,13 @@ public class Shooter extends CSubsystem {
     /**
      * Creates a command to run the shooter backwards.
      * 
-     * @return command that runs shooter in reverse
+     * @return command that runs shooter backwards
      */
     public CCommand ShootBackwards() {
         return cCommand("ShootBackwards")
-                .onExecute(() -> {
+                .onInitialize(() -> {
                     state = ShooterState.Backwards;
-                    shooter_controller.setSpeed(RobotConstants.ShooterSubsystemConstants.backwardsOnSpeeds);
-                })
-                .onEnd(() -> {
-                    state = ShooterState.Off;
-                    shooter_motor_controller.setVoltage(0);
-                });
-    }
-
-    /**
-     * Creates a command to manually spin the shooter forward at low speed.
-     * 
-     * @return command that runs shooter forward slowly
-     */
-    public CCommand ManualSpinForward() {
-        return cCommand("ManualSpinForward")
-                .onExecute(() -> {
-                    state = ShooterState.ManualForward;
-                    shooter_motor_controller.setVoltage(6.0);
-                })
-                .onEnd(() -> {
-                    state = ShooterState.Off;
-                    shooter_motor_controller.setVoltage(0);
-                });
-    }
-
-    /**
-     * Creates a command to manually spin the shooter backward at low speed.
-     * 
-     * @return command that runs shooter backward slowly
-     */
-    public CCommand ManualSpinBackward() {
-        return cCommand("ManualSpinBackward")
-                .onExecute(() -> {
-                    state = ShooterState.ManualBackward;
-                    shooter_motor_controller.setVoltage(-6.0);
+                    shooter_controller.setMechanismVelocitySetpoint(ShooterSubsystemConstants.backwardsOnSpeeds);
                 })
                 .onEnd(() -> {
                     state = ShooterState.Off;
@@ -220,6 +269,9 @@ public class Shooter extends CSubsystem {
     public void periodic() {
         // Update telemetry
         shooter_controller.updateTelemetry();
+        
+        // Log whether shooter is up to speed
+        isUpToSpeed();
     }
 
     /**

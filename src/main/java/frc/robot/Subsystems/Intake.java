@@ -6,6 +6,8 @@ import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Volts;
 
+import java.util.function.Supplier;
+
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.SparkMax;
@@ -15,6 +17,7 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.IntakeState;
+import frc.robot.Constants.ShooterState;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
 import yams.gearing.GearBox;
@@ -29,7 +32,7 @@ import yams.motorcontrollers.local.SparkWrapper;
  */
 public class Intake extends CSubsystem {
     /** Motor controller for the intake mechanism. */
-    private final SparkMax intakeMotorController = new SparkMax(13, SparkLowLevel.MotorType.kBrushless);
+    private final SparkMax intakeMotorController = new SparkMax(15, SparkLowLevel.MotorType.kBrushless);
     /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
     private final SmartMotorControllerConfig smcConfig  = new SmartMotorControllerConfig(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
@@ -61,6 +64,9 @@ public class Intake extends CSubsystem {
     /** Target state of the intake mechanism. */
     private IntakeState state = IntakeState.OFF;
 
+    private final Supplier<ShooterState> getShooterState;
+    private final Supplier<Boolean> isShooterUpToSpeed;
+
     /**
      * Gets the current state of the intake.
      * 
@@ -72,7 +78,10 @@ public class Intake extends CSubsystem {
      * Constructs a new Intake subsystem.
      * Initializes motor controller, SysId routine, and sets up default command.
      */
-    public Intake() {
+    public Intake(Shooter shooter_subsystem) {
+        this.getShooterState = shooter_subsystem::getState;
+        this.isShooterUpToSpeed = shooter_subsystem::isUpToSpeed;        
+
         // Initialize SysId routine
         sysIdRoutine = new SysIdRoutine(
             new SysIdRoutine.Config(),
@@ -101,10 +110,11 @@ public class Intake extends CSubsystem {
      * 
      * @return command that sets intake state to On
      */
-    public CCommand SetIntakeOn() {
+    public CCommand IntakeOn() {
         return cCommand().onInitialize(() -> {
-            // state = IntakeState.ON;
-            this.intakeController.setVoltage(Volts.of(9));
+            state = IntakeState.ON;
+        }).onEnd(() -> {
+            state = IntakeState.OFF;
         });
     }
 
@@ -113,40 +123,23 @@ public class Intake extends CSubsystem {
      * 
      * @return command that sets intake state to Off
      */
-    public CCommand SetIntakeOff() {
+    public CCommand IntakeOff() {
         return cCommand().onInitialize(() -> {
-            // state = IntakeState.OFF;
-            this.intakeController.setVoltage(Volts.of(0));
+            state = IntakeState.OFF;
         });
     }
 
     /**
-     * Creates the default command that handles intake state transitions.
-     * Monitors state changes and updates motor velocity accordingly.
+     * Creates a command to set the intake to barf.
      * 
-     * @return command that handles automatic intake control
+     * @return command that sets intake state to Barf
      */
-    public CCommand intakeHandler() {
-       return cCommand("IntakeHandler")
-           .onExecute(() -> {
-               if ( state != currentState ) {
-                   switch (state) {
-                       case OFF:
-                            currentState = IntakeState.OFF;
-                            intakeController.setVelocity(RPM.of(0));
-                            break;
-                       case ON:
-                           currentState = IntakeState.ON;
-                           intakeController.setVelocity(RPM.of(100));
-                           break;
-                       case REV:
-                           currentState = IntakeState.REV;
-                           // TODO: Implement reverse/barfing speed
-                           intakeController.setVelocity(RPM.of(-100));
-                           break;
-                   }
-               }
-           });
+    public CCommand IntakeBarf() {
+        return cCommand().onInitialize(() -> {
+            state = IntakeState.REV;
+        }).onEnd(() -> {
+            state = IntakeState.OFF;
+        });
     }
 
     /**
@@ -156,6 +149,15 @@ public class Intake extends CSubsystem {
     @Override
     public void periodic() {
         intakeController.updateTelemetry();
+
+        // Run intake if manually commanded OR if shooter is up to speed
+        if ( this.state == IntakeState.ON || (this.getShooterState.get() == ShooterState.On && this.isShooterUpToSpeed.get()) ) {
+            this.intakeController.setVoltage(Volts.of(11));
+        } else if ( this.state == IntakeState.REV ) {
+            this.intakeController.setVoltage(Volts.of(-12));
+        } else {
+            this.intakeController.setVoltage(Volts.of(0));
+        }
     }
 
     /**
