@@ -50,7 +50,6 @@ public class Climber extends CSubsystem {
         .withGearing(new MechanismGearing(GearBox.fromReductionStages(9)))
         .withMotorInverted(false)
         .withIdleMode(SmartMotorControllerConfig.MotorMode.BRAKE)
-        .withExternalEncoder(climber_encoder)
         .withStatorCurrentLimit(Amps.of(40));
 
     public SmartMotorController climber_motor = new SparkWrapper(
