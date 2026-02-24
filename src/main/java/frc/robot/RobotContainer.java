@@ -62,7 +62,7 @@ public class RobotContainer {
     // ); 
 
     // SysId complete routine for shooter characterization - runs all 4 tests in sequence
-    driverController.a().onTrue(shooter_subsystem.getCompleteSysIdRoutine());
+    // driverController.a().onTrue(shooter_subsystem.getCompleteSysIdRoutine());
 
     // Reset odometry to current Limelight pose
     // driverController.b().onTrue(drive_subsystem.resetOdometryWithVision());
