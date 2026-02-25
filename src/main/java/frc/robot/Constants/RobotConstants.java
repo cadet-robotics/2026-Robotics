@@ -4,6 +4,8 @@ import static edu.wpi.first.units.Units.RPM;
 
 import com.pathplanner.lib.config.PIDConstants;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.AngularVelocity;
 
@@ -33,6 +35,15 @@ public class RobotConstants {
         public static final Translation2d BLUE_HUB_POSITION = new Translation2d(182.11, 158.84);
         /** Red alliance hub/speaker position (x, y) in inches. */
         public static final Translation2d RED_HUB_POSITION = new Translation2d(469.11, 158.84);
+        
+        /** Blue alliance rightside climb position (x, y, Rotation2d) in inches and degrees. */
+        public static final Pose2d BLUE_RIGHT_CLIMB_POSITION = new Pose2d(37.6075, 107.5065, Rotation2d.fromDegrees(0));
+        /** Blue alliance leftside climb position (x, y, Rotation2d) in inches and degrees. */
+        public static final Pose2d BLUE_LEFT_CLIMB_POSITION = new Pose2d(42.3925, 187.4335, Rotation2d.fromDegrees(180));
+        /** Red alliance rightside climb position (x, y, Rotation2d) in inches and degrees. */
+        public static final Pose2d RED_RIGHT_CLIMB_POSITION = new Pose2d(608.8275, 154.5065, Rotation2d.fromDegrees(180));
+        /** Red alliance leftside climb position (x, y, Rotation2d) in inches and degrees. */
+        public static final Pose2d RED_LEFT_CLIMB_POSITION = new Pose2d(613.6125, 234.4335, Rotation2d.fromDegrees(0));
     }
 
     /**

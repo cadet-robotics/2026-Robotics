@@ -328,6 +328,38 @@ public class Drive extends CSubsystem {
             });
     }
 
+    /**
+     * Creates a command that drives to a climb position.
+     * 
+     * @return command that drives to closest climb position
+     */
+    public Command driveToClimb() {
+        Pose2d targetPose;
+        if (DriverStation.getAlliance().get() == Alliance.Blue) {
+            // Choose the closest blue climb position
+            Pose2d blueRight = RobotConstants.FieldConstants.BLUE_RIGHT_CLIMB_POSITION;
+            Pose2d blueLeft = RobotConstants.FieldConstants.BLUE_LEFT_CLIMB_POSITION;
+            targetPose = (getPose().getTranslation().getDistance(blueRight.getTranslation()) < 
+                          getPose().getTranslation().getDistance(blueLeft.getTranslation())) ? blueRight : blueLeft;
+        } else {
+            // Choose the closest red climb position
+            Pose2d redRight = RobotConstants.FieldConstants.RED_RIGHT_CLIMB_POSITION;
+            Pose2d redLeft = RobotConstants.FieldConstants.RED_LEFT_CLIMB_POSITION;
+            targetPose = (getPose().getTranslation().getDistance(redRight.getTranslation()) < 
+                          getPose().getTranslation().getDistance(redLeft.getTranslation())) ? redRight : redLeft;
+        }
+
+        return driveToTargetPose(targetPose, 0.0)
+            .beforeStarting(() -> {
+                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putString("PathPlanner/Status", "Starting pathfind to climb");
+                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putString("PathPlanner/Target", 
+                    String.format("(%.2f, %.2f, %.1f°)", targetPose.getX(), targetPose.getY(), targetPose.getRotation().getDegrees()));
+            })
+            .andThen(() -> {
+                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putString("PathPlanner/Status", "Pathfind to climb complete");
+            });
+    }
+
     // Find our alliance's HUB and the location
     public Translation2d getHub() {
             if (DriverStation.getAlliance().get() == Alliance.Blue) {
