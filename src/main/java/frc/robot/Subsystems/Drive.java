@@ -1,10 +1,12 @@
 package frc.robot.Subsystems;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meter;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.List;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -12,8 +14,12 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -21,14 +27,12 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Config;
-import frc.robot.Robot;
 import frc.robot.Configuration.DriveSubsystemConfiguration;
 import frc.robot.Constants.RobotConstants;
+import frc.robot.Constants.RobotConstants.FieldConstants;
+import frc.robot.Constants.RobotConstants.ShooterSubsystemConstants;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
-
-import frc.robot.Subsystems.Vision.RealVision;
-import frc.robot.Subsystems.Vision.SimVision;
 import frc.robot.Subsystems.Vision.Vision;
 import swervelib.SwerveDrive;
 import swervelib.SwerveDriveTest;
@@ -48,8 +52,8 @@ public class Drive extends CSubsystem {
     private SwerveDrive swerveDrive;
     /** Vision subsystem for processing camera data and vision measurements. */
     private Vision vision;
-
-
+    // Height to render poses in meters (matches shooter muzzle height used by sim)
+    private static final double POSE_RENDER_Z = 0.9;
 
     /**
      * Constructs a new Drive subsystem.
@@ -63,16 +67,48 @@ public class Drive extends CSubsystem {
         // }
 
         // Temp starting positions for sim
-        boolean blueAlliance = false;
+        boolean blueAlliance = DriverStation.getAlliance().get() == Alliance.Blue;
         Pose2d startingPose = blueAlliance ? new Pose2d(new Translation2d(Meter.of(1),
                 Meter.of(4)),
-                Rotation2d.fromDegrees(180))
+                Rotation2d.fromDegrees(0))
                 : new Pose2d(new Translation2d(Meter.of(16),
                         Meter.of(4)),
-                        Rotation2d.fromDegrees(0));
+                        Rotation2d.fromDegrees(180));
 
         configureSwerveObjects(startingPose);
         DriveSubsystemConfiguration.configurePathPlanner(this, swerveDrive);
+    }
+
+    // Flags set by RobotContainer when certain input streams are active
+    private volatile boolean driveToPoseActive = false;
+    private volatile boolean aimModeActive = false;
+
+    /**
+     * Mark whether the drive-to-pose input stream is currently active.
+     * Called by RobotContainer when the corresponding input is pressed/released.
+     */
+    public void setDriveToPoseActive(boolean active) { this.driveToPoseActive = active; }
+    public boolean isDriveToPoseActive() { return this.driveToPoseActive; }
+
+    /**
+     * Mark whether the aim input stream (aim mode) is currently active.
+     */
+    public void setAimModeActive(boolean active) { this.aimModeActive = active; }
+    public boolean isAimModeActive() { return this.aimModeActive; }
+
+    /**
+     * Check whether the robot is aimed at the alliance hub within a tolerance (radians).
+     */
+    public boolean isAimedAtHub(double tolRad) {
+        try {
+            Pose2d desired = posePointingAtAllianceHub(getPose().getTranslation());
+            double desiredAngle = desired.getRotation().getRadians();
+            double currentAngle = getPose().getRotation().getRadians();
+            double angleError = Math.atan2(Math.sin(desiredAngle - currentAngle), Math.cos(desiredAngle - currentAngle));
+            return Math.abs(angleError) <= tolRad;
+        } catch (Exception ex) {
+            return false;
+        }
     }
 
     /**
@@ -247,6 +283,41 @@ public class Drive extends CSubsystem {
                             swerveDrive.getMaximumChassisAngularVelocity());
                 });
     }
+
+    /**
+     * Build a command that drives the robot using a supplier of ChassisSpeeds.
+     * The supplier should provide desired chassis velocities in the robot frame
+     * (vx, vy in m/s and omega in rad/s). This method creates a command that
+     * reads the supplier each loop and forwards the speeds to the swerve drive.
+     *
+     * @param speedsSupplier Supplier that returns desired ChassisSpeeds
+     * @return CCommand that drives with the supplied chassis speeds
+     */
+    public CCommand driveWithChassisSpeedsSupplier(java.util.function.Supplier<ChassisSpeeds> speedsSupplier) {
+        return cCommand("DriveSubsystem.DriveWithChassisSpeeds").onExecute(() -> {
+            ChassisSpeeds speeds = speedsSupplier.get();
+            // Convert chassis speeds to translation (vx, vy) in m/s and omega in rad/s
+            Translation2d translation = new Translation2d(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
+            double omega = speeds.omegaRadiansPerSecond;
+            // Telemetry to help debug aiming behavior
+            try {
+                Pose2d desiredPose = posePointingAtAllianceHub(getPose().getTranslation());
+                double desiredAngle = desiredPose.getRotation().getRadians();
+                double currentAngle = getPose().getRotation().getRadians();
+                double angleError = Math.atan2(Math.sin(desiredAngle - currentAngle), Math.cos(desiredAngle - currentAngle));
+                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/ChassisSpeeds/Vx", speeds.vxMetersPerSecond);
+                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/ChassisSpeeds/Vy", speeds.vyMetersPerSecond);
+                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/ChassisSpeeds/Omega", omega);
+                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/DesiredAngleRad", desiredAngle);
+                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/CurrentAngleRad", currentAngle);
+                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/AngleErrorRad", angleError);
+            } catch (Exception e) {
+                // ignore telemetry errors
+            }
+            // Drive the swerve with given speeds (robot-relative)
+            swerveDrive.drive(translation, omega, true, false);
+        });
+    }
     
     /**
      * Command to drive to a target pose using PathPlanner's pathfinding.
@@ -417,5 +488,124 @@ public class Drive extends CSubsystem {
     public void periodic() {
         // Vision subsystem periodic is called automatically by CommandScheduler
         // No need to manually call it here
+        // Publish visual helpers (hub arc) so AdvantageScope / dashboard can render them
+        publishHubArc();
+    }
+
+    /**
+     * Publish a polyline (x,y pairs) describing the circular arc around the hub
+     * at the configured shooter mid-range. AdvantageScope can render this by
+     * reading the NetworkTables array at key "Drive/HubArcPointsMeters".
+     *
+     * Published format: [x0, y0, x1, y1, x2, y2, ...] in meters (field coordinates).
+     */
+    private void publishHubArc() {
+        final int points = 64; // resolution of the circle
+        Translation2d h = FieldConstants.hub.getTranslation();
+        double r = ShooterSubsystemConstants.midRange; // midRange is in meters
+
+        double[] pts = new double[points * 2];
+        for (int i = 0; i < points; ++i) {
+            double theta = 2.0 * Math.PI * ((double) i / (double) points);
+            pts[i * 2] = h.getX() + r * Math.cos(theta);
+            pts[i * 2 + 1] = h.getY() + r * Math.sin(theta);
+        }
+
+        SmartDashboard.putNumberArray("Drive/HubArcPointsMeters", pts);
+    }
+
+    /**
+     * Return the scaled point using the robot's current translation from odometry.
+     * Uses (x0,y0) = robot translation and returns (d / sqrt(x0^2 + y0^2)) * (x0,y0).
+     * This keeps the function focused on the math you requested.
+     */
+    public Pose2d getClosestPointOnCurve(double controllerOffset) {
+        // p = robot position, h = hub position, d = desired distance (midRange)
+        Translation2d p = getPose().getTranslation();
+        Translation2d h = FieldConstants.hub.getTranslation();
+
+        SmartDashboard.putNumber("ControllerOffset", controllerOffset);
+
+        // vector from hub to robot: v = p - h
+        Translation2d v = p.minus(h);
+        if ( Math.abs(controllerOffset) > 0.1 ) {
+            Translation2d offset = new Translation2d( 0, -1);
+            v.plus(offset);
+        }
+
+        // distance ||v||
+        double dist = Math.hypot(v.getX(), v.getY());
+
+        // Guard against division by zero (robot exactly at hub)
+        if (dist < 1e-6) {
+            // undefined direction; return a pose at the current position pointing at the hub
+            return posePointingAtAllianceHub(p);
+        }
+
+        // ShooterSubsystemConstants.midRange is in meters (use directly)
+        double desiredDistanceMeters = ShooterSubsystemConstants.midRange;
+
+        // factor = d / ||v||
+        double factor = desiredDistanceMeters / dist;
+
+        // target = h + factor * v  -> matches: d/||p-h|| * (p-h) + (h_x,h_y)
+        Translation2d continuousTarget = v.times(factor).plus(h);
+
+        // Publish continuous target distance to hub (should be equal to desiredDistanceMeters)
+        double continuousTargetDist = Math.hypot(continuousTarget.getX() - h.getX(), continuousTarget.getY() - h.getY());
+        SmartDashboard.putNumber("Drive/ContinuousTargetDistanceFromHubMeters", continuousTargetDist);
+
+        // Snap to nearest vertex on the published hub arc so the logged target matches the visual arc
+        final int arcPoints = 64;
+        int nearestIndex = 0;
+        double nearestDistSq = Double.POSITIVE_INFINITY;
+        Translation2d snappedTarget = continuousTarget;
+        for (int i = 0; i < arcPoints; ++i) {
+            double theta = 2.0 * Math.PI * ((double) i / (double) arcPoints);
+            double px = h.getX() + desiredDistanceMeters * Math.cos(theta);
+            double py = h.getY() + desiredDistanceMeters * Math.sin(theta);
+            double dx = continuousTarget.getX() - px;
+            double dy = continuousTarget.getY() - py;
+            double d2 = dx * dx + dy * dy;
+            if (d2 < nearestDistSq) {
+                nearestDistSq = d2;
+                nearestIndex = i;
+                snappedTarget = new Translation2d(px, py);
+            }
+        }
+
+        double snappedTargetDist = Math.hypot(snappedTarget.getX() - h.getX(), snappedTarget.getY() - h.getY());
+        SmartDashboard.putNumber("Drive/SnappedTargetDistanceFromHubMeters", snappedTargetDist);
+        SmartDashboard.putNumber("Drive/DesiredDistanceMeters", desiredDistanceMeters);
+        SmartDashboard.putNumber("Drive/TargetDistanceErrorMeters", snappedTargetDist - desiredDistanceMeters);
+        SmartDashboard.putNumber("Drive/HubArcNearestIndex", nearestIndex);
+
+        return posePointingAtAllianceHub(snappedTarget);
+    }
+
+    public Pose2d posePointingAtAllianceHub(Translation2d position) {
+        Translation2d hubPosition = frc.robot.Constants.RobotConstants.FieldConstants.hub.getTranslation();
+
+    // Publish hub location for debugging as Pose3d: [x, y, z, rollDeg, pitchDeg, yawDeg]
+    SmartDashboard.putNumberArray("Drive/HubPose", new double[] { hubPosition.getX(), hubPosition.getY(), POSE_RENDER_Z, 0.0, 0.0, 0.0 });
+
+        // Angle from the given position to the hub (robot should point at the hub)
+        double angle = Math.atan2(hubPosition.getY() - position.getY(), hubPosition.getX() - position.getX());
+
+        // Create a pose at the provided position with rotation toward the hub.
+        // IMPORTANT: do NOT add the hub translation again; that would produce position + hub which is incorrect.
+        Pose2d targetPose = new Pose2d(position, new Rotation2d(angle).rotateBy(Rotation2d.k180deg));
+
+        // Prepare the arc pose3d for publishing (default)
+        Pose3d arcPose3d = new Pose3d(new Translation3d(targetPose.getX(), targetPose.getY(), POSE_RENDER_Z), new Rotation3d(0.0, 0.0, targetPose.getRotation().getRadians()));
+        SmartDashboard.putNumberArray("Drive/TargetPoseArc", new double[] { arcPose3d.getX(), arcPose3d.getY(), arcPose3d.getZ(), Math.toDegrees(arcPose3d.getRotation().getX()), Math.toDegrees(arcPose3d.getRotation().getY()), Math.toDegrees(arcPose3d.getRotation().getZ()) });
+
+        // Try to find a projectile close to the snapped target; if present, publish the ball Pose3d as the target
+        Pose3d chosenPose3d = arcPose3d;
+
+        // Publish the chosen target pose (ball if present, otherwise arc)
+        SmartDashboard.putNumberArray("Drive/TargetPose", new double[] { chosenPose3d.getX(), chosenPose3d.getY(), chosenPose3d.getZ(), Math.toDegrees(chosenPose3d.getRotation().getX()), Math.toDegrees(chosenPose3d.getRotation().getY()), Math.toDegrees(chosenPose3d.getRotation().getZ()) });
+
+        return targetPose;
     }
 }

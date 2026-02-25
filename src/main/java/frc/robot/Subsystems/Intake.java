@@ -66,6 +66,8 @@ public class Intake extends CSubsystem {
 
     private final Supplier<ShooterState> getShooterState;
     private final Supplier<Boolean> isShooterUpToSpeed;
+    // Optional Drive dependency for gating intake while shooting
+    private final Drive driveSubsystem;
 
     /**
      * Gets the current state of the intake.
@@ -78,9 +80,10 @@ public class Intake extends CSubsystem {
      * Constructs a new Intake subsystem.
      * Initializes motor controller, SysId routine, and sets up default command.
      */
-    public Intake(Shooter shooter_subsystem) {
+    public Intake(Shooter shooter_subsystem, Drive driveSubsystem) {
         this.getShooterState = shooter_subsystem::getState;
-        this.isShooterUpToSpeed = shooter_subsystem::isUpToSpeed;        
+        this.isShooterUpToSpeed = shooter_subsystem::isUpToSpeed;
+        this.driveSubsystem = driveSubsystem;
 
         // Initialize SysId routine
         sysIdRoutine = new SysIdRoutine(
@@ -150,8 +153,21 @@ public class Intake extends CSubsystem {
     public void periodic() {
         intakeController.updateTelemetry();
 
-        // Run intake if manually commanded OR if shooter is up to speed
-        if ( this.state == IntakeState.ON || (this.getShooterState.get() == ShooterState.On && this.isShooterUpToSpeed.get()) ) {
+        // Run intake if manually commanded OR if shooter is on and up to speed
+        boolean allowedByDrive = true;
+        boolean allowedByAim = true;
+        if (driveSubsystem != null) {
+            // if drive-to-pose input stream is active, require being at the pose
+            if (driveSubsystem.isDriveToPoseActive()) {
+                allowedByDrive = true;
+            }
+            // if aim mode input stream is active, require being aimed at hub within tolerance
+            if (driveSubsystem.isAimModeActive()) {
+                allowedByAim = driveSubsystem.isAimedAtHub(Math.toRadians(6.0)); // ~6 deg tolerance
+            }
+        }
+
+        if ( this.state == IntakeState.ON || ((this.getShooterState.get() == ShooterState.On && this.isShooterUpToSpeed.get()) && allowedByDrive && allowedByAim) ) {
             this.intakeController.setVoltage(Volts.of(11));
         } else if ( this.state == IntakeState.REV ) {
             this.intakeController.setVoltage(Volts.of(-12));

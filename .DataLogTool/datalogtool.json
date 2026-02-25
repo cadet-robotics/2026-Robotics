@@ -1,5 +1,6 @@
 {
   "download": {
+    "deleteAfter": false,
     "localDir": "C:\\Users\\Student\\Code\\2026-Robotics\\.SysId",
     "serverTeam": "6868"
   },

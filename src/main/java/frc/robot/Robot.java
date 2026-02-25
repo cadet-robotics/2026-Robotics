@@ -180,6 +180,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void simulationPeriodic() {
-    SimulatedArena.getInstance().simulationPeriodic();
+    robotContainer.fuelSim.updateSim();
+    // Step the projectile sim so projectiles are advanced and published for visualization
   }
 }

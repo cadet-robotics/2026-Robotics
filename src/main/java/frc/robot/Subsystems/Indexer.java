@@ -66,6 +66,8 @@ public class Indexer extends CSubsystem {
     private Shooter shooterSubsystem;
     /** Reference to the intake subsystem. */
     private Intake intakeSubsystem;
+    /** Reference to drive subsystem for gating while-shooting behavior. */
+    private Drive driveSubsystem;
 
     /** Current state of the indexer. */
     private IndexerState indexerState = IndexerState.OFF;
@@ -77,9 +79,10 @@ public class Indexer extends CSubsystem {
      * @param shooterSubsystem the shooter subsystem instance
      * @param intakeSubsystem the intake subsystem instance
      */
-    public Indexer( Shooter shooterSubsystem, Intake intakeSubsystem ) {
+    public Indexer( Shooter shooterSubsystem, Intake intakeSubsystem, Drive driveSubsystem ) {
         this.shooterSubsystem = shooterSubsystem;
         this.intakeSubsystem = intakeSubsystem;
+        this.driveSubsystem = driveSubsystem;
         
         // Initialize SysId routine
         sysIdRoutine = new SysIdRoutine(
@@ -135,8 +138,19 @@ public class Indexer extends CSubsystem {
                     SmartDashboard.putBoolean("Indexer/Handler/ShooterUpToSpeed", shooterUpToSpeed);
                     
                     // Determine indexer action based on subsystem states
-                    // Only feed shooter if it's on AND up to speed
-                    if ( (shooterState == ShooterState.On && shooterUpToSpeed) || intakeState == IntakeState.REV ) {
+                    // Only feed shooter if it's on AND up to speed and any drive/aim gating passes
+                    boolean allowedByDrive = true;
+                    boolean allowedByAim = true;
+                    if (driveSubsystem != null) {
+                        if (driveSubsystem.isDriveToPoseActive()) {
+                            allowedByDrive = true;
+                        }
+                        if (driveSubsystem.isAimModeActive()) {
+                            allowedByAim = driveSubsystem.isAimedAtHub(Math.toRadians(6.0));
+                        }
+                    }
+
+                    if ( ((shooterState == ShooterState.On && shooterUpToSpeed) && allowedByDrive && allowedByAim) || intakeState == IntakeState.REV ) {
                         indexerState = IndexerState.SHOOTER;
                         indexerController.setVoltage(edu.wpi.first.units.Units.Volts.of(-11));
                         SmartDashboard.putString("Indexer/Handler/Action", "Feeding Shooter");
