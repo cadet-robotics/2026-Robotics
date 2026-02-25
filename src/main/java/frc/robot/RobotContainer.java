@@ -10,6 +10,8 @@ import static edu.wpi.first.units.Units.Meters;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
+import com.ctre.phoenix6.swerve.jni.SwerveJNI.DriveState;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -123,6 +125,7 @@ public class RobotContainer {
 
     driverController.a().whileTrue(drive_subsystem.resetOdom());
 
+    codriverController.b().whileTrue(drive_subsystem.driveToClimb());
     // Climber controls on codriver X, Y, and B
     // codriverController.x().whileTrue(climber_subsystem.climbUp());
     
