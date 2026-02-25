@@ -15,7 +15,7 @@ import frc.robot.Subsystems.Climber;
 import frc.robot.Subsystems.Drive;
 import frc.robot.Subsystems.Indexer;
 import frc.robot.Subsystems.Intake;
-import frc.robot.Subsystems.Shaker;
+// import frc.robot.Subsystems.Shaker;
 import frc.robot.Subsystems.Shooter;
 import frc.robot.Subsystems.Vision.RealVision;
 import frc.robot.Subsystems.Vision.SimVision;
@@ -62,7 +62,7 @@ public class RobotContainer {
     // ); 
 
     // SysId complete routine for shooter characterization - runs all 4 tests in sequence
-    driverController.a().onTrue(shooter_subsystem.getCompleteSysIdRoutine());
+    //driverController.a().onTrue(shooter_subsystem.getCompleteSysIdRoutine());
 
     // Reset odometry to current Limelight pose
     // driverController.b().onTrue(drive_subsystem.resetOdometryWithVision());
@@ -81,31 +81,32 @@ public class RobotContainer {
     // driverController.leftBumper().whileTrue(intake_subsystem.IntakeOn());
     
     // driverController.rightBumper().whileTrue( new ParallelCommandGroup( intake_subsystem.IntakeBarf(), shaker_subsystem.shake()));
-    driverController.leftTrigger().whileTrue( new ParallelCommandGroup(
+    driverController.rightTrigger().whileTrue( new ParallelCommandGroup(
         shooter_subsystem.Shoot()
     ));
     
     // Right trigger - shoot backwards
-    driverController.rightTrigger().whileTrue( new ParallelCommandGroup( shooter_subsystem.ShootBackwards()));
+    driverController.leftTrigger().whileTrue( new ParallelCommandGroup( shooter_subsystem.ShootBackwards()));
     
     // Intake controls on codriver bumpers
     driverController.leftBumper().whileTrue(intake_subsystem.IntakeOn());
     
     driverController.rightBumper().whileTrue( new ParallelCommandGroup( intake_subsystem.IntakeBarf()));
 
+    driverController.a().whileTrue(drive_subsystem.resetOdom());
 
     // Climber controls on codriver X, Y, and B
-    codriverController.x().whileTrue(climber_subsystem.climbUp());
+    // codriverController.x().whileTrue(climber_subsystem.climbUp());
     
     // Y button - climb to climbing position (middle position)
-    codriverController.y().whileTrue(climber_subsystem.climb());
+    // codriverController.y().whileTrue(climber_subsystem.climb());
     
     // B button - climb down
-    codriverController.b().whileTrue(climber_subsystem.climbZero());
+    // codriverController.b().whileTrue(climber_subsystem.climbZero());
 
     // Manual voltage control for climber on codriver triggers
-    codriverController.leftTrigger().whileTrue(climber_subsystem.manualClimbUpVoltage());
-    codriverController.rightTrigger().whileTrue(climber_subsystem.manualClimbDownVoltage());
+    // codriverController.leftTrigger().whileTrue(climber_subsystem.manualClimbUpVoltage());
+    // driverController.y().whileTrue(climber_subsystem.manualClimbDownVoltage());
   }
 
   public void configureDriving() {

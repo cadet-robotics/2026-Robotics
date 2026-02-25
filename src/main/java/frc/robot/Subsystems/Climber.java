@@ -50,7 +50,7 @@ public class Climber extends CSubsystem {
         .withGearing(new MechanismGearing(GearBox.fromReductionStages(9)))
         .withMotorInverted(false)
         .withIdleMode(SmartMotorControllerConfig.MotorMode.BRAKE)
-        .withExternalEncoder(climber_encoder)
+        // .withExternalEncoder(climber_encoder)
         .withStatorCurrentLimit(Amps.of(40));
 
     public SmartMotorController climber_motor = new SparkWrapper(
@@ -118,7 +118,7 @@ public class Climber extends CSubsystem {
     public CCommand manualClimbDownVoltage() {
         return cCommand("ClimberSubsystem.ManualDownDutyCycle")
             .onExecute(() -> {
-                this.climber_motor_controller.setVoltage(Volts.of(-2));
+                this.climber_motor_controller.set(-0.1);
             })
             .onEnd(() -> {
                 this.climber_motor_controller.setVoltage(Volts.of(0));

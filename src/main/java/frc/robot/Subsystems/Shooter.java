@@ -192,9 +192,9 @@ public class Shooter extends CSubsystem {
         // Get target velocity based on current state
         double targetVelocityRPM;
         if (state == ShooterState.On) {
-            targetVelocityRPM = ShooterSubsystemConstants.forwardsOnSpeeds.in(RPM);
+            targetVelocityRPM = 50;
         } else if (state == ShooterState.Backwards) {
-            targetVelocityRPM = ShooterSubsystemConstants.backwardsOnSpeeds.in(RPM);
+            targetVelocityRPM = -50;
         } else {
             return false;
         }
@@ -203,7 +203,7 @@ public class Shooter extends CSubsystem {
         double tolerance = Math.abs(targetVelocityRPM * 0.10);
         
         // Check if within tolerance
-        boolean atSpeed = Math.abs(currentVelocityRPM - targetVelocityRPM) <= tolerance;
+        boolean atSpeed = currentVelocityRPM >= 50;
         
         // Log to SmartDashboard
         SmartDashboard.putBoolean("Shooter/IsUpToSpeed", atSpeed);

@@ -303,6 +303,14 @@ public class Drive extends CSubsystem {
         return driveToTargetPose(pose2dSupplier, 0.0);
     }
 
+    public CCommand resetOdom() {
+        return cCommand("DriveSubsystem.ResetOdom").onInitialize(() -> {
+            Pose2d newPose = new Pose2d( swerveDrive.getPose().getX(), swerveDrive.getPose().getY(), Rotation2d.fromDegrees(0) );
+            swerveDrive.resetOdometry(newPose);
+            SmartDashboard.putString("Drive/Odometry Reset", "Odometry reset to (0, 0, 0)");
+        });
+    }
+
     /**
      * Creates a command that drives to a dummy test pose.
      * 

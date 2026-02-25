@@ -68,15 +68,15 @@ public class RobotConstants {
      */
     public static final class ShooterSubsystemConstants {
         /** Flywheel motor speed in RPM when shooting game pieces (forwards operation). */
-        public static final AngularVelocity forwardsOnSpeeds = RPM.of(3000);
+        public static final AngularVelocity forwardsOnSpeeds = RPM.of(4000);
         /** Flywheel motor speed in RPM when shooting game pieces backwards (reverse operation). */
-        public static final AngularVelocity backwardsOnSpeeds = RPM.of(-3000);
+        public static final AngularVelocity backwardsOnSpeeds = RPM.of(-4000);
         /** Manual spin speed in RPM for slow manual control. */
         public static final AngularVelocity manualSpinSpeed = RPM.of(20);
         
         // PID Constants
         /** Proportional gain for shooter velocity PID control. */
-        public static final double SHOOTER_KP = 1;
+        public static final double SHOOTER_KP = 1.5;
         /** Integral gain for shooter velocity PID control. */
         public static final double SHOOTER_KI = 0.0;
         /** Derivative gain for shooter velocity PID control. */
