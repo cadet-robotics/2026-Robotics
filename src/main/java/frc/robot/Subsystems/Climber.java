@@ -117,7 +117,7 @@ public class Climber extends CSubsystem {
     public CCommand manualClimbDownVoltage() {
         return cCommand("ClimberSubsystem.ManualDownDutyCycle")
             .onExecute(() -> {
-                this.climber_motor_controller.setVoltage(Volts.of(-2));
+                this.climber_motor_controller.set(-0.1);
             })
             .onEnd(() -> {
                 this.climber_motor_controller.setVoltage(Volts.of(0));

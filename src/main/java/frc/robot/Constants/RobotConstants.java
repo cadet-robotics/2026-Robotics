@@ -11,6 +11,8 @@ import com.pathplanner.lib.config.PIDConstants;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
@@ -50,6 +52,15 @@ public class RobotConstants {
         public static final Pose2d hub = DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get() == Alliance.Blue 
             ? new Pose2d(BLUE_HUB_POSITION, Rotation2d.fromDegrees(0)) 
             : new Pose2d(RED_HUB_POSITION, Rotation2d.fromDegrees(0));
+        
+        /** Blue alliance rightside climb position (x, y, Rotation2d) in inches and degrees. */
+        public static final Pose2d BLUE_RIGHT_CLIMB_POSITION = new Pose2d(37.6075, 107.5065, Rotation2d.fromDegrees(0));
+        /** Blue alliance leftside climb position (x, y, Rotation2d) in inches and degrees. */
+        public static final Pose2d BLUE_LEFT_CLIMB_POSITION = new Pose2d(42.3925, 187.4335, Rotation2d.fromDegrees(180));
+        /** Red alliance rightside climb position (x, y, Rotation2d) in inches and degrees. */
+        public static final Pose2d RED_RIGHT_CLIMB_POSITION = new Pose2d(608.8275, 154.5065, Rotation2d.fromDegrees(180));
+        /** Red alliance leftside climb position (x, y, Rotation2d) in inches and degrees. */
+        public static final Pose2d RED_LEFT_CLIMB_POSITION = new Pose2d(613.6125, 234.4335, Rotation2d.fromDegrees(0));
     }
 
     /**
@@ -115,7 +126,7 @@ public class RobotConstants {
         
         // PID Constants
         /** Proportional gain for shooter velocity PID control. */
-        public static final double SHOOTER_KP = 1;
+        public static final double SHOOTER_KP = 1.5;
         /** Integral gain for shooter velocity PID control. */
         public static final double SHOOTER_KI = 0.0;
         /** Derivative gain for shooter velocity PID control. */
