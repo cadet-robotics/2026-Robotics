@@ -184,9 +184,6 @@ public class RealVision implements Vision, Subsystem {
 
     @Override
     public void periodic() {
-        if (true) {
-            return;
-        }
 
         periodicCounter++;
         SmartDashboard.putNumber("Vision/Periodic Counter", periodicCounter);

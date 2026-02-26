@@ -24,7 +24,7 @@ import frc.robot.Subsystems.Climber;
 import frc.robot.Subsystems.Drive;
 import frc.robot.Subsystems.Indexer;
 import frc.robot.Subsystems.Intake;
-// import frc.robot.Subsystems.Shaker;
+import frc.robot.Subsystems.Shaker;
 import frc.robot.Subsystems.Shooter;
 import frc.robot.Subsystems.Vision.Vision;
 import swervelib.SwerveInputStream;
@@ -40,7 +40,7 @@ public class RobotContainer {
   private final Indexer indexer_subsystem;
   private final Shooter shooter_subsystem;
   private final Climber climber_subsystem;
-  // private final Shaker shaker_subsystem;
+  private final Shaker shaker_subsystem;
 
   public FuelSim fuelSim = new FuelSim("FuelSim");
 
@@ -56,7 +56,7 @@ public class RobotContainer {
     intake_subsystem = new Intake(shooter_subsystem, drive_subsystem);
     indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem, drive_subsystem );
     climber_subsystem = new Climber();
-    // shaker_subsystem = new Shaker();
+    shaker_subsystem = new Shaker();
 
     autos = new Autos(this, drive_subsystem );
 
@@ -93,27 +93,27 @@ public class RobotContainer {
     // ); 
 
     // SysId complete routine for shooter characterization - runs all 4 tests in sequence
-    driverController.a().onTrue(shooter_subsystem.getCompleteSysIdRoutine());
+    // driverController.a().onTrue(shooter_subsystem.getCompleteSysIdRoutine());
 
     // Reset odometry to current Limelight pose
-    // driverController.b().onTrue(drive_subsystem.resetOdometryWithVision());
+    driverController.b().onTrue(drive_subsystem.resetOdometryWithVision());
 
     // Shooter bindings on codriver controller
-    // Left trigger - shoot forwards
-    // driverController.leftTrigger().whileTrue( new ParallelCommandGroup(
-    //     shooter_subsystem.Shoot(),
-    //     shaker_subsystem.shake()
-    // ));
+    // right trigger - shoot forwards
+    driverController.rightTrigger().whileTrue( new ParallelCommandGroup(
+        shooter_subsystem.Shoot(),
+        shaker_subsystem.shake()
+    ));
     
     // // Right trigger - shoot backwards
     // driverController.rightTrigger().whileTrue( new ParallelCommandGroup( shooter_subsystem.ShootBackwards(), shaker_subsystem.shake()));
     
     // driverController.leftBumper().whileTrue(intake_subsystem.IntakeOn());
     
-    // driverController.rightBumper().whileTrue( new ParallelCommandGroup( intake_subsystem.IntakeBarf(), shaker_subsystem.shake()));
-    driverController.rightTrigger().whileTrue( new ParallelCommandGroup(
-        shooter_subsystem.Shoot()
-    ));
+    driverController.rightBumper().whileTrue( new ParallelCommandGroup( intake_subsystem.IntakeBarf(), shaker_subsystem.shake()));
+    // driverController.rightTrigger().whileTrue( new ParallelCommandGroup(
+    //     shooter_subsystem.Shoot()
+    // ));
     
     // Right trigger - shoot backwards
     driverController.leftTrigger().whileTrue( new ParallelCommandGroup( shooter_subsystem.ShootBackwards()));
@@ -121,11 +121,11 @@ public class RobotContainer {
     // Intake controls on codriver bumpers
     driverController.leftBumper().whileTrue(intake_subsystem.IntakeOn());
     
-    driverController.rightBumper().whileTrue( new ParallelCommandGroup( intake_subsystem.IntakeBarf()));
+    // driverController.rightBumper().whileTrue( new ParallelCommandGroup( intake_subsystem.IntakeBarf()));
 
-    driverController.a().whileTrue(drive_subsystem.resetOdom());
+    driverController.y().whileTrue(drive_subsystem.resetOdom());
 
-    codriverController.b().whileTrue(drive_subsystem.driveToClimb());
+    driverController.x().whileTrue(drive_subsystem.driveToClimb());
     // Climber controls on codriver X, Y, and B
     // codriverController.x().whileTrue(climber_subsystem.climbUp());
     
@@ -145,8 +145,8 @@ public class RobotContainer {
         ControllerConstants.deadbandX);
     DoubleSupplier getTranslationY = () -> -1 * MathUtil.applyDeadband(this.driverController.getLeftX(),
         ControllerConstants.deadbandY);
-    DoubleSupplier getHeadingX = () -> -1 * driverController.getRightX();
-    DoubleSupplier getHeadingY = () -> -1 * driverController.getRightY();
+    DoubleSupplier getHeadingX = () -> 1 * driverController.getRightX();
+    DoubleSupplier getHeadingY = () -> 1 * driverController.getRightY();
 
     SwerveInputStream baseStream = SwerveInputStream.of(drive_subsystem.getSwerveDrive(), getTranslationX, getTranslationY)
       .scaleTranslation(0.8)
