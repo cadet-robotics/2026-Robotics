@@ -49,7 +49,7 @@ import swervelib.telemetry.SwerveDriveTelemetry;
 public class Drive extends CSubsystem {
     /** Maximum speed of the robot in meters per second. */
     // TODO: Configure robot details
-    private static final double maxSpeed = Units.feetToMeters(6);
+    private static final double maxSpeed = Units.feetToMeters(12);
     /** The swerve drive object that manages the swerve modules. */
     private SwerveDrive swerveDrive;
     /** Vision subsystem for processing camera data and vision measurements. */

@@ -108,6 +108,16 @@ public class Intake extends CSubsystem {
         // setDefaultCommand(intakeHandler());
     }
 
+    public CCommand intakeToggler() {
+        return cCommand().onInitialize(() -> {
+            if (state == IntakeState.OFF) {
+                state = IntakeState.ON;
+            } else {
+                state = IntakeState.OFF;
+            }
+        });
+    }
+
     /**
      * Creates a command to turn the intake on.
      * 
