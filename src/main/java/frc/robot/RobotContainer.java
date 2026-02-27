@@ -126,6 +126,9 @@ public class RobotContainer {
     driverController.a().whileTrue(drive_subsystem.resetOdom());
 
     codriverController.b().whileTrue(drive_subsystem.driveToClimb());
+
+    codriverController.povLeft().whileTrue(climber_subsystem.manualClimbUpVoltage());
+    codriverController.povRight().whileTrue(climber_subsystem.manualClimbDownVoltage());
     // Climber controls on codriver X, Y, and B
     // codriverController.x().whileTrue(climber_subsystem.climbUp());
     
