@@ -27,12 +27,14 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Config;
+import frc.robot.Robot;
 import frc.robot.Configuration.DriveSubsystemConfiguration;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.RobotConstants.FieldConstants;
 import frc.robot.Constants.RobotConstants.ShooterSubsystemConstants;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
+import frc.robot.Subsystems.Vision.RealVision;
 import frc.robot.Subsystems.Vision.Vision;
 import swervelib.SwerveDrive;
 import swervelib.SwerveDriveTest;
@@ -61,10 +63,10 @@ public class Drive extends CSubsystem {
      */
     public Drive() {
 
-        // if (Robot.isReal()) {
-        //     vision = new RealVision(this);
-        // } else {
-        // }
+        if (Robot.isReal()) {
+            vision = new RealVision(this);
+        } else {
+        }
 
         // Temp starting positions for sim
         boolean blueAlliance = DriverStation.getAlliance().get() == Alliance.Blue;
@@ -301,16 +303,16 @@ public class Drive extends CSubsystem {
             double omega = speeds.omegaRadiansPerSecond;
             // Telemetry to help debug aiming behavior
             try {
-                Pose2d desiredPose = posePointingAtAllianceHub(getPose().getTranslation());
-                double desiredAngle = desiredPose.getRotation().getRadians();
-                double currentAngle = getPose().getRotation().getRadians();
-                double angleError = Math.atan2(Math.sin(desiredAngle - currentAngle), Math.cos(desiredAngle - currentAngle));
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/ChassisSpeeds/Vx", speeds.vxMetersPerSecond);
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/ChassisSpeeds/Vy", speeds.vyMetersPerSecond);
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/ChassisSpeeds/Omega", omega);
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/DesiredAngleRad", desiredAngle);
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/CurrentAngleRad", currentAngle);
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/AngleErrorRad", angleError);
+                // Pose2d desiredPose = posePointingAtAllianceHub(getPose().getTranslation());
+                // double desiredAngle = desiredPose.getRotation().getRadians();
+                // double currentAngle = getPose().getRotation().getRadians();
+                // double angleError = Math.atan2(Math.sin(desiredAngle - currentAngle), Math.cos(desiredAngle - currentAngle));
+                // edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/ChassisSpeeds/Vx", speeds.vxMetersPerSecond);
+                // edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/ChassisSpeeds/Vy", speeds.vyMetersPerSecond);
+                // edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/ChassisSpeeds/Omega", omega);
+                // edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/DesiredAngleRad", desiredAngle);
+                // edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/CurrentAngleRad", currentAngle);
+                // edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/AngleErrorRad", angleError);
             } catch (Exception e) {
                 // ignore telemetry errors
             }

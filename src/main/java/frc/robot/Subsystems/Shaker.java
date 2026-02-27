@@ -13,7 +13,7 @@ public class Shaker extends CSubsystem {
     public CCommand shake() {
         return cCommand("ShakerSubsystem.Shake")
             .onInitialize(() -> {
-                shaker_motor.set(1);
+                shaker_motor.set(0.5);
             })
             .onEnd(() -> {
                 shaker_motor.set(0);

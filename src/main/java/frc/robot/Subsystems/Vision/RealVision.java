@@ -4,6 +4,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Libs.LimelightHelpers;
 import frc.robot.Subsystems.Drive;
 import limelight.Limelight;
@@ -12,7 +13,7 @@ import limelight.networktables.target.AprilTagFiducial;
 
 import java.util.Optional;
 
-public class RealVision implements Vision, Subsystem {
+public class RealVision extends SubsystemBase implements Vision {
 
     private final Drive driveSubsystem;
     private final Limelight back_limelight;
@@ -184,11 +185,9 @@ public class RealVision implements Vision, Subsystem {
 
     @Override
     public void periodic() {
-        if (true) {
-            return;
-        }
 
         periodicCounter++;
+        // System.out.println(periodicCounter);
         SmartDashboard.putNumber("Vision/Periodic Counter", periodicCounter);
         
         // Log current drive pose
