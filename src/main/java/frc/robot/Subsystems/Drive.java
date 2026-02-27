@@ -303,16 +303,16 @@ public class Drive extends CSubsystem {
             double omega = speeds.omegaRadiansPerSecond;
             // Telemetry to help debug aiming behavior
             try {
-                Pose2d desiredPose = posePointingAtAllianceHub(getPose().getTranslation());
-                double desiredAngle = desiredPose.getRotation().getRadians();
-                double currentAngle = getPose().getRotation().getRadians();
-                double angleError = Math.atan2(Math.sin(desiredAngle - currentAngle), Math.cos(desiredAngle - currentAngle));
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/ChassisSpeeds/Vx", speeds.vxMetersPerSecond);
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/ChassisSpeeds/Vy", speeds.vyMetersPerSecond);
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/ChassisSpeeds/Omega", omega);
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/DesiredAngleRad", desiredAngle);
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/CurrentAngleRad", currentAngle);
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/AngleErrorRad", angleError);
+                // Pose2d desiredPose = posePointingAtAllianceHub(getPose().getTranslation());
+                // double desiredAngle = desiredPose.getRotation().getRadians();
+                // double currentAngle = getPose().getRotation().getRadians();
+                // double angleError = Math.atan2(Math.sin(desiredAngle - currentAngle), Math.cos(desiredAngle - currentAngle));
+                // edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/ChassisSpeeds/Vx", speeds.vxMetersPerSecond);
+                // edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/ChassisSpeeds/Vy", speeds.vyMetersPerSecond);
+                // edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/ChassisSpeeds/Omega", omega);
+                // edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/DesiredAngleRad", desiredAngle);
+                // edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/CurrentAngleRad", currentAngle);
+                // edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Drive/AngleErrorRad", angleError);
             } catch (Exception e) {
                 // ignore telemetry errors
             }
