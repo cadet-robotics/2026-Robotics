@@ -36,7 +36,9 @@ public class Climber extends CSubsystem {
 
     public RelativeEncoder climber_encoder = climber_motor_controller.getEncoder();
 
-    public Climber() {}
+    public Climber() {
+        this.setName("ClimberSubsystem");
+    }
 
     public SmartMotorControllerConfig smc_config = new SmartMotorControllerConfig()
         .withSubsystem(this)
@@ -139,6 +141,8 @@ public class Climber extends CSubsystem {
 
     @Override
     public void periodic() {
+        logSelf();
+
         // Update telemetry
         climber_motor.updateTelemetry();
         

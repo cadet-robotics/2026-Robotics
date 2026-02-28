@@ -70,6 +70,8 @@ public class Drive extends CSubsystem {
      * Initializes vision (real or simulated based on robot mode) and configures swerve drive.
      */
     public Drive(CommandXboxController driverController, CommandXboxController codriverController) {
+        setName("DriveSubsystem");
+
         this.driverController = driverController;
         this.codriverController = codriverController;
 
@@ -510,6 +512,8 @@ public class Drive extends CSubsystem {
 
     @Override
     public void periodic() {
+        logSelf();
+
         ShootOnTheMove.calculateLeadHeading(getPose(), swerveDrive.getFieldVelocity());
         ShootOnTheMove.publish();
     }

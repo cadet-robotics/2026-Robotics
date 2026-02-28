@@ -15,6 +15,8 @@ public class Shaker extends CSubsystem {
     private Supplier<IndexerState> indexerStateSupplier;
 
     public Shaker( Indexer indexer_subsystem ) {
+        setName("ShakerSubsystem");
+
         indexerStateSupplier = indexer_subsystem::getState;
     }
 
@@ -24,6 +26,8 @@ public class Shaker extends CSubsystem {
 
     @Override 
     public void periodic() {
+        logSelf();
+
         IndexerState incomming_state = indexerStateSupplier.get();
         if (cached_indexerState != incomming_state) {
             switch (incomming_state) {

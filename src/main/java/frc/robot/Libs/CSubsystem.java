@@ -22,6 +22,9 @@ public class CSubsystem extends SubsystemBase {
         return new CCommand( name, this );
     }
 
+    /**
+     * Puts the subsystem on the SmartDashboard
+     */
     public void logSelf() {
         SmartDashboard.putData("Subsystems/" + this.getName(), this);
     }

@@ -104,6 +104,8 @@ public class Shooter extends CSubsystem {
      * Initializes motor controllers, flywheel, SysId routine, and sets up default command.
      */
     public Shooter(FuelSim fuelSim) {
+        setName("ShooterSubsystem");
+
         this.fuelSim = fuelSim;
     }
 
@@ -226,6 +228,8 @@ public class Shooter extends CSubsystem {
      */
     @Override
     public void periodic() {
+        logSelf();
+
         // Update telemetry
         shooter_controller.updateTelemetry();
         
