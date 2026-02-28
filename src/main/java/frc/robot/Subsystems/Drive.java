@@ -199,6 +199,14 @@ public class Drive extends CSubsystem {
     }
 
     /**
+     * Checks if the drive subsystem approves of shooting. Really only used when driving to pose.
+     * @return weither the indexer should run or not
+     */
+    public boolean driveApprovesOfShooting() {
+        return false;
+    }
+
+    /**
      * Converts a target position into usable chassis speeds for the drivebase.
      *
      * @param target The target pose
