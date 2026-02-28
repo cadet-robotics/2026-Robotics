@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degree;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
+import static edu.wpi.first.units.Units.Rotation;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.revrobotics.RelativeEncoder;
@@ -30,9 +31,9 @@ public class Climber extends CSubsystem {
     /** Limit switch on DIO 0 - triggers when climber is at bottom position */
     private final DigitalInput limitSwitch = new DigitalInput(0);
 
-    private final float zero_position = RobotConstants.ClimberSubsystemConstants.ZERO_POSITION;
-    private final float climb_position = RobotConstants.ClimberSubsystemConstants.CLIMB_POSITION;
-    private final float max_position = RobotConstants.ClimberSubsystemConstants.MAX_POSITION;
+    private final double zero_position = RobotConstants.ClimberSubsystemConstants.ZERO_POSITION;
+    private final double climb_position = RobotConstants.ClimberSubsystemConstants.CLIMB_POSITION;
+    private final double max_position = RobotConstants.ClimberSubsystemConstants.MAX_POSITION;
 
     public RelativeEncoder climber_encoder = climber_motor_controller.getEncoder();
 
@@ -59,9 +60,12 @@ public class Climber extends CSubsystem {
     
     public CCommand climbUp() {
         return cCommand("ClimberSubsystem.ClimbUp")
+            .onInitialize(() -> {
+                climber_motor.startClosedLoopController();
+            })
             .onExecute(() -> {
                 // Use position control to move to max position
-                this.climber_motor.setPosition(Degree.of(max_position));
+                this.climber_motor.setPosition(Rotation.of(max_position));
             })
             .isFinished(() -> {
                 // Command finishes when position is reached (within tolerance)
@@ -71,9 +75,12 @@ public class Climber extends CSubsystem {
 
     public CCommand climb() {
         return cCommand("ClimberSubsystem.ClimbDown")
+            .onInitialize(() -> {
+                climber_motor.startClosedLoopController();
+            })
             .onExecute(() -> {
                 // Use position control to move to zero position
-                this.climber_motor.setPosition(Degree.of(climb_position));
+                this.climber_motor.setPosition(Rotation.of(climb_position));
             })
             .isFinished(() -> {
                 // Command finishes when position is reached (within tolerance) or limit switch hit
@@ -83,14 +90,16 @@ public class Climber extends CSubsystem {
 
     public CCommand climbZero() {
         return cCommand("ClimberSubsystem.ClimbDown")
+            .onInitialize(() -> {
+                climber_motor.startClosedLoopController();
+            })
             .onExecute(() -> {
                 // Use position control to move to zero position
-                this.climber_motor.setPosition(Degree.of(zero_position));
+                this.climber_motor.setPosition(Rotation.of(zero_position));
             })
-            .isFinished(() -> {
+            .isFinished(
                 // Command finishes when position is reached (within tolerance) or limit switch hit
-                return isAtPosition(zero_position) || isLimitSwitchPressed();
-            });
+                isAtPosition(zero_position) || isLimitSwitchPressed());
     }
 
     /**
@@ -100,11 +109,15 @@ public class Climber extends CSubsystem {
      */
     public CCommand manualClimbUpVoltage() {
         return cCommand("ClimberSubsystem.ManualUpDutyCycle")
+            .onInitialize(() -> {
+                climber_motor.stopClosedLoopController();
+            })
             .onExecute(() -> {
-                this.climber_motor_controller.setVoltage(Volts.of(2));
+                this.climber_motor.setDutyCycle(0.5);
             })
             .onEnd(() -> {
-                this.climber_motor_controller.setVoltage(Volts.of(0));
+                System.out.println("I've Ended");
+                this.climber_motor.setDutyCycle(0);
             });
     }
 
@@ -115,15 +128,18 @@ public class Climber extends CSubsystem {
      */
     public CCommand manualClimbDownVoltage() {
         return cCommand("ClimberSubsystem.ManualDownDutyCycle")
+            .onInitialize(() -> {
+                climber_motor.stopClosedLoopController();
+            })
             .onExecute(() -> {
-                this.climber_motor_controller.set(-0.1);
+                climber_motor.setDutyCycle(-0.5);
             })
             .onEnd(() -> {
-                this.climber_motor_controller.setVoltage(Volts.of(0));
+                this.climber_motor.setDutyCycle(0);
             });
     }
 
-    private boolean isAtPosition(float target_position) {
+    private boolean isAtPosition(double target_position) {
         double currentPos = this.climber_encoder.getPosition();
         return Math.abs(currentPos - target_position) < 0.05; // 5% tolerance
     }
@@ -140,7 +156,7 @@ public class Climber extends CSubsystem {
     @Override
     public void periodic() {
         // Update telemetry
-        climber_motor.updateTelemetry();
+        // climber_motor.updateTelemetry();
         
         // Publish limit switch state to SmartDashboard
         SmartDashboard.putBoolean("Climber/Limit Switch", isLimitSwitchPressed());
@@ -158,6 +174,6 @@ public class Climber extends CSubsystem {
     @Override
     public void simulationPeriodic() {
         // Update simulation
-        climber_motor.simIterate();
+        // climber_motor.simIterate();
     }
 }

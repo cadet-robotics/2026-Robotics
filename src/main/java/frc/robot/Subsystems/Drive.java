@@ -491,19 +491,11 @@ public class Drive extends CSubsystem {
      * @return SwerveInputStream that aims at the hub and allows driver control of heading with right stick
      */
     public SwerveInputStream buildAimingStream() {
-        // TODO: the following can be changed when .aimHeadingOffset is implemented in YAGSL
-        DoubleSupplier getTranlationXi = () -> -1 * getTranslationX.getAsDouble();
-        DoubleSupplier getTranlationYi = () -> -1 * getTranslationY.getAsDouble();
-
-        return SwerveInputStream.of(swerveDrive, getTranlationXi, getTranlationYi)
-            .scaleTranslation(0.8)
-            .allianceRelativeControl(true)
-            .deadband(0.12)
+        return baseStream.copy()
             .aim(FieldConstants.hub.get())
             .aimWhile(true)
-            .translationHeadingOffset(Rotation2d.k180deg);
-        // .aimOffset(Rotation2d.k180deg)
-        // .aimOffsetEnabled(true);
+            .aimHeadingOffset(Rotation2d.k180deg)
+            .aimHeadingOffset(true);
     }
 
     /**
@@ -529,6 +521,7 @@ public class Drive extends CSubsystem {
             RobotConstants.DriveSubsystemConstants.rotationProfiledController
         )
         .driveToPoseEnabled(true);
+
     }
 
     public SwerveInputStream buildRelativeTurningStream() {
@@ -541,6 +534,8 @@ public class Drive extends CSubsystem {
         return baseStream
             .copy()
             .scaleTranslation(0.5)
-            .scaleRotation(0.5);
+            .scaleRotation(1)
+            .withControllerHeadingAxis(getHeadingX, getHeadingY)
+            .headingWhile(true);
     }
 }
