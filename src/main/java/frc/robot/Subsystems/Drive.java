@@ -463,19 +463,18 @@ public class Drive extends CSubsystem {
      * @return SwerveInputStream that aims at the hub and allows driver control of heading with right stick
      */
     public SwerveInputStream buildAimingStream() {
-        // TODO: the following can be changed when .aimHeadingOffset is implemented in YAGSL
-        DoubleSupplier getTranlationXi = () -> -1 * getTranslationX.getAsDouble();
-        DoubleSupplier getTranlationYi = () -> -1 * getTranslationY.getAsDouble();
 
-        return SwerveInputStream.of(swerveDrive, getTranlationXi, getTranlationYi)
-            .scaleTranslation(0.8)
-            .allianceRelativeControl(true)
-            .deadband(0.12)
+        DoubleSupplier getHeadingXSafe = () -> ShootOnTheMove.heading.isPresent() ? ShootOnTheMove.heading.get().getCos() : 0.0;
+        DoubleSupplier getHeadingYSafe = () -> ShootOnTheMove.heading.isPresent() ? ShootOnTheMove.heading.get().getSin() : 0.0;
+
+        return baseStream.copy()
+            .withControllerHeadingAxis(getHeadingXSafe, getHeadingYSafe)
+            .headingWhile(ShootOnTheMove.heading.isPresent())
+            // Fallback
             .aim(FieldConstants.hub.get())
-            .aimWhile(true)
-            .translationHeadingOffset(Rotation2d.k180deg);
-        // .aimOffset(Rotation2d.k180deg)
-        // .aimOffsetEnabled(true);
+            .aimWhile(ShootOnTheMove.heading.isEmpty())
+            .aimHeadingOffset(Rotation2d.k180deg)
+            .aimHeadingOffset(ShootOnTheMove.heading.isEmpty());
     }
 
     /**
@@ -507,5 +506,11 @@ public class Drive extends CSubsystem {
         return baseStream
             .copy()
             .withControllerRotationAxis(() -> -1 * driverController.getRightX());
+    }
+
+    @Override
+    public void periodic() {
+        ShootOnTheMove.calculateLeadHeading(getPose(), swerveDrive.getFieldVelocity());
+        ShootOnTheMove.publish();
     }
 }
