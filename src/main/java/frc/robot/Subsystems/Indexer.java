@@ -3,18 +3,12 @@ package frc.robot.Subsystems;
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
-import static edu.wpi.first.units.Units.RPM;
-
-import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.IndexerState;
-import frc.robot.Constants.RobotConstants.IndexerSubsystemConstants;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
 import yams.gearing.GearBox;
@@ -59,9 +53,6 @@ public class Indexer extends CSubsystem {
             smcConfig
     );
 
-    /** SysId routine for motor characterization. */
-    private final SysIdRoutine sysIdRoutine;
-
     /** Reference to the shooter subsystem. */
     private Shooter shooterSubsystem;
     /** Reference to the intake subsystem. */
@@ -74,7 +65,6 @@ public class Indexer extends CSubsystem {
 
     /**
      * Constructs a new Indexer subsystem.
-     * Initializes motor controllers, SysId routine, and sets up default command.
      * 
      * @param shooterSubsystem the shooter subsystem instance
      * @param intakeSubsystem the intake subsystem instance
@@ -83,26 +73,6 @@ public class Indexer extends CSubsystem {
         this.shooterSubsystem = shooterSubsystem;
         this.intakeSubsystem = intakeSubsystem;
         this.driveSubsystem = driveSubsystem;
-        
-        // Initialize SysId routine
-        sysIdRoutine = new SysIdRoutine(
-            new SysIdRoutine.Config(),
-            new SysIdRoutine.Mechanism(
-                (volts) -> indexerController.setVoltage(volts),
-                null, // No log consumer (can add if needed)
-                this
-            )
-        );
-        
-        // Register SysId commands with SmartDashboard
-        SmartDashboard.putData("Indexer/SysId Quasistatic Forward", 
-            sysIdRoutine.quasistatic(SysIdRoutine.Direction.kForward));
-        SmartDashboard.putData("Indexer/SysId Quasistatic Reverse", 
-            sysIdRoutine.quasistatic(SysIdRoutine.Direction.kReverse));
-        SmartDashboard.putData("Indexer/SysId Dynamic Forward", 
-            sysIdRoutine.dynamic(SysIdRoutine.Direction.kForward));
-        SmartDashboard.putData("Indexer/SysId Dynamic Reverse", 
-            sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse));
         
         setDefaultCommand(indexerHandler());
     }
@@ -132,14 +102,9 @@ public class Indexer extends CSubsystem {
                     IntakeState intakeState = intakeSubsystem.getState();
                     boolean shooterUpToSpeed = shooterSubsystem.isUpToSpeed();
                     
-                    // Log input states
-                    SmartDashboard.putString("Indexer/Handler/ShooterState", shooterState.toString());
-                    SmartDashboard.putString("Indexer/Handler/IntakeState", intakeState.toString());
-                    SmartDashboard.putBoolean("Indexer/Handler/ShooterUpToSpeed", shooterUpToSpeed);
-                    
                     // Determine indexer action based on subsystem states
                     // Only feed shooter if it's on AND up to speed and any drive/aim gating passes
-                    boolean allowedByDrive = true;
+                    boolean allowedByDrive = true; // TODO: make aiming and autodriving regulate shooting
                     boolean allowedByAim = true;
                     if (driveSubsystem != null) {
                         if (driveSubsystem.isDriveToPoseActive()) {
@@ -153,24 +118,19 @@ public class Indexer extends CSubsystem {
                     if ( ((shooterState == ShooterState.On && shooterUpToSpeed) && allowedByDrive && allowedByAim) || intakeState == IntakeState.REV ) {
                         indexerState = IndexerState.SHOOTER;
                         indexerController.setVoltage(edu.wpi.first.units.Units.Volts.of(-11));
-                        SmartDashboard.putString("Indexer/Handler/Action", "Feeding Shooter");
-                        SmartDashboard.putNumber("Indexer/Handler/Voltage", -11.0);
                     } else if ( intakeState == IntakeState.ON ) {
                         indexerState = IndexerState.HOPPER;
                         indexerController.setVoltage(edu.wpi.first.units.Units.Volts.of(11));
-                        SmartDashboard.putString("Indexer/Handler/Action", "Feeding Hopper");
-                        SmartDashboard.putNumber("Indexer/Handler/Voltage", 11.0);
                     } else {
                         indexerState = IndexerState.OFF;
                         indexerController.setVoltage(edu.wpi.first.units.Units.Volts.of(0));
-                        SmartDashboard.putString("Indexer/Handler/Action", "Stopped");
-                        SmartDashboard.putNumber("Indexer/Handler/Voltage", 0.0);
                     }
-                    
-                    // Log current indexer state
-                    SmartDashboard.putString("Indexer/Handler/IndexerState", indexerState.toString());
                 });
     }
+
+    public IndexerState getState() {
+        return indexerState;
+    }    
 
     /**
      * Updates telemetry data for the indexer motor controller.

@@ -3,12 +3,10 @@ package frc.robot.Subsystems;
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
-import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Volts;
 
 import java.util.function.Supplier;
 
-import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.SparkMax;
 
@@ -35,32 +33,17 @@ public class Intake extends CSubsystem {
     private final SparkMax intakeMotorController = new SparkMax(15, SparkLowLevel.MotorType.kBrushless);
     /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
     private final SmartMotorControllerConfig smcConfig  = new SmartMotorControllerConfig(this)
-        .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
-        // Feedback Constants (PID Constants)
-        .withClosedLoopController(0.001, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
-        .withSimClosedLoopController(50, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
-        // Feedforward Constants
         .withFeedforward(new SimpleMotorFeedforward(0, 0, 0))
         .withSimFeedforward(new SimpleMotorFeedforward(0, 0, 0))
-        // Telemetry name and verbosity level
         .withTelemetry("IntakeMotor",SmartMotorControllerConfig.TelemetryVerbosity.HIGH)
-        // Gearing from the motor rotor to final shaft.
-        // In this example GearBox.fromReductionStages(3,4) is the same as GearBox.fromStages("3:1","4:1") which corresponds to the gearbox attached to your motor.
-        // You could also use .withGearing(12) which does the same thing.
         .withGearing(new MechanismGearing(GearBox.fromReductionStages(4, 4)))
-            // Motor properties to prevent over currenting.
-            .withMotorInverted(false)
+        .withMotorInverted(false)
         .withIdleMode(SmartMotorControllerConfig.MotorMode.COAST)
         .withStatorCurrentLimit(Amps.of(40));
 
     /** Smart motor controller wrapper for the intake motor. */
     private final SmartMotorController intakeController = new SparkWrapper( intakeMotorController, DCMotor.getNeoVortex(1), smcConfig);
 
-    /** SysId routine for motor characterization. */
-    private final SysIdRoutine sysIdRoutine;
-
-    /** Current state of the intake mechanism. */
-    private IntakeState currentState = IntakeState.OFF;
     /** Target state of the intake mechanism. */
     private IntakeState state = IntakeState.OFF;
 
@@ -84,28 +67,6 @@ public class Intake extends CSubsystem {
         this.getShooterState = shooter_subsystem::getState;
         this.isShooterUpToSpeed = shooter_subsystem::isUpToSpeed;
         this.driveSubsystem = driveSubsystem;
-
-        // Initialize SysId routine
-        sysIdRoutine = new SysIdRoutine(
-            new SysIdRoutine.Config(),
-            new SysIdRoutine.Mechanism(
-                (volts) -> intakeController.setVoltage(volts),
-                null, // No log consumer (can add if needed)
-                this
-            )
-        );
-        
-        // Register SysId commands with SmartDashboard
-        SmartDashboard.putData("Intake/SysId Quasistatic Forward", 
-            sysIdRoutine.quasistatic(SysIdRoutine.Direction.kForward));
-        SmartDashboard.putData("Intake/SysId Quasistatic Reverse", 
-            sysIdRoutine.quasistatic(SysIdRoutine.Direction.kReverse));
-        SmartDashboard.putData("Intake/SysId Dynamic Forward", 
-            sysIdRoutine.dynamic(SysIdRoutine.Direction.kForward));
-        SmartDashboard.putData("Intake/SysId Dynamic Reverse", 
-            sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse));
-        
-        // setDefaultCommand(intakeHandler());
     }
 
     public CCommand intakeToggler() {

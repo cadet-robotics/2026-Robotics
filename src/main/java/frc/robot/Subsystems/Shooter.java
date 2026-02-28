@@ -2,47 +2,28 @@ package frc.robot.Subsystems;
 
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.DegreesPerSecond;
-import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Pounds;
-import static edu.wpi.first.units.Units.RPM;
-import static edu.wpi.first.units.Units.Volt;
-import static edu.wpi.first.units.Units.Volts;
 
 import java.util.Optional;
-import java.util.spi.CurrencyNameProvider;
 
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
-import com.revrobotics.spark.SparkBase;
-import com.revrobotics.spark.config.SparkFlexConfig;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.wpilibj.DutyCycle;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.RobotBase;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.RobotConstants.ShooterSubsystemConstants;
 import frc.robot.Constants.ShooterState;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
-import frc.robot.Subsystems.Drive;
 import frc.robot.Libs.FuelSim;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Meters;
-// Radians import no longer used because turret is fixed at 180 degrees
-import yams.gearing.GearBox;
-import yams.gearing.MechanismGearing;
 import yams.mechanisms.config.FlyWheelConfig;
 import yams.mechanisms.velocity.FlyWheel;
 import yams.motorcontrollers.SmartMotorController;
@@ -93,14 +74,9 @@ public class Shooter extends CSubsystem {
     /** Flywheel controller for managing shooter wheel velocity. */
     public FlyWheel shooter_controller = new FlyWheel(shooter_config);
     
-    /** SysId routine for motor characterization. */
-    private final SysIdRoutine sysIdRoutine;
-
     /** Reference to the fuel simulation manager (optional - null on robot/hardware). */
     private final FuelSim fuelSim;
 
-    /** Current state of the shooter mechanism. */
-    private ShooterState current_state = ShooterState.Off;
     /** Target state of the shooter mechanism. */
     private ShooterState state = ShooterState.Off;
     // Simulation spawn timing
@@ -127,58 +103,6 @@ public class Shooter extends CSubsystem {
      */
     public Shooter(FuelSim fuelSim) {
         this.fuelSim = fuelSim;
-        // Configure the follower motor using SparkFlexConfig to follow the leader motor inverted
-        
-        // Initialize SysId routine with 7V max voltage and data logging
-        sysIdRoutine = new SysIdRoutine(
-            new SysIdRoutine.Config(
-                edu.wpi.first.units.Units.Volts.of(1).per(edu.wpi.first.units.Units.Second), // Ramp rate: 1V per second
-                edu.wpi.first.units.Units.Volts.of(7), // Max voltage: 7V
-                null, // Default timeout (no timeout)
-                null  // Default log state
-            ),
-            new SysIdRoutine.Mechanism(
-                (volts) -> smc.setVoltage(volts),
-                log -> {
-                    // Log motor data for SysId analysis
-                    log.motor("shooter")
-                        .voltage(edu.wpi.first.units.Units.Volts.mutable(
-                            shooter_motor_controller.getAppliedOutput() * shooter_motor_controller.getBusVoltage()))
-                        .angularPosition(edu.wpi.first.units.Units.Rotations.mutable(
-                            shooter_motor_controller.getEncoder().getPosition()))
-                        .angularVelocity(edu.wpi.first.units.Units.RotationsPerSecond.mutable(
-                            shooter_motor_controller.getEncoder().getVelocity() / 60.0));
-                },
-                this
-            )
-        );
-        
-        // Register SysId commands with SmartDashboard
-        SmartDashboard.putData("Shooter/SysId Quasistatic Forward", 
-            sysIdRoutine.quasistatic(SysIdRoutine.Direction.kForward));
-        SmartDashboard.putData("Shooter/SysId Quasistatic Reverse", 
-            sysIdRoutine.quasistatic(SysIdRoutine.Direction.kReverse));
-        SmartDashboard.putData("Shooter/SysId Dynamic Forward", 
-            sysIdRoutine.dynamic(SysIdRoutine.Direction.kForward));
-        SmartDashboard.putData("Shooter/SysId Dynamic Reverse", 
-            sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse));
-        
-        // setDefaultCommand(shooterHandler());
-    }
-
-    /**
-     * Launch a fuel using FuelSim while leading the target. Returns true if a launch was performed.
-     */
-    public boolean leadAndLaunch(Pose2d robotPose, Pose2d targetPose, Translation2d targetVelocity) {
-        if (this.fuelSim == null) return false;
-
-        try {
-            // No turret on robot and fixed elevation: always launch with 80 degrees elevation
-            fuelSim.launchFuel(MetersPerSecond.of(7), Degrees.of(80.0), Degrees.of(180.0), Meters.of(0.9));
-            return true;
-        } catch (IllegalStateException ex) {
-            return false;
-        }
     }
 
     /**
@@ -188,37 +112,6 @@ public class Shooter extends CSubsystem {
     public Optional<Pose2d> getLastIdealPose() {
         if (Double.isNaN(lastIdealX) || Double.isNaN(lastIdealY)) return Optional.empty();
         return Optional.of(new Pose2d(lastIdealX, lastIdealY, new edu.wpi.first.math.geometry.Rotation2d(0.0)));
-    }
-
-    /**
-     * Gets the SysId quasistatic forward routine command.
-     * 
-     * @return command that runs the SysId quasistatic forward test
-     */
-    public Command getSysIdQuasistaticForward() {
-        return sysIdRoutine.quasistatic(SysIdRoutine.Direction.kForward);
-    }
-
-    /**
-     * Gets the SysId dynamic forward routine command.
-     * 
-     * @return command that runs the SysId dynamic forward test
-     */
-    public Command getSysIdDynamicForward() {
-        return sysIdRoutine.dynamic(SysIdRoutine.Direction.kForward);
-    }
-
-    /**
-     * Gets the complete SysId routine that runs all four tests in sequence.
-     * Runs: Quasistatic Forward → Quasistatic Reverse → Dynamic Forward → Dynamic Reverse
-     * 
-     * @return command that runs the complete SysId characterization routine
-     */
-    public Command getCompleteSysIdRoutine() {
-        return sysIdRoutine.quasistatic(SysIdRoutine.Direction.kForward)
-            .andThen(sysIdRoutine.quasistatic(SysIdRoutine.Direction.kReverse))
-            .andThen(sysIdRoutine.dynamic(SysIdRoutine.Direction.kForward))
-            .andThen(sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse));
     }
 
     /**
@@ -235,6 +128,7 @@ public class Shooter extends CSubsystem {
      * @return true if shooter is at or above target speed (within 5% tolerance), false otherwise
      */
     public boolean isUpToSpeed() {
+        // TODO, rework entire system to use velocity setpoints based on the distance, I need sleep
         if (state == ShooterState.Off) {
             return false;
         }
@@ -253,20 +147,12 @@ public class Shooter extends CSubsystem {
         }
         
         // Calculate tolerance (5% of target speed)
-        double tolerance = Math.abs(targetVelocityRPM * 0.10);
+        // double tolerance = Math.abs(targetVelocityRPM * 0.5);
         
         // Check if within tolerance
-        boolean atSpeed = currentVelocityRPM >= 50;
-        
-        // Log to SmartDashboard
-        SmartDashboard.putBoolean("Shooter/IsUpToSpeed", atSpeed);
-        SmartDashboard.putNumber("Shooter/CurrentVelocityRPM", currentVelocityRPM);
-        SmartDashboard.putNumber("Shooter/TargetVelocityRPM", targetVelocityRPM);
-        SmartDashboard.putNumber("Shooter/VelocityError", Math.abs(currentVelocityRPM - targetVelocityRPM));
+        // boolean atSpeed = currentVelocityRPM >= 50;
 
         return currentVelocityRPM >= 50;
-
-        // return atSpeed;
     }
 
     /**

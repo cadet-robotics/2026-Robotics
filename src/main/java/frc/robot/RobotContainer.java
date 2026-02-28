@@ -7,20 +7,9 @@ package frc.robot;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 
-import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
-
-import com.ctre.phoenix6.swerve.jni.SwerveJNI.DriveState;
-
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import frc.robot.Constants.RobotConstants;
-import frc.robot.Constants.RobotConstants.ControllerConstants;
-import frc.robot.Constants.RobotConstants.FieldConstants;
 import frc.robot.Libs.FuelSim;
 import frc.robot.Subsystems.Climber;
 import frc.robot.Subsystems.Drive;
@@ -29,7 +18,6 @@ import frc.robot.Subsystems.Intake;
 import frc.robot.Subsystems.Shaker;
 import frc.robot.Subsystems.Shooter;
 import frc.robot.Subsystems.Vision.Vision;
-import swervelib.SwerveInputStream;
 
 public class RobotContainer {
 
@@ -51,26 +39,17 @@ public class RobotContainer {
 
   public RobotContainer() {
     // Setup and initialize Subsystems here
-    drive_subsystem = new Drive();
+    drive_subsystem = new Drive(driverController, codriverController);
     vision_subsystem = drive_subsystem.getVision();
     shooter_subsystem = new Shooter(fuelSim);
-      // Register robot pose supplier for simulation projectile manager
     intake_subsystem = new Intake(shooter_subsystem, drive_subsystem);
     indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem, drive_subsystem );
     climber_subsystem = new Climber();
-    shaker_subsystem = new Shaker();
+    shaker_subsystem = new Shaker(indexer_subsystem);
 
     autos = new Autos(this, drive_subsystem );
 
-  // Default lead target velocity (m/s) for testing — editable on SmartDashboard
-  edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Lead/TargetVx", 0.0);
-  edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Lead/TargetVy", 0.0);
-  // Tunable multiplier to increase/decrease computed lead time (default >1 to increase lead)
-  edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putNumber("Lead/TimeMultiplier", 1.25);
-  edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putData("ActualSubsystem",drive_subsystem);
-
     configureBindings();
-    configureDriving();
     if ( Robot.isSimulation() ) {
       configureSim();
     }
@@ -103,7 +82,44 @@ public class RobotContainer {
     driverController.x().onTrue(intake_subsystem.intakeToggler());
 
     driverController.b().whileTrue(drive_subsystem.resetOdom());
+  
+    drive_subsystem.setDefaultCommand(
+      drive_subsystem.driveWithChassisSpeedsSupplier(
+        drive_subsystem.buildDefaultStream()
+      ));
 
+    // Shoots, Shakes, and Aims
+    driverController.rightTrigger()
+      .whileTrue( 
+        new ParallelCommandGroup(
+          shooter_subsystem.Shoot(),
+          drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildAimingStream())
+        ));
+    
+    // Uses Relative Turning
+    driverController.leftTrigger()
+      .whileTrue(
+        drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildRelativeTurningStream())
+      );
+
+    // Drives to a point on the curve (the arc where we are best equipped to shoot accurately)
+    driverController.a()
+      .whileTrue(
+        drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream())
+      );
+
+    // Barf
+    driverController.rightBumper()
+      .whileTrue(intake_subsystem.IntakeBarf());
+
+    // Intake controls on codriver bumpers
+    driverController.leftBumper().whileTrue(intake_subsystem.IntakeOn());
+
+    driverController.y().whileTrue(drive_subsystem.resetOdom());
+
+    driverController.x().whileTrue(drive_subsystem.driveToClimb());
+
+    driverController.b().whileTrue(drive_subsystem.resetOdom());
     // Shooter bindings on codriver controller
     // right trigger - shoot forwards
     codriverController.rightTrigger().whileTrue( new ParallelCommandGroup(
