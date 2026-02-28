@@ -189,15 +189,36 @@ public class RealVision extends SubsystemBase implements Vision {
         // System.out.println(periodicCounter);
         SmartDashboard.putNumber("Vision/Periodic Counter", periodicCounter);
         
-        // Log current drive pose
-        Pose2d currentDrivePose = driveSubsystem.getPose();
-        SmartDashboard.putNumber("Vision/Drive Pose X", currentDrivePose.getX());
-        SmartDashboard.putNumber("Vision/Drive Pose Y", currentDrivePose.getY());
-        SmartDashboard.putNumber("Vision/Drive Pose Rotation", currentDrivePose.getRotation().getDegrees());
+        Pose2d currentPose;
+
+        // First try to get initial pose estimate from front limelight using megatag
+        LimelightHelpers.PoseEstimate initialFrontEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-front");
+        if(initialFrontEstimate != null && initialFrontEstimate.tagCount > 0 && initialFrontEstimate.tagCount == 1 && initialFrontEstimate.rawFiducials.length == 1 &&
+            initialFrontEstimate.rawFiducials[0].ambiguity < .7 && initialFrontEstimate.rawFiducials[0].distToCamera < 3){
+            // If valid front megatag pose, use it
+            currentPose = initialFrontEstimate.pose;        
+        } else {
+            // If no valid front megatag pose, try back limelight
+            LimelightHelpers.PoseEstimate initialBackEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-rear");
+            if(initialBackEstimate != null && initialBackEstimate.tagCount > 0 && initialBackEstimate.tagCount == 1 && initialBackEstimate.rawFiducials.length == 1 &&
+                initialBackEstimate.rawFiducials[0].ambiguity < .7 && initialBackEstimate.rawFiducials[0].distToCamera < 3){
+                    // If valid back megatag pose, use it
+                    currentPose = initialBackEstimate.pose;
+            } else {
+                // If no valid megatag pose, use current odometry pose
+                currentPose = driveSubsystem.getPose();
+            }
+        }
         
+        
+        // Log current drive pose
+        SmartDashboard.putNumber("Vision/Drive Pose X", currentPose.getX());
+        SmartDashboard.putNumber("Vision/Drive Pose Y", currentPose.getY());
+        SmartDashboard.putNumber("Vision/Drive Pose Rotation", currentPose.getRotation().getDegrees());
+
         // Update robot orientation in NetworkTables for both limelights BEFORE fetching pose estimates
         // This ensures MegaTag2 has the latest odometry data
-        double yawDegrees = currentDrivePose.getRotation().getDegrees();
+        double yawDegrees = currentPose.getRotation().getDegrees();
         LimelightHelpers.SetRobotOrientation("limelight-front", yawDegrees, 0, 0, 0, 0, 0);
         LimelightHelpers.SetRobotOrientation("limelight-rear", yawDegrees, 0, 0, 0, 0, 0);
         
