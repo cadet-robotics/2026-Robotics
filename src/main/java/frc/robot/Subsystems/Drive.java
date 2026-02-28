@@ -16,6 +16,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -314,20 +315,47 @@ public class Drive extends CSubsystem {
      * @return command that drives to closest climb position
      */
     public Command driveToClimb() {
+        Pose2d preTargetPose;
         Pose2d targetPose;
+
         if (DriverStation.getAlliance().get() == Alliance.Blue) {
             // Choose the closest blue climb position
+            Pose2d preBlueRight = RobotConstants.FieldConstants.BLUE_RIGHT_CLIMB_POSITION.transformBy(new Transform2d(5.0, -5.0, Rotation2d.fromDegrees(0)));
             Pose2d blueRight = RobotConstants.FieldConstants.BLUE_RIGHT_CLIMB_POSITION;
+            Pose2d preBlueLeft = RobotConstants.FieldConstants.BLUE_LEFT_CLIMB_POSITION.transformBy(new Transform2d(-5.0, 5.0, Rotation2d.fromDegrees(0)));
             Pose2d blueLeft = RobotConstants.FieldConstants.BLUE_LEFT_CLIMB_POSITION;
-            targetPose = (getPose().getTranslation().getDistance(blueRight.getTranslation()) < 
-                          getPose().getTranslation().getDistance(blueLeft.getTranslation())) ? blueRight : blueLeft;
+            preTargetPose = (getPose().getTranslation().getDistance(preBlueRight.getTranslation()) < 
+                          getPose().getTranslation().getDistance(preBlueLeft.getTranslation())) ? preBlueRight : preBlueLeft;
+            if(preTargetPose.equals(preBlueRight)) {
+                targetPose = blueRight;
+            } else {
+                targetPose = blueLeft;
+            }
+            
         } else {
             // Choose the closest red climb position
+            Pose2d preRedRight = RobotConstants.FieldConstants.RED_RIGHT_CLIMB_POSITION.transformBy(new Transform2d(-5.0, -5.0, Rotation2d.fromDegrees(0)));
             Pose2d redRight = RobotConstants.FieldConstants.RED_RIGHT_CLIMB_POSITION;
+            Pose2d preRedLeft = RobotConstants.FieldConstants.RED_LEFT_CLIMB_POSITION.transformBy(new Transform2d(5.0, 5.0, Rotation2d.fromDegrees(0)));
             Pose2d redLeft = RobotConstants.FieldConstants.RED_LEFT_CLIMB_POSITION;
-            targetPose = (getPose().getTranslation().getDistance(redRight.getTranslation()) < 
-                          getPose().getTranslation().getDistance(redLeft.getTranslation())) ? redRight : redLeft;
+            preTargetPose = (getPose().getTranslation().getDistance(preRedRight.getTranslation()) < 
+                          getPose().getTranslation().getDistance(preRedLeft.getTranslation())) ? preRedRight : preRedLeft;
+            if(preTargetPose.equals(preRedRight)) {
+                targetPose = redRight;
+            } else {
+                targetPose = redLeft;
+            }
         }
+
+        driveToTargetPose(preTargetPose, 0.0)
+            .beforeStarting(() -> {
+                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putString("PathPlanner/Status", "Starting pathfind to preClimb");
+                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putString("PathPlanner/Target", 
+                    String.format("(%.2f, %.2f, %.1f°)", preTargetPose.getX(), preTargetPose.getY(), preTargetPose.getRotation().getDegrees()));
+            })
+            .andThen(() -> {
+                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putString("PathPlanner/Status", "Pathfind to preClimb complete");
+            });
 
         return driveToTargetPose(targetPose, 0.0)
             .beforeStarting(() -> {
