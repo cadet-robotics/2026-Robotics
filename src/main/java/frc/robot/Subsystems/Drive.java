@@ -508,4 +508,11 @@ public class Drive extends CSubsystem {
             .copy()
             .withControllerRotationAxis(() -> -1 * driverController.getRightX());
     }
+
+    public SwerveInputStream buildHalfDriveStream() {
+        return baseStream
+            .copy()
+            .scaleTranslation(0.5)
+            .scaleRotation(0.5);
+    }
 }

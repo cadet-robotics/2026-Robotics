@@ -67,20 +67,15 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
+    // Driver Controls
+
     // SysId complete routine for shooter characterization - runs all 4 tests in sequence
     // driverController.a().onTrue(shooter_subsystem.getCompleteSysIdRoutine());
 
     // Reset odometry to current Limelight pose
     // driverController.b().onTrue(drive_subsystem.resetOdometryWithVision());
-    
-    driverController.rightBumper().whileTrue( new ParallelCommandGroup( 
-        intake_subsystem.IntakeBarf(),
-        shaker_subsystem.shake()
-    ));
 
-    // Intake controls on driver bumpers
-    driverController.x().onTrue(intake_subsystem.intakeToggler());
-
+    // Reset Gyro
     driverController.b().whileTrue(drive_subsystem.resetOdom());
   
     drive_subsystem.setDefaultCommand(
@@ -89,12 +84,12 @@ public class RobotContainer {
       ));
 
     // Shoots, Shakes, and Aims
-    driverController.rightTrigger()
-      .whileTrue( 
-        new ParallelCommandGroup(
-          shooter_subsystem.Shoot(),
-          drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildAimingStream())
-        ));
+    // driverController.rightTrigger()
+    //   .whileTrue( 
+    //     new ParallelCommandGroup(
+    //       shooter_subsystem.Shoot(),
+    //       drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildAimingStream())
+    //     ));
     
     // Uses Relative Turning
     driverController.leftTrigger()
@@ -102,38 +97,33 @@ public class RobotContainer {
         drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildRelativeTurningStream())
       );
 
-    // Drives to a point on the curve (the arc where we are best equipped to shoot accurately)
-    driverController.a()
+    // Cuts the speed of the bot in half for more precise maneuvering
+    driverController.rightTrigger()
       .whileTrue(
-        drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream())
+        drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildHalfDriveStream())
       );
 
+    // Drives to a point on the curve (the arc where we are best equipped to shoot accurately)
+    // driverController.a()
+    //   .whileTrue(
+    //     drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream())
+    //   );
+
     // Barf
-    driverController.rightBumper()
-      .whileTrue(intake_subsystem.IntakeBarf());
+    driverController.rightBumper().whileTrue(intake_subsystem.IntakeBarf());
 
-    // Intake controls on codriver bumpers
-    driverController.leftBumper().whileTrue(intake_subsystem.IntakeOn());
+    // Toggle the intake on / off
+    driverController.x().onTrue(intake_subsystem.intakeToggler());
 
-    driverController.y().whileTrue(drive_subsystem.resetOdom());
+    
+    //Co Driver Controls
 
-    driverController.x().whileTrue(drive_subsystem.driveToClimb());
 
-    driverController.b().whileTrue(drive_subsystem.resetOdom());
-    // Shooter bindings on codriver controller
     // right trigger - shoot forwards
-    codriverController.rightTrigger().whileTrue( new ParallelCommandGroup(
-        shooter_subsystem.Shoot(),
-        shaker_subsystem.shake()
-    ));
-
-    // // Right trigger - shoot backwards
-    // codriverController.rightTrigger().whileTrue( new ParallelCommandGroup(
-    //     shooter_subsystem.ShootBackwards(), 
-    //     shaker_subsystem.shake()));
+    codriverController.rightTrigger().whileTrue(shooter_subsystem.Shoot());
 
     // Automatic driving to the closest climb position
-    // codriverController.x().whileTrue(drive_subsystem.driveToClimb());
+    // codriverController.a().whileTrue(drive_subsystem.driveToClimb());
 
     codriverController.povUp().whileTrue(climber_subsystem.manualClimbUpVoltage());
     codriverController.povDown().whileTrue(climber_subsystem.manualClimbDownVoltage());
@@ -148,31 +138,31 @@ public class RobotContainer {
     // codriverController.b().whileTrue(climber_subsystem.climbZero());
   }
 
-  public void configureDriving() {
-    DoubleSupplier getTranslationX = () -> -1 * MathUtil.applyDeadband(this.driverController.getLeftY(),
-        ControllerConstants.deadbandX);
-    DoubleSupplier getTranslationY = () -> -1 * MathUtil.applyDeadband(this.driverController.getLeftX(),
-        ControllerConstants.deadbandY);
-    DoubleSupplier getHeadingX = () -> -1 * driverController.getRightX();
-    DoubleSupplier getHeadingY = () -> -1 * driverController.getRightY();
+  // public void configureDriving() {
+  //   DoubleSupplier getTranslationX = () -> -1 * MathUtil.applyDeadband(this.driverController.getLeftY(),
+  //       ControllerConstants.deadbandX);
+  //   DoubleSupplier getTranslationY = () -> -1 * MathUtil.applyDeadband(this.driverController.getLeftX(),
+  //       ControllerConstants.deadbandY);
+  //   DoubleSupplier getHeadingX = () -> -1 * driverController.getRightX();
+  //   DoubleSupplier getHeadingY = () -> -1 * driverController.getRightY();
 
-    SwerveInputStream baseStream = SwerveInputStream.of(drive_subsystem.getSwerveDrive(), getTranslationX, getTranslationY)
-      .scaleTranslation(0.8)
-      .allianceRelativeControl(true)
-      .deadband(0.12);
+  //   SwerveInputStream baseStream = SwerveInputStream.of(drive_subsystem.getSwerveDrive(), getTranslationX, getTranslationY)
+  //     .scaleTranslation(0.8)
+  //     .allianceRelativeControl(true)
+  //     .deadband(0.12);
 
-    // The default SIS
-    SwerveInputStream defaultStream = baseStream.copy()
-      .withControllerHeadingAxis(getHeadingX, getHeadingY)
-      .headingWhile(true);
+  //   // The default SIS
+  //   SwerveInputStream defaultStream = baseStream.copy()
+  //     .withControllerHeadingAxis(getHeadingX, getHeadingY)
+  //     .headingWhile(true);
 
-    // A SIS with relative turning
-    SwerveInputStream relativeTurning = baseStream.copy()
-      .withControllerRotationAxis(() -> -1 * driverController.getRightX());
+  //   // A SIS with relative turning
+  //   SwerveInputStream relativeTurning = baseStream.copy()
+  //     .withControllerRotationAxis(() -> -1 * driverController.getRightX());
 
-    SwerveInputStream halfSpeed = baseStream.copy()
-      .scaleTranslation(0.5)
-      .scaleRotation(0.5);
+  //   SwerveInputStream halfSpeed = baseStream.copy()
+  //     .scaleTranslation(0.5)
+  //     .scaleRotation(0.5);
 
     // A SIS which looks at the hub but uses a heading vector that's opposite the hub direction
     // SwerveInputStream looking = baseStream
@@ -191,24 +181,24 @@ public class RobotContainer {
     //   .driveToPoseEnabled(true);
 
     // Will use default by default
-    drive_subsystem.setDefaultCommand(
-      drive_subsystem.driveWithChassisSpeedsSupplier(defaultStream).withName("headingDrive")
-    );
+  //   drive_subsystem.setDefaultCommand(
+  //     drive_subsystem.driveWithChassisSpeedsSupplier(defaultStream).withName("headingDrive")
+  //   );
 
-    BooleanSupplier relativeDriveCondition = driverController.leftTrigger()::getAsBoolean;
-    BooleanSupplier aimDriveCondition = driverController.rightTrigger()::getAsBoolean;
-    BooleanSupplier autoDriveCondition = driverController.a()::getAsBoolean;
+  //   BooleanSupplier relativeDriveCondition = driverController.leftTrigger()::getAsBoolean;
+  //   BooleanSupplier aimDriveCondition = driverController.rightTrigger()::getAsBoolean;
+  //   BooleanSupplier autoDriveCondition = driverController.a()::getAsBoolean;
 
-  // We do a little bit of binding here which might be bad idk
-    driverController
-      .leftTrigger()
-      .and(driverController.a().negate())
-      .and(() -> !autoDriveCondition.getAsBoolean())
-      .whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(relativeTurning).withName("rotationDrive"));
+  // // We do a little bit of binding here which might be bad idk
+  //   driverController
+  //     .leftTrigger()
+  //     .and(driverController.a().negate())
+  //     .and(() -> !autoDriveCondition.getAsBoolean())
+  //     .whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(relativeTurning).withName("rotationDrive"));
 
-    driverController
-      .rightTrigger()
-      .whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(halfSpeed).withName("halfDrive"));
+    // driverController
+    //   .rightTrigger()
+    //   .whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(halfSpeed).withName("halfDrive"));
 
     // driverController
     //   .rightTrigger()
@@ -227,21 +217,20 @@ public class RobotContainer {
     // driverController.a().onFalse(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(false)));
 
     // Button to fire a lead shot using SmartDashboard-specified target velocity (for testing)
-    driverController.x().onTrue(
-      Commands.runOnce(() -> {
-        double vx = edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.getNumber("Lead/TargetVx", 0.0);
-        double vy = edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.getNumber("Lead/TargetVy", 0.0);
-        // Subtract robot field velocity so target velocity is relative to the ground minus robot motion.
-        var speeds = drive_subsystem.getSwerveDrive().getFieldVelocity();
-        double rvx = speeds.vxMetersPerSecond;
-        double rvy = speeds.vyMetersPerSecond;
-        shooter_subsystem.leadAndLaunch(drive_subsystem.getPose(), RobotConstants.FieldConstants.hub, new edu.wpi.first.math.geometry.Translation2d(vx - rvx, vy - rvy));
-      }, shooter_subsystem)
-    );
-  }
+    // driverController.x().onTrue(
+    //   Commands.runOnce(() -> {
+    //     double vx = edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.getNumber("Lead/TargetVx", 0.0);
+    //     double vy = edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.getNumber("Lead/TargetVy", 0.0);
+    //     // Subtract robot field velocity so target velocity is relative to the ground minus robot motion.
+    //     var speeds = drive_subsystem.getSwerveDrive().getFieldVelocity();
+    //     double rvx = speeds.vxMetersPerSecond;
+    //     double rvy = speeds.vyMetersPerSecond;
+    //     shooter_subsystem.leadAndLaunch(drive_subsystem.getPose(), RobotConstants.FieldConstants.hub, new edu.wpi.first.math.geometry.Translation2d(vx - rvx, vy - rvy));
+    //   }, shooter_subsystem)
+    // );
+  
 
   public Command getAutonomousCommand() {
     return this.autos.getAutonomousCommand();
   }
-
 }
