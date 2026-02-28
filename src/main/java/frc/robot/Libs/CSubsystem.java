@@ -12,11 +12,6 @@ public class CSubsystem extends SubsystemBase {
         super();
     }
 
-    public CSubsystem(String name) {
-        super();
-        this.setName(name);
-    }
-
     // Creating a new command
     public CCommand cCommand() {
         return new CCommand( this );
