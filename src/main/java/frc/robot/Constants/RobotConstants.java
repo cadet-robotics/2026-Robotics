@@ -69,9 +69,9 @@ public class RobotConstants {
         public static final double maxSpeed = 6; // Meters per second
 
         /** PID constants for translational (x, y) movement control. */
-        public static final PIDConstants translationPidConstants = new PIDConstants(1, 0, 0);
+        public static final PIDConstants translationPidConstants = new PIDConstants(3.5, 0, 1);
         /** PID constants for rotational (theta) movement control. */
-        public static final PIDConstants rotationPidConstants = new PIDConstants(1, 0, 0);
+        public static final PIDConstants rotationPidConstants = new PIDConstants(6, 0, 0);
 
         /** Motion profile constraints for translation (meters/sec, meters/sec^2) */
         public static final double TRANSLATION_MAX_VELOCITY = maxSpeed; // m/s
@@ -120,11 +120,18 @@ public class RobotConstants {
         
         // PID Constants
         /** Proportional gain for shooter velocity PID control. */
+        // public static final double SHOOTER_KP = .125;
+        // /** Integral gain for shooter velocity PID control. */
+        // public static final double SHOOTER_KI = 0.0;
+        // /** Derivative gain for shooter velocity PID control. */
+        // public static final double SHOOTER_KD = 5.0;
+
+        /** Proportional gain for shooter velocity PID control. */
         public static final double SHOOTER_KP = 1.5;
         /** Integral gain for shooter velocity PID control. */
         public static final double SHOOTER_KI = 0.0;
         /** Derivative gain for shooter velocity PID control. */
-        public static final double SHOOTER_KD = 0.0;
+        public static final double SHOOTER_KD = 0;
 
         /** Distance in feet of the middle of the shooting range from the hub */
         public static final double midRange = 2.3;
