@@ -36,7 +36,7 @@ public class Intake extends CSubsystem {
         .withFeedforward(new SimpleMotorFeedforward(0, 0, 0))
         .withSimFeedforward(new SimpleMotorFeedforward(0, 0, 0))
         .withTelemetry("IntakeMotor",SmartMotorControllerConfig.TelemetryVerbosity.HIGH)
-        .withGearing(new MechanismGearing(GearBox.fromReductionStages(4, 4)))
+        .withGearing(new MechanismGearing(GearBox.fromReductionStages(9)))
         .withMotorInverted(false)
         .withIdleMode(SmartMotorControllerConfig.MotorMode.COAST)
         .withStatorCurrentLimit(Amps.of(40));
