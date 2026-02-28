@@ -43,7 +43,7 @@ public class Climber extends CSubsystem {
         .withSubsystem(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
         .withClosedLoopController( new ExponentialProfilePIDController(1, 0, 0, ExponentialProfilePIDController.createConstraints(Volts.of(12), DegreesPerSecond.of(5600 * 360), DegreesPerSecondPerSecond.of(5600 * 360))))
-        .withSimClosedLoopController(1, 0, 0, DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
+        .withSimClosedLoopController(1, 0, 0, DegreesPerSecond.of(5600 * 360), DegreesPerSecondPerSecond.of(5600 * 360))
         .withFeedforward(new SimpleMotorFeedforward(0, 0, 0))
         .withSimFeedforward(new SimpleMotorFeedforward(0, 0, 0))
         .withTelemetry("Climber Motor",SmartMotorControllerConfig.TelemetryVerbosity.HIGH)
@@ -156,7 +156,7 @@ public class Climber extends CSubsystem {
     @Override
     public void periodic() {
         // Update telemetry
-        // climber_motor.updateTelemetry();
+        climber_motor.updateTelemetry();
         
         // Publish limit switch state to SmartDashboard
         SmartDashboard.putBoolean("Climber/Limit Switch", isLimitSwitchPressed());
