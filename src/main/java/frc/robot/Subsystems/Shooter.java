@@ -221,7 +221,7 @@ public class Shooter extends CSubsystem {
         shooter_controller.updateTelemetry();
         
         // Log whether shooter is up to speed
-        isUpToSpeed();
+        // isUpToSpeed();
     }
 
     /**

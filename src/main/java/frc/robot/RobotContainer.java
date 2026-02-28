@@ -30,7 +30,7 @@ public class RobotContainer {
   private final Indexer indexer_subsystem;
   private final Shooter shooter_subsystem;
   private final Climber climber_subsystem;
-  private final Shaker shaker_subsystem;
+  // private final Shaker shaker_subsystem;
 
   public FuelSim fuelSim = new FuelSim("FuelSim");
 
@@ -45,7 +45,7 @@ public class RobotContainer {
     intake_subsystem = new Intake(shooter_subsystem, drive_subsystem);
     indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem, drive_subsystem );
     climber_subsystem = new Climber();
-    shaker_subsystem = new Shaker(indexer_subsystem);
+    // shaker_subsystem = new Shaker(indexer_subsystem);
 
     autos = new Autos(this, drive_subsystem );
 
@@ -80,9 +80,10 @@ public class RobotContainer {
   
     drive_subsystem.setDefaultCommand(
       drive_subsystem.driveWithChassisSpeedsSupplier(
-        drive_subsystem.buildDefaultStream()
+        drive_subsystem.buildRelativeTurningStream()
       ));
 
+    driverController.leftBumper().whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream()));
     // Shoots, Shakes, and Aims
     // driverController.rightTrigger()
     //   .whileTrue( 
@@ -94,7 +95,7 @@ public class RobotContainer {
     // Uses Relative Turning
     driverController.leftTrigger()
       .whileTrue(
-        drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildRelativeTurningStream())
+        drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDefaultStream())
       );
 
     // Cuts the speed of the bot in half for more precise maneuvering
@@ -113,7 +114,7 @@ public class RobotContainer {
     driverController.rightBumper().whileTrue(intake_subsystem.IntakeBarf());
 
     // Toggle the intake on / off
-    driverController.x().onTrue(intake_subsystem.intakeToggler());
+    driverController.x().whileTrue(intake_subsystem.intakeToggler());
 
     
     //Co Driver Controls
@@ -125,17 +126,17 @@ public class RobotContainer {
     // Automatic driving to the closest climb position
     // codriverController.a().whileTrue(drive_subsystem.driveToClimb());
 
-    codriverController.povUp().whileTrue(climber_subsystem.manualClimbUpVoltage());
-    codriverController.povDown().whileTrue(climber_subsystem.manualClimbDownVoltage());
+    codriverController.a().whileTrue(climber_subsystem.manualClimbUpVoltage());
+    codriverController.b().whileTrue(climber_subsystem.manualClimbDownVoltage());
 
     // Climber controls on codriver X, Y, and B
-    // codriverController.x().whileTrue(climber_subsystem.climbUp());
+    codriverController.povUp().whileTrue(climber_subsystem.climbUp());
     
     // Y button - climb to climbing position (middle position)
-    // codriverController.y().whileTrue(climber_subsystem.climb());
+    codriverController.povLeft().whileTrue(climber_subsystem.climb());
     
     // B button - climb down
-    // codriverController.b().whileTrue(climber_subsystem.climbZero());
+    codriverController.povDown().whileTrue(climber_subsystem.climbZero());
   }
 
   // public void configureDriving() {
