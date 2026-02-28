@@ -17,6 +17,7 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Subsystems.Drive;
 
 import java.util.List;
@@ -26,7 +27,7 @@ import java.util.Optional;
  * PhotonVision-based simulation vision system for AprilTag detection and pose estimation.
  * This replaces Limelight in simulation with PhotonVision's simulation capabilities.
  */
-public class SimVision implements Vision, Subsystem {
+public class SimVision extends SubsystemBase implements Vision {
 
     private final Drive driveSubsystem;
     private final PhotonCamera camera;
@@ -98,44 +99,6 @@ public class SimVision implements Vision, Subsystem {
     @Override
     public boolean seesAprilTag() {
         return getLatestResult().map(PhotonPipelineResult::hasTargets).orElse(false);
-    }
-
-    @Override
-    public void changeFilter(int id) {
-        // PhotonVision uses setPipelineIndex to change pipelines
-        this.camera.setPipelineIndex(id);
-    }
-
-    @Override
-    public Optional<Integer> getTagID() {
-        return getLatestResult()
-            .filter(PhotonPipelineResult::hasTargets)
-            .map(PhotonPipelineResult::getBestTarget)
-            .map(PhotonTrackedTarget::getFiducialId);
-    }
-
-    @Override
-    public Optional<Double> getTx() {
-        return getLatestResult()
-            .filter(PhotonPipelineResult::hasTargets)
-            .map(PhotonPipelineResult::getBestTarget)
-            .map(PhotonTrackedTarget::getYaw);  // Horizontal offset in degrees
-    }
-
-    @Override
-    public Optional<Double> getTy() {
-        return getLatestResult()
-            .filter(PhotonPipelineResult::hasTargets)
-            .map(PhotonPipelineResult::getBestTarget)
-            .map(PhotonTrackedTarget::getPitch);  // Vertical offset in degrees
-    }
-
-    @Override
-    public Optional<Double> getTa() {
-        return getLatestResult()
-            .filter(PhotonPipelineResult::hasTargets)
-            .map(PhotonPipelineResult::getBestTarget)
-            .map(PhotonTrackedTarget::getArea);  // Target area as percentage of image
     }
 
     @Override
