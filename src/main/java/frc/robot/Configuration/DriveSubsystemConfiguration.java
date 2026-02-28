@@ -9,10 +9,8 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.Constants.RobotConstants.DriveSubsystemConstants;
 import frc.robot.Subsystems.Drive;
-import org.json.simple.parser.ParseException;
 import swervelib.SwerveDrive;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 

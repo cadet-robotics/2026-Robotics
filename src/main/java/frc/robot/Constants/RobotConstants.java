@@ -1,26 +1,21 @@
 package frc.robot.Constants;
 
-import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RPM;
+
+import java.util.function.Supplier;
 
 import com.pathplanner.lib.config.PIDConstants;
 
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.units.DistanceUnit;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  * Container class for all robot constants.
@@ -32,7 +27,6 @@ public class RobotConstants {
      * Defines deadband values to prevent stick drift and unintended movement.
      */
     public static final class ControllerConstants {
-        // TODO: Configure when controllers arrive
         /** Deadband threshold for X-axis joystick input (prevents stick drift). */
         public static final double deadbandX = 0.15;
         /** Deadband threshold for Y-axis joystick input (prevents stick drift). */
@@ -49,9 +43,9 @@ public class RobotConstants {
         /** Red alliance hub/speaker position (x, y) in inches. */
         public static final Translation2d RED_HUB_POSITION = new Translation2d( Inches.of(469.11).in(Meters), Inches.of(158.84).in(Meters) );
 
-        public static final Pose2d hub = DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get() == Alliance.Blue 
+        public static Supplier<Pose2d> hub = () -> { return DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get() == Alliance.Blue 
             ? new Pose2d(BLUE_HUB_POSITION, Rotation2d.fromDegrees(0)) 
-            : new Pose2d(RED_HUB_POSITION, Rotation2d.fromDegrees(0));
+            : new Pose2d(RED_HUB_POSITION, Rotation2d.fromDegrees(0)); };
         
         /** Blue alliance rightside climb position (x, y, Rotation2d) in inches and degrees. */
         public static final Pose2d BLUE_RIGHT_CLIMB_POSITION = new Pose2d(37.6075, 107.5065, Rotation2d.fromDegrees(0));
