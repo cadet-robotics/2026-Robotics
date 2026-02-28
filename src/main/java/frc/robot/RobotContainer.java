@@ -93,12 +93,6 @@ public class RobotContainer {
 
     // Reset odometry to current Limelight pose
     // driverController.b().onTrue(drive_subsystem.resetOdometryWithVision());
-
-    
-    
-    
-    
-    
     
     driverController.rightBumper().whileTrue( new ParallelCommandGroup( 
         intake_subsystem.IntakeBarf(),
@@ -128,7 +122,6 @@ public class RobotContainer {
     codriverController.povUp().whileTrue(climber_subsystem.manualClimbUpVoltage());
     codriverController.povDown().whileTrue(climber_subsystem.manualClimbDownVoltage());
 
-
     // Climber controls on codriver X, Y, and B
     // codriverController.x().whileTrue(climber_subsystem.climbUp());
     
@@ -137,10 +130,6 @@ public class RobotContainer {
     
     // B button - climb down
     // codriverController.b().whileTrue(climber_subsystem.climbZero());
-
-    // Manual voltage control for climber on codriver triggers
-    // codriverController.leftTrigger().whileTrue(climber_subsystem.manualClimbUpVoltage());
-    // driverController.y().whileTrue(climber_subsystem.manualClimbDownVoltage());
   }
 
   public void configureDriving() {
