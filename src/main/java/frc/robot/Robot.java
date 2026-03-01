@@ -69,7 +69,10 @@ public class Robot extends TimedRobot {
   @Override
   public void disabledPeriodic() {
       // Update vision system in disabled mode to keep limelights seeded with robot pose for accurate autonomous readings when transitioning to autonomous mode
-      visionSubsystem.disabledPeriodic();
+      // Only need to do this with the real robot
+      if (Robot.isReal()) {
+        visionSubsystem.disabledPeriodic();
+      }
   }
 
   /**
