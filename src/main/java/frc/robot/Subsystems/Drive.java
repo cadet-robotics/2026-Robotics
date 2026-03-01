@@ -187,6 +187,36 @@ public class Drive extends CSubsystem {
     }
 
     /**
+     * Returns true if the robot is on our alliance's half of the field.
+     *
+     * The field midline is computed as the midpoint between the blue and red hub
+     * X coordinates. For the Blue alliance the 'our half' is the lower-X side;
+     * for the Red alliance it's the higher-X side.
+     *
+     * @return true if the robot's X position is on our alliance half, false otherwise
+     */
+    public boolean isOnOurSide() {
+        // Use hub X positions as the boundary. The field is effectively split in thirds
+        // for our purposes: if we're Blue, we're 'on our side' when our X is less than
+        // the Blue hub's X; if Red, when our X is greater than the Red hub's X.
+        Pose2d pose = getPose();
+        double x = pose.getX();
+
+        // If alliance can't be determined, default to true per request
+        if (!DriverStation.getAlliance().isPresent()) {
+            return true;
+        }
+
+        DriverStation.Alliance alliance = DriverStation.getAlliance().get();
+
+        if (alliance == DriverStation.Alliance.Blue) {
+            return x < FieldConstants.BLUE_HUB_POSITION.getX();
+        } else {
+            return x > FieldConstants.RED_HUB_POSITION.getX();
+        }
+    }
+
+    /**
      * Resets the odometry to a specified pose.
      * 
      * @param pose2d the new pose to reset to
