@@ -28,7 +28,7 @@ public class RobotContainer {
   private final Indexer indexer_subsystem;
   private final Shooter shooter_subsystem;
   private final Climber climber_subsystem;
-  // private final Shaker shaker_subsystem;
+  private final Shaker shaker_subsystem;
 
   public FuelSim fuelSim = new FuelSim("FuelSim");
 
@@ -43,7 +43,7 @@ public class RobotContainer {
     intake_subsystem = new Intake(shooter_subsystem, drive_subsystem);
     indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem, drive_subsystem );
     climber_subsystem = new Climber();
-    // shaker_subsystem = new Shaker(indexer_subsystem);
+    shaker_subsystem = new Shaker(indexer_subsystem);
 
     autos = new Autos(this, drive_subsystem );
 
