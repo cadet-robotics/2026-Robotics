@@ -107,7 +107,7 @@ public class Indexer extends CSubsystem {
                     
                     // Determine indexer action based on subsystem states
                     // Only feed shooter if it's on AND up to speed and any drive/aim gating passes
-                    boolean allowedByDrive = true; // TODO: make aiming and autodriving regulate shooting
+                    boolean allowedByDrive = true;
                     boolean allowedByAim = true;
                     if (driveSubsystem != null) {
                         if (driveSubsystem.isDriveToPoseActive()) {
