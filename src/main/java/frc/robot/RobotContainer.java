@@ -10,6 +10,8 @@ import static edu.wpi.first.units.Units.Meters;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.Constants.IntakeState;
 import frc.robot.Libs.FuelSim;
 import frc.robot.Subsystems.Climber;
 import frc.robot.Subsystems.Drive;
@@ -18,6 +20,7 @@ import frc.robot.Subsystems.Intake;
 import frc.robot.Subsystems.Shaker;
 import frc.robot.Subsystems.Shooter;
 import frc.robot.Subsystems.Vision.Vision;
+import swervelib.parser.json.modules.DriveConversionFactorsJson;
 
 public class RobotContainer {
 
@@ -40,7 +43,11 @@ public class RobotContainer {
     drive_subsystem = new Drive(driverController, codriverController);
     vision_subsystem = drive_subsystem.getVision();
     shooter_subsystem = new Shooter(fuelSim);
-    intake_subsystem = new Intake(shooter_subsystem, drive_subsystem);
+      // Provide shooter with drive reference so sim spawning can be gated to autodrive target
+      shooter_subsystem.setDriveSubsystem(drive_subsystem);
+      intake_subsystem = new Intake(shooter_subsystem, drive_subsystem);
+      // Wire intake into shooter so shooter can request ball removal from the hopper
+      shooter_subsystem.setIntakeSubsystem(intake_subsystem);
     indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem, drive_subsystem );
     climber_subsystem = new Climber();
     shaker_subsystem = new Shaker(indexer_subsystem);
@@ -61,6 +68,19 @@ public class RobotContainer {
         drive_subsystem::getPose, // Supplier<Pose2d> of robot pose
         drive_subsystem.getSwerveDrive()::getFieldVelocity); // Supplier<ChassisSpeeds> of field-centric chassis speeds
 
+    fuelSim.registerIntake(
+      Inches.of(20.5/2),
+      Inches.of(27.5+2),
+      Inches.of(-27.5/3), 
+      Inches.of(27.5/3),
+      () -> {
+        return intake_subsystem.getState() == IntakeState.ON && !intake_subsystem.isHopperFull();
+      }, 
+      () -> {
+        intake_subsystem.addToHopper();
+      });   
+
+    fuelSim.spawnStartingFuel();
     fuelSim.start(); // enables the simulation to run (updateSim must still be called periodically)
   }
 
@@ -81,7 +101,15 @@ public class RobotContainer {
         drive_subsystem.buildRelativeTurningStream()
       ));
 
-    driverController.leftBumper().whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream()));
+    driverController.leftBumper().and(drive_subsystem::isOnOurSide).whileTrue(
+      new ParallelCommandGroup(
+        drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream()),
+        shooter_subsystem.Shoot()
+      ));
+    // Keep Drive informed when the drive-to-curve input stream is active so other subsystems
+    // can gate behavior (indexer/intake) based on whether we're at the pose.
+    driverController.leftBumper().onTrue(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(true)));
+    driverController.leftBumper().onFalse(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(false)));
     // Shoots, Shakes, and Aims
     // driverController.rightTrigger()
     //   .whileTrue( 
@@ -97,10 +125,10 @@ public class RobotContainer {
       );
 
     // Cuts the speed of the bot in half for more precise maneuvering
-    driverController.rightTrigger()
-      .whileTrue(
-        drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildHalfDriveStream())
-      );
+    // driverController.rightTrigger()
+    //   .whileTrue(
+    //     drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildHalfDriveStream())
+    //   );
 
     // Drives to a point on the curve (the arc where we are best equipped to shoot accurately)
     // driverController.a()
@@ -118,8 +146,14 @@ public class RobotContainer {
     //Co Driver Controls
 
 
-    // right trigger - shoot forwards
-    codriverController.rightTrigger().whileTrue(shooter_subsystem.Shoot());
+    // right trigger - shoot forwards, but only when robot is on our side of the field
+    // Inform Drive when aim mode is active so indexer/intake can require being aimed before feeding
+    driverController.rightTrigger().onTrue(Commands.runOnce(() -> drive_subsystem.setAimModeActive(true)));
+    driverController.rightTrigger().onFalse(Commands.runOnce(() -> drive_subsystem.setAimModeActive(false)));
+
+    driverController.rightTrigger()
+      .and(() -> drive_subsystem.isOnOurSide())
+      .whileTrue(new ParallelCommandGroup(shooter_subsystem.Shoot(), drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildAimingStream())));
 
     // Automatic driving to the closest climb position
     // codriverController.a().whileTrue(drive_subsystem.driveToClimb());

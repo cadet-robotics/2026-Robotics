@@ -49,6 +49,39 @@ public class Intake extends CSubsystem {
 
     private final Supplier<ShooterState> getShooterState;
     private final Supplier<Boolean> isShooterUpToSpeed;
+    
+    private int hopperCount = 0;
+    private int hopperMax = 23;
+
+    public int getHopperCount() {
+        return hopperCount;
+    }
+    
+    public boolean isHopperFull() {
+        return hopperCount >= hopperMax;
+    }
+
+    public void addToHopper() {
+        if (hopperCount < hopperMax) {
+            hopperCount++;
+        }
+        SmartDashboard.putNumber("Intake/HopperCount", hopperCount);
+    }
+
+    /**
+     * Removes a ball from the hopper
+     * @return whether the remove was successful (ie hopper was already empty)
+     */
+    public boolean removeFromHopper() {
+        SmartDashboard.putNumber("Intake/HopperCount", hopperCount);
+        if (hopperCount == 0) {
+            return false;
+        }
+        hopperCount--;
+        SmartDashboard.putNumber("Intake/HopperCount", hopperCount);
+        return true;
+    }
+
     // Optional Drive dependency for gating intake while shooting
     private final Drive driveSubsystem;
 
@@ -148,6 +181,10 @@ public class Intake extends CSubsystem {
         } else {
             this.intakeController.setVoltage(Volts.of(0));
         }
+        // Publish whether the simulation intake condition is active
+        // (matches the supplier used by FuelSim.registerIntake)
+        boolean simIntakeActive = (this.state == IntakeState.ON) && (!this.isHopperFull());
+        SmartDashboard.putBoolean("Intake/SimActive", simIntakeActive);
     }
 
     /**

@@ -217,6 +217,55 @@ public class Drive extends CSubsystem {
     }
 
     /**
+     * Returns true if autodrive (drive-to-pose) is active and the robot is within the given
+     * translational and rotational tolerances of the target pose used by the autodrive stream.
+     *
+     * <p>For the built-in "drive-to-curve" autodrive this computes the target using the current
+     * left-stick X input and the same snapping logic as {@link #getClosestPointOnCurve(double)}.
+     *
+     * @param posToleranceMeters translational tolerance in meters
+     * @param rotToleranceRad rotational tolerance in radians
+     * @return true if autodrive is active and robot is at the target pose
+     */
+    public boolean isAtAutoDriveTarget(double posToleranceMeters, double rotToleranceRad) {
+        // If autodrive isn't active, by definition we're not "at the target while autodrive is on".
+        if (!isDriveToPoseActive()) {
+            return false;
+        }
+
+        try {
+            // For the common "drive-to-curve" autodrive the target is computed from the left stick X.
+            Pose2d targetPose = getClosestPointOnCurve(driverController.getLeftX());
+            Pose2d current = getPose();
+
+            double dist = current.getTranslation().getDistance(targetPose.getTranslation());
+
+            double desiredAngle = targetPose.getRotation().getRadians();
+            double currentAngle = current.getRotation().getRadians();
+            double angleError = Math.atan2(Math.sin(desiredAngle - currentAngle), Math.cos(desiredAngle - currentAngle));
+
+            boolean within = (dist <= posToleranceMeters) && (Math.abs(angleError) <= rotToleranceRad);
+
+            SmartDashboard.putBoolean("Drive/AutoDrive/AtTarget", within);
+            SmartDashboard.putNumber("Drive/AutoDrive/TargetDistMeters", dist);
+            SmartDashboard.putNumber("Drive/AutoDrive/AngleErrorRad", angleError);
+
+            return within;
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
+    /**
+     * Convenience overload that uses reasonable defaults for positional and rotational tolerances.
+     * @return true if autodrive is active and the robot is at the target pose
+     */
+    public boolean isAtAutoDriveTarget() {
+        // Default: 0.25 m position tolerance, 10 degrees rotation tolerance
+        return isAtAutoDriveTarget(0.25, Math.toRadians(10.0));
+    }
+
+    /**
      * Resets the odometry to a specified pose.
      * 
      * @param pose2d the new pose to reset to
@@ -276,14 +325,6 @@ public class Drive extends CSubsystem {
             // Drive the swerve with given speeds (robot-relative)
             swerveDrive.drive(translation, omega, true, false);
         });
-    }
-
-    /**
-     * Checks if the drive subsystem approves of shooting. Really only used when driving to pose.
-     * @return weither the indexer should run or not
-     */
-    public boolean driveApprovesOfShooting() {
-        return false;
     }
     
     /**
@@ -445,10 +486,6 @@ public class Drive extends CSubsystem {
 
         // vector from hub to robot: v = p - h
         Translation2d v = p.minus(h);
-        if ( Math.abs(controllerOffset) > 0.1 ) {
-            Translation2d offset = new Translation2d( 0, -1);
-            v.plus(offset);
-        }
 
         // distance ||v||
         double dist = Math.hypot(v.getX(), v.getY());

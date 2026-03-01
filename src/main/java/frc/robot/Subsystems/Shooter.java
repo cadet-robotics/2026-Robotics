@@ -79,6 +79,11 @@ public class Shooter extends CSubsystem {
     /** Reference to the fuel simulation manager (optional - null on robot/hardware). */
     private final FuelSim fuelSim;
 
+    /** Optional reference to the Intake subsystem so Shooter can request ball removal from hopper. */
+    private frc.robot.Subsystems.Intake intakeSubsystem = null;
+    // Optional reference to the Drive subsystem to gate simulation spawns when using autodrive
+    private Drive driveSubsystem = null;
+
     /** Target state of the shooter mechanism. */
     private ShooterState state = ShooterState.Off;
     // Simulation spawn timing
@@ -107,6 +112,35 @@ public class Shooter extends CSubsystem {
         setName("ShooterSubsystem");
 
         this.fuelSim = fuelSim;
+    }
+
+    /**
+     * Set the Intake subsystem reference so the Shooter can interact with it.
+     * This is provided after construction (RobotContainer sets it).
+     *
+     * @param intake the Intake subsystem instance
+     */
+    public void setIntakeSubsystem(frc.robot.Subsystems.Intake intake) {
+        this.intakeSubsystem = intake;
+    }
+
+    /**
+     * Provide a reference to the Drive subsystem so simulated ball spawning can be gated to
+     * only occur when the robot is at the autodrive target.
+     */
+    public void setDriveSubsystem(Drive drive) {
+        this.driveSubsystem = drive;
+    }
+
+    /**
+     * Request the Intake subsystem to remove a ball from the hopper.
+     * Returns true if a ball was removed, false if the hopper was empty or intake not set.
+     */
+    public boolean removeBallFromHopper() {
+        if (this.intakeSubsystem == null) {
+            return false;
+        }
+        return this.intakeSubsystem.removeFromHopper();
     }
 
     /**
@@ -253,7 +287,36 @@ public class Shooter extends CSubsystem {
             if (now - lastSpawnNs >= intervalNs) {
                 lastSpawnNs = now;
                 try {
-                    fuelSim.launchFuel(MetersPerSecond.of(shooter_controller.getSpeed().magnitude() * 60 * 8.0 / 3000), Degrees.of(80.0), Degrees.of(180.0), Meters.of(0.9));
+                    // Only spawn/launch projectiles in sim when either the Drive subsystem isn't present
+                    // or when the robot is at the autodrive target with a small tolerance. Use 2% positional
+                    // tolerance relative to mid-range and a small rotational tolerance (3.6 deg = 2% of 180deg).
+                    boolean allowSpawn = true;
+                    if (this.driveSubsystem != null) {
+                        // Allow spawn if the robot is aimed at the hub within 3 degrees (override)
+                        // Otherwise, if autodrive is active require being at the autodrive target distance.
+                        if (this.driveSubsystem.isAimedAtHub(Math.toRadians(3.0))) {
+                            // If we're pointing at the hub within 3°, always allow spawn.
+                            allowSpawn = true;
+                        } else if (this.driveSubsystem.isDriveToPoseActive()) {
+                            // When autodrive is active, require the robot's distance to the hub be within a
+                            // tolerance of the configured midRange used to generate the drive-to-curve target
+                            // AND require the robot to be pointing at the hub within 3 degrees.
+                            double midRange = RobotConstants.ShooterSubsystemConstants.midRange;
+                            double posTol = midRange * 0.05; // 5% tolerance around midRange
+                            double hubDist = this.driveSubsystem.getPose().getTranslation().getDistance(
+                                RobotConstants.FieldConstants.hub.get().getTranslation());
+                            boolean distOk = Math.abs(hubDist - midRange) <= posTol;
+                            boolean angleOk = this.driveSubsystem.isAimedAtHub(Math.toRadians(3.0));
+                            allowSpawn = distOk && angleOk;
+                        } else {
+                            // Not autodriving and not aimed: allow normal spawning.
+                            allowSpawn = true;
+                        }
+                    }
+
+                    if (allowSpawn && removeBallFromHopper()) {
+                        fuelSim.launchFuel(MetersPerSecond.of(8), Degrees.of(80.0), Degrees.of(180.0), Meters.of(0.9));
+                    }
                 } catch (IllegalStateException ex) {
                     // Robot not registered with fuelSim yet; ignore spawn attempt
                 }

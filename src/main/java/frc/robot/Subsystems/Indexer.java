@@ -18,6 +18,7 @@ import yams.motorcontrollers.SmartMotorControllerConfig;
 import yams.motorcontrollers.local.SparkWrapper;
 import frc.robot.Constants.IntakeState;
 import frc.robot.Constants.ShooterState;
+import frc.robot.Constants.RobotConstants;
 
 /**
  * Indexer subsystem that moves game pieces between the intake and shooter.
@@ -110,7 +111,15 @@ public class Indexer extends CSubsystem {
                     boolean allowedByAim = true;
                     if (driveSubsystem != null) {
                         if (driveSubsystem.isDriveToPoseActive()) {
-                            allowedByDrive = true;
+                            // When autodrive is active, allow shooting only if the robot's distance
+                            // to the hub is within a tolerance of the midRange used to generate the curve.
+                            double midRange = RobotConstants.ShooterSubsystemConstants.midRange;
+                            double posTol = midRange * 0.05; // 5% tolerance around midRange
+                            double hubDist = driveSubsystem.getPose().getTranslation().getDistance(
+                                RobotConstants.FieldConstants.hub.get().getTranslation());
+                            boolean distOk = Math.abs(hubDist - midRange) <= posTol;
+                            boolean angleOk = driveSubsystem.isAimedAtHub(Math.toRadians(3.0));
+                            allowedByDrive = distOk && angleOk;
                         }
                         if (driveSubsystem.isAimModeActive()) {
                             allowedByAim = driveSubsystem.isAimedAtHub(Math.toRadians(6.0));
