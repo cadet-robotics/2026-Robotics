@@ -294,7 +294,7 @@ public class Shooter extends CSubsystem {
                     if (this.driveSubsystem != null) {
                         // Allow spawn if the robot is aimed at the hub within 3 degrees (override)
                         // Otherwise, if autodrive is active require being at the autodrive target distance.
-                        if (this.driveSubsystem.isAimedAtHub(Math.toRadians(3.0))) {
+                        if (this.driveSubsystem.isAimedAtHub(Math.toRadians(6.0))) {
                             // If we're pointing at the hub within 3°, always allow spawn.
                             allowSpawn = true;
                         } else if (this.driveSubsystem.isDriveToPoseActive()) {
@@ -306,7 +306,7 @@ public class Shooter extends CSubsystem {
                             double hubDist = this.driveSubsystem.getPose().getTranslation().getDistance(
                                 RobotConstants.FieldConstants.hub.get().getTranslation());
                             boolean distOk = Math.abs(hubDist - midRange) <= posTol;
-                            boolean angleOk = this.driveSubsystem.isAimedAtHub(Math.toRadians(3.0));
+                            boolean angleOk = this.driveSubsystem.isAimedAtHub(Math.toRadians(6.0));
                             allowSpawn = distOk && angleOk;
                         } else {
                             // Not autodriving and not aimed: allow normal spawning.

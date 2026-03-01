@@ -509,30 +509,70 @@ public class Drive extends CSubsystem {
         double continuousTargetDist = Math.hypot(continuousTarget.getX() - h.getX(), continuousTarget.getY() - h.getY());
         SmartDashboard.putNumber("Drive/ContinuousTargetDistanceFromHubMeters", continuousTargetDist);
 
-        // Snap to nearest vertex on the published hub arc so the logged target matches the visual arc
-        final int arcPoints = 64;
-        int nearestIndex = 0;
-        double nearestDistSq = Double.POSITIVE_INFINITY;
-        Translation2d snappedTarget = continuousTarget;
-        for (int i = 0; i < arcPoints; ++i) {
-            double theta = 2.0 * Math.PI * ((double) i / (double) arcPoints);
-            double px = h.getX() + desiredDistanceMeters * Math.cos(theta);
-            double py = h.getY() + desiredDistanceMeters * Math.sin(theta);
-            double dx = continuousTarget.getX() - px;
-            double dy = continuousTarget.getY() - py;
-            double d2 = dx * dx + dy * dy;
-            if (d2 < nearestDistSq) {
-                nearestDistSq = d2;
-                nearestIndex = i;
-                snappedTarget = new Translation2d(px, py);
-            }
+        // Use the controller offset to slide left/right along the hub arc.
+        // Map controllerOffset (-1..1) to an angular offset around the hub. We choose
+        // a max angular excursion of +/- 90 degrees (pi/2) so the driver can move left/right
+        // along the arc without flipping to the far side.
+        double baseAngle = Math.atan2(v.getY(), v.getX()); // angle from hub->robot
+        double maxAngle = Math.PI / 2.0; // +/- 90 degrees
+        double angleOffset = MathUtil.clamp(controllerOffset, -1.0, 1.0) * maxAngle;
+        double chosenTheta = baseAngle + angleOffset;
+
+        // Compensate the aiming angle slightly opposite the robot's horizontal travel to
+        // counteract momentum. Compute lateral sign relative to the hub->robot vector and
+        // scale compensation by current speed fraction (0..1) with a small max angle.
+        try {
+            var vel = swerveDrive.getFieldVelocity();
+            double vx = vel.vxMetersPerSecond;
+            double vy = vel.vyMetersPerSecond;
+            double travelSpeed = Math.hypot(vx, vy);
+            double travelAngle = Math.atan2(vy, vx);
+
+            // relative angle from hub->robot to travel vector
+            double rel = travelAngle - baseAngle;
+            // sign of lateral component (sin(rel) > 0 means movement is 'left' of the hub->robot line)
+            double lateralSign = Math.signum(Math.sin(rel));
+
+            // scale: fraction of max chassis speed (guard positive)
+            double speedFraction = 0.0;
+            double maxSpeed = swerveDrive.getMaximumChassisVelocity();
+            if (maxSpeed > 1e-6) speedFraction = MathUtil.clamp(travelSpeed / maxSpeed, 0.0, 1.0);
+
+            // make compensation stronger when driver offsets further from center: scale by |controllerOffset|
+            double offsetFactor = Math.abs(MathUtil.clamp(controllerOffset, -1.0, 1.0));
+            double offsetGain = 6.0; // stronger multiplier to make offset influence very noticeable
+
+            // maximum compensation angle (radians) at full speed and full offset
+            double maxCompensation = Math.toRadians(40.0); // substantially larger ( ~40 degrees )
+
+            // scale compensation proportionally with lateral motion magnitude so straighter
+            // forward/back motion doesn't add huge compensation. Use lateral magnitude (0..1).
+            double lateralMagnitude = Math.abs(Math.sin(rel));
+
+            // Compose final compensation: sign * speed fraction * offset factor * lateral magnitude * gain * max
+            double compensation = -Math.signum(Math.sin(rel)) * speedFraction * offsetFactor * lateralMagnitude * offsetGain * maxCompensation;
+            chosenTheta += compensation;
+
+            SmartDashboard.putNumber("Drive/TravelSpeed", travelSpeed);
+            SmartDashboard.putNumber("Drive/TravelAngleRad", travelAngle);
+            SmartDashboard.putNumber("Drive/AngleCompensationRad", compensation);
+            SmartDashboard.putNumber("Drive/OffsetFactor", offsetFactor);
+            SmartDashboard.putNumber("Drive/OffsetGain", offsetGain);
+        } catch (Exception ex) {
+            // if anything goes wrong (e.g., swerveDrive not ready), skip compensation
         }
+
+        Translation2d snappedTarget = new Translation2d(
+            h.getX() + desiredDistanceMeters * Math.cos(chosenTheta),
+            h.getY() + desiredDistanceMeters * Math.sin(chosenTheta)
+        );
 
         double snappedTargetDist = Math.hypot(snappedTarget.getX() - h.getX(), snappedTarget.getY() - h.getY());
         SmartDashboard.putNumber("Drive/SnappedTargetDistanceFromHubMeters", snappedTargetDist);
         SmartDashboard.putNumber("Drive/DesiredDistanceMeters", desiredDistanceMeters);
         SmartDashboard.putNumber("Drive/TargetDistanceErrorMeters", snappedTargetDist - desiredDistanceMeters);
-        SmartDashboard.putNumber("Drive/HubArcNearestIndex", nearestIndex);
+        SmartDashboard.putNumber("Drive/HubArcChosenAngleRad", chosenTheta);
+        SmartDashboard.putNumber("Drive/ControllerOffset", controllerOffset);
 
         return posePointingAtAllianceHub(snappedTarget);
     }
@@ -600,7 +640,12 @@ public class Drive extends CSubsystem {
         return baseStream
         .copy()
         .driveToPose(
-            () -> getClosestPointOnCurve(driverController.getLeftX()),
+            // Use a deadbanded left-stick X so the driver can move left/right along the curve
+            () -> {
+                double raw = driverController.getLeftX();
+                double offset = MathUtil.applyDeadband(raw, ControllerConstants.deadbandX) / 2;
+                return getClosestPointOnCurve(offset);
+            },
             RobotConstants.DriveSubsystemConstants.translationProfiledController, 
             RobotConstants.DriveSubsystemConstants.rotationProfiledController
         )

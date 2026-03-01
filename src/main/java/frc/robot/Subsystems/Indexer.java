@@ -118,7 +118,7 @@ public class Indexer extends CSubsystem {
                             double hubDist = driveSubsystem.getPose().getTranslation().getDistance(
                                 RobotConstants.FieldConstants.hub.get().getTranslation());
                             boolean distOk = Math.abs(hubDist - midRange) <= posTol;
-                            boolean angleOk = driveSubsystem.isAimedAtHub(Math.toRadians(3.0));
+                            boolean angleOk = driveSubsystem.isAimedAtHub(Math.toRadians(6.0));
                             allowedByDrive = distOk && angleOk;
                         }
                         if (driveSubsystem.isAimModeActive()) {
