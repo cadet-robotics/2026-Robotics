@@ -1,106 +1,73 @@
 package frc.robot.Subsystems.Vision;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.networktables.BooleanPublisher;
+import edu.wpi.first.networktables.IntegerPublisher;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Libs.LimelightHelpers;
 import frc.robot.Subsystems.Drive;
 import limelight.Limelight;
-import limelight.networktables.LimelightResults;
-import limelight.networktables.target.AprilTagFiducial;
+import limelight.networktables.AngularVelocity3d;
+import limelight.networktables.LimelightPoseEstimator;
+import limelight.networktables.Orientation3d;
+import limelight.networktables.PoseEstimate;
+
+import static edu.wpi.first.units.Units.RPM;
 
 import java.util.Optional;
 
 public class RealVision extends SubsystemBase implements Vision {
 
+    private final NetworkTable visionTable = NetworkTableInstance.getDefault().getTable("Vision");
+    private final StructPublisher<Pose2d> frontPosePublisher = visionTable.getStructTopic("frontPose", Pose2d.struct).publish();
+    private final StructPublisher<Pose2d> backPosePublisher = visionTable.getStructTopic("backPose", Pose2d.struct).publish();
+    private final BooleanPublisher frontSeesTag = visionTable.getBooleanTopic("frontSeesTag").publish();
+    private final BooleanPublisher backSeesTag = visionTable.getBooleanTopic("backSeesTag").publish();
+    private final IntegerPublisher frontTagCount = visionTable.getIntegerTopic("frontTagCount").publish();
+    private final IntegerPublisher backTagCount = visionTable.getIntegerTopic("backTagCount").publish();
+    
     private final Drive driveSubsystem;
     private final Limelight back_limelight;
     private final Limelight front_limelight;
-    private int periodicCounter = 0;
+
+    private final LimelightPoseEstimator frontPoseEstimatorM1;
+    private final LimelightPoseEstimator frontPoseEstimatorM2;
+    private final LimelightPoseEstimator backPoseEstimatorM1;
+    private final LimelightPoseEstimator backPoseEstimatorM2;
 
     public RealVision(Drive driveSubsystem) {
         this.driveSubsystem = driveSubsystem;
         this.front_limelight = new Limelight("limelight-front");
         this.back_limelight = new Limelight("limelight-rear");
-        
-        // Add debug message to confirm subsystem is created
-        SmartDashboard.putString("Vision/Status", "Vision Subsystem Initialized");
-        SmartDashboard.putBoolean("Vision/Subsystem Active", true);
+        this.frontPoseEstimatorM1 = new LimelightPoseEstimator(front_limelight, LimelightPoseEstimator.EstimationMode.MEGATAG1);
+        this.frontPoseEstimatorM2 = new LimelightPoseEstimator(front_limelight, LimelightPoseEstimator.EstimationMode.MEGATAG2);
+        this.backPoseEstimatorM1 = new LimelightPoseEstimator(back_limelight, LimelightPoseEstimator.EstimationMode.MEGATAG1);
+        this.backPoseEstimatorM2 = new LimelightPoseEstimator(back_limelight, LimelightPoseEstimator.EstimationMode.MEGATAG2);
     }
 
     public boolean seesAprilTag() {
-        Optional<LimelightResults> front_results = front_limelight.getLatestResults();
-        if (front_results.isPresent()) {
-            LimelightResults data = front_results.get();
-            return data.targets_Fiducials != null && data.targets_Fiducials.length > 0;
-        }
-        Optional<LimelightResults> back_results = back_limelight.getLatestResults();
-        if (back_results.isPresent()) {
-            LimelightResults data = back_results.get();
-            return data.targets_Fiducials != null && data.targets_Fiducials.length > 0;
-        }
-        return false;
+        boolean frontSees = frontSeesAprilTag();
+        boolean backSees = backSeesAprilTag();
+        frontSeesTag.set(frontSees);
+        frontTagCount.set(frontSees ? front_limelight.getLatestResults().get().targets_Fiducials.length : 0);
+        backSeesTag.set(backSees);
+        backTagCount.set(backSees ? back_limelight.getLatestResults().get().targets_Fiducials.length : 0);
+        return frontSees || backSees;
     }
 
-    /**
-     * Changes the pipeline on the limelight to the input id. This is used to switch filters/what ids are accepted.
-     *
-     * @param id Id of the pipeline
-     */
-    public void changeFilter(int id) {
-        front_limelight.getSettings()
-                .withPipelineIndex(id)
-                .save();
+    public boolean frontSeesAprilTag() {
+        return front_limelight.getLatestResults().isPresent()
+            && front_limelight.getLatestResults().get().targets_Fiducials != null
+            && front_limelight.getLatestResults().get().targets_Fiducials.length > 0;
     }
 
-    /**
-     * A function to get the id of the current april tag.
-     *
-     * @return Optional containing the ID of the AprilTag, or empty if no tag is visible
-     */
-    public Optional<Integer> getTagID() {
-        Optional<LimelightResults> results = front_limelight.getLatestResults();
-        if (results.isPresent() && seesAprilTag()) {
-            AprilTagFiducial[] tags = results.get().targets_Fiducials;
-            if (tags.length > 0) {
-                return Optional.of((int) tags[0].fiducialID);
-            }
-        }
-        return Optional.empty();
-    }
-
-    public Optional<Double> getTx() {
-        Optional<LimelightResults> results = front_limelight.getLatestResults();
-        if (results.isPresent() && seesAprilTag()) {
-            AprilTagFiducial[] tags = results.get().targets_Fiducials;
-            if (tags.length > 0) {
-                return Optional.of(tags[0].tx);
-            }
-        }
-        return Optional.empty();
-    }
-
-    public Optional<Double> getTy() {
-        Optional<LimelightResults> results = front_limelight.getLatestResults();
-        if (results.isPresent() && seesAprilTag()) {
-            AprilTagFiducial[] tags = results.get().targets_Fiducials;
-            if (tags.length > 0) {
-                return Optional.of(tags[0].ty);
-            }
-        }
-        return Optional.empty();
-    }
-
-    public Optional<Double> getTa() {
-        Optional<LimelightResults> results = front_limelight.getLatestResults();
-        if (results.isPresent() && seesAprilTag()) {
-            AprilTagFiducial[] tags = results.get().targets_Fiducials;
-            if (tags.length > 0) {
-                return Optional.of(tags[0].ta);
-            }
-        }
-        return Optional.empty();
+    public boolean backSeesAprilTag() {
+        return back_limelight.getLatestResults().isPresent()
+            && back_limelight.getLatestResults().get().targets_Fiducials != null
+            && back_limelight.getLatestResults().get().targets_Fiducials.length > 0;
     }
 
     /**
@@ -111,172 +78,39 @@ public class RealVision extends SubsystemBase implements Vision {
      */
     @Override
     public Optional<Pose2d> getRobotPose() {
-        // Try front limelight first using LimelightHelpers for MegaTag2 WPIBlue
-        double[] front_pose = LimelightHelpers.getBotPose("limelight-front");
-        
-        SmartDashboard.putBoolean("Vision/Front Data Null", front_pose == null);
-        
-        if (front_pose != null) {
-            SmartDashboard.putBoolean("Vision/Front wpiblue Null", false);
-            SmartDashboard.putBoolean("Vision/Front wpiblue Length >= 6", front_pose.length >= 6);
-            
-            boolean frontHasTargets = LimelightHelpers.getTV("limelight-front");
-            SmartDashboard.putBoolean("Vision/Front Tag Count > 0", frontHasTargets);
-            
-            if (front_pose.length >= 6) {
-                double x = front_pose[0];
-                double y = front_pose[1];
-                double rotationDeg = front_pose[5];
-                
-                SmartDashboard.putBoolean("Vision/Front Pose Is Zero", (x == 0 && y == 0));
-                SmartDashboard.putBoolean("Vision/Front Has Tags", frontHasTargets);
-                
-                // Only return if pose is non-zero and has tags
-                if ((x != 0 || y != 0) && frontHasTargets) {
-                    Pose2d pose = new Pose2d(x, y, Rotation2d.fromDegrees(rotationDeg));
-                    SmartDashboard.putString("Vision/Active Limelight", "Front");
-                    SmartDashboard.putNumberArray("Vision/Front Pose", new double[] {
-                        pose.getX(),
-                        pose.getY(),
-                        pose.getRotation().getRadians()
-                    });
-                    return Optional.of(pose);
-                }
-            }
+        if ( frontPoseEstimatorM2.getPoseEstimate().isPresent() ) {
+            Pose2d frontPose = frontPoseEstimatorM2.getPoseEstimate().get().pose.toPose2d();
+            frontPosePublisher.set(frontPose);
+            return Optional.of(frontPose);
         }
-        
-        // Fall back to back limelight
-        double[] back_pose = LimelightHelpers.getBotPose("limelight-rear");
-        
-        SmartDashboard.putBoolean("Vision/Back Data Null", back_pose == null);
-        
-        if (back_pose != null) {
-            SmartDashboard.putBoolean("Vision/Back wpiblue Null", false);
-            SmartDashboard.putBoolean("Vision/Back wpiblue Length >= 6", back_pose.length >= 6);
-            
-            boolean backHasTargets = LimelightHelpers.getTV("limelight-rear");
-            SmartDashboard.putBoolean("Vision/Back Tag Count > 0", backHasTargets);
-            
-            if (back_pose.length >= 6) {
-                double x = back_pose[0];
-                double y = back_pose[1];
-                double rotationDeg = back_pose[5];
-                
-                SmartDashboard.putBoolean("Vision/Back Pose Is Zero", (x == 0 && y == 0));
-                SmartDashboard.putBoolean("Vision/Back Has Tags", backHasTargets);
-                
-                if ((x != 0 || y != 0) && backHasTargets) {
-                    Pose2d pose = new Pose2d(x, y, Rotation2d.fromDegrees(rotationDeg));
-                    SmartDashboard.putString("Vision/Active Limelight", "Back");
-                    SmartDashboard.putNumberArray("Vision/Back Pose", new double[] {
-                        pose.getX(),
-                        pose.getY(),
-                        pose.getRotation().getRadians()
-                    });
-                    return Optional.of(pose);
-                }
-            }
+        if ( backPoseEstimatorM2.getPoseEstimate().isPresent() ) {
+            Pose2d backPose = backPoseEstimatorM2.getPoseEstimate().get().pose.toPose2d();
+            backPosePublisher.set(backPose);
+            return Optional.of(backPose);
         }
-        
-        SmartDashboard.putString("Vision/Active Limelight", "None");
         return Optional.empty();
+    }
+
+    public void disbaledPeriodic() {
+        Optional<PoseEstimate> throwaway = frontPoseEstimatorM1.getPoseEstimate();
+        Optional<PoseEstimate> throwaway2 = frontPoseEstimatorM1.getPoseEstimate();
+        
+        Orientation3d robotOrientation = new Orientation3d( new Rotation3d(driveSubsystem.getSwerveDrive().getOdometryHeading()), new AngularVelocity3d(RPM.of(0), RPM.of(0), RPM.of(0)));
+
+        front_limelight.getSettings().withRobotOrientation(robotOrientation);
+        back_limelight.getSettings().withRobotOrientation(robotOrientation);
     }
 
     @Override
     public void periodic() {
-
-        periodicCounter++;
-        // System.out.println(periodicCounter);
-        SmartDashboard.putNumber("Vision/Periodic Counter", periodicCounter);
-        
-        Pose2d currentPose;
-
-        // First try to get initial pose estimate from front limelight using megatag
-        LimelightHelpers.PoseEstimate initialFrontEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-front");
-        if(initialFrontEstimate != null && initialFrontEstimate.tagCount > 0 && initialFrontEstimate.tagCount == 1 && initialFrontEstimate.rawFiducials.length == 1 &&
-            initialFrontEstimate.rawFiducials[0].ambiguity < .7 && initialFrontEstimate.rawFiducials[0].distToCamera < 3){
-            // If valid front megatag pose, use it
-            currentPose = initialFrontEstimate.pose;        
-        } else {
-            // If no valid front megatag pose, try back limelight
-            LimelightHelpers.PoseEstimate initialBackEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-rear");
-            if(initialBackEstimate != null && initialBackEstimate.tagCount > 0 && initialBackEstimate.tagCount == 1 && initialBackEstimate.rawFiducials.length == 1 &&
-                initialBackEstimate.rawFiducials[0].ambiguity < .7 && initialBackEstimate.rawFiducials[0].distToCamera < 3){
-                    // If valid back megatag pose, use it
-                    currentPose = initialBackEstimate.pose;
-            } else {
-                // If no valid megatag pose, use current odometry pose
-                currentPose = driveSubsystem.getPose();
-            }
-        }
-        
-        
-        // Log current drive pose
-        SmartDashboard.putNumber("Vision/Drive Pose X", currentPose.getX());
-        SmartDashboard.putNumber("Vision/Drive Pose Y", currentPose.getY());
-        SmartDashboard.putNumber("Vision/Drive Pose Rotation", currentPose.getRotation().getDegrees());
-
-        // Update robot orientation in NetworkTables for both limelights BEFORE fetching pose estimates
-        // This ensures MegaTag2 has the latest odometry data
-        double yawDegrees = currentPose.getRotation().getDegrees();
-        LimelightHelpers.SetRobotOrientation("limelight-front", yawDegrees, 0, 0, 0, 0, 0);
-        LimelightHelpers.SetRobotOrientation("limelight-rear", yawDegrees, 0, 0, 0, 0, 0);
-        
-        SmartDashboard.putNumber("Vision/Sending Rotation (deg)", yawDegrees);
-        
-        // Try to get pose estimate from front limelight using MegaTag2
-        LimelightHelpers.PoseEstimate frontEstimate = 
-            LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-front");
-        
-        if (frontEstimate != null && frontEstimate.tagCount > 0 && 
-            (frontEstimate.pose.getX() != 0 || frontEstimate.pose.getY() != 0)) {
-            
-            // Update odometry with vision measurement using the estimate's timestamp
-            driveSubsystem.getSwerveDrive().addVisionMeasurement(
-                frontEstimate.pose, 
-                frontEstimate.timestampSeconds
+        seesAprilTag();
+        Optional<Pose2d> shrodingersPose = getRobotPose();
+        if (shrodingersPose.isPresent()) {
+            Pose2d pose = shrodingersPose.get();
+            driveSubsystem.updatePose(pose, frontSeesAprilTag() 
+                ? frontPoseEstimatorM2.getPoseEstimate().get().timestampSeconds
+                : backPoseEstimatorM2.getPoseEstimate().get().timestampSeconds
             );
-            
-            // Publish pose to SmartDashboard
-            SmartDashboard.putString("Vision/Active Limelight", "Front");
-            SmartDashboard.putNumberArray("Vision/Robot Pose", new double[] {
-                frontEstimate.pose.getX(),
-                frontEstimate.pose.getY(),
-                frontEstimate.pose.getRotation().getRadians()
-            });
-            SmartDashboard.putNumber("Vision/Timestamp", frontEstimate.timestampSeconds);
-            SmartDashboard.putNumber("Vision/Tag Count", frontEstimate.tagCount);
-            SmartDashboard.putBoolean("Vision/Has Valid Pose", true);
-            
-        } else {
-            // Try back limelight as fallback
-            LimelightHelpers.PoseEstimate backEstimate = 
-                LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-rear");
-            
-            if (backEstimate != null && backEstimate.tagCount > 0 && 
-                (backEstimate.pose.getX() != 0 || backEstimate.pose.getY() != 0)) {
-                
-                // Update odometry with vision measurement using the estimate's timestamp
-                driveSubsystem.getSwerveDrive().addVisionMeasurement(
-                    backEstimate.pose, 
-                    backEstimate.timestampSeconds
-                );
-                
-                // Publish pose to SmartDashboard
-                SmartDashboard.putString("Vision/Active Limelight", "Back");
-                SmartDashboard.putNumberArray("Vision/Robot Pose", new double[] {
-                    backEstimate.pose.getX(),
-                    backEstimate.pose.getY(),
-                    backEstimate.pose.getRotation().getRadians()
-                });
-                SmartDashboard.putNumber("Vision/Timestamp", backEstimate.timestampSeconds);
-                SmartDashboard.putNumber("Vision/Tag Count", backEstimate.tagCount);
-                SmartDashboard.putBoolean("Vision/Has Valid Pose", true);
-                
-            } else {
-                SmartDashboard.putString("Vision/Active Limelight", "None");
-                SmartDashboard.putBoolean("Vision/Has Valid Pose", false);
-            }
         }
     }
 }

@@ -22,6 +22,8 @@ import frc.robot.Constants.ShooterState;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
 import frc.robot.Libs.FuelSim;
+import frc.robot.Libs.ShootOnTheMove;
+
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Meters;
 import yams.mechanisms.config.FlyWheelConfig;
@@ -102,6 +104,8 @@ public class Shooter extends CSubsystem {
      * Initializes motor controllers, flywheel, SysId routine, and sets up default command.
      */
     public Shooter(FuelSim fuelSim) {
+        setName("ShooterSubsystem");
+
         this.fuelSim = fuelSim;
     }
 
@@ -174,6 +178,13 @@ public class Shooter extends CSubsystem {
                         lastSpawnNs = System.nanoTime();
                     }
                 })
+                .onExecute(() -> {
+                    if (ShootOnTheMove.shooterRPM.isPresent()) {
+                        shooter_controller.setMechanismVelocitySetpoint(ShootOnTheMove.shooterRPM.get());
+                    } else {
+                        shooter_controller.setMechanismVelocitySetpoint(ShooterSubsystemConstants.forwardsOnSpeeds);
+                    }
+                })
                 .onEnd(() -> {
                     state = ShooterState.Off;
                     shooter_motor_controller.setVoltage(0);
@@ -217,6 +228,8 @@ public class Shooter extends CSubsystem {
      */
     @Override
     public void periodic() {
+        logSelf();
+
         // Update telemetry
         shooter_controller.updateTelemetry();
         
@@ -239,17 +252,12 @@ public class Shooter extends CSubsystem {
             if (lastSpawnNs == 0) lastSpawnNs = now;
             if (now - lastSpawnNs >= intervalNs) {
                 lastSpawnNs = now;
-                // Use the shooter elevation (~70 degrees) and zero turret yaw (robot-relative)
                 try {
-                    fuelSim.launchFuel(MetersPerSecond.of(7), Degrees.of(80.0), Degrees.of(180.0), Meters.of(0.9));
+                    fuelSim.launchFuel(MetersPerSecond.of(shooter_controller.getSpeed().magnitude() * 60 * 8.0 / 3000), Degrees.of(80.0), Degrees.of(180.0), Meters.of(0.9));
                 } catch (IllegalStateException ex) {
                     // Robot not registered with fuelSim yet; ignore spawn attempt
                 }
             }
         }
-        // Publish last computed ideal target each simulation cycle for visualization
-        var tbl = NetworkTableInstance.getDefault().getTable("Shooter");
-        tbl.getEntry("IdealTargetPose").setDoubleArray(new double[] { lastIdealX, lastIdealY, 0.0 });
-        tbl.getEntry("IdealTargetTime").setDouble(lastIdealT);
     }
 }

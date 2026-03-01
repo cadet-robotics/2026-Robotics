@@ -1,10 +1,10 @@
 // https://github.com/Greater-Rochester-Robotics/GRRBase/blob/main/src/main/java/org/team340/lib/util/command/GRRSubsystem.java
 package frc.robot.Libs;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class CSubsystem extends SubsystemBase {
-    
     // Constructor - SubsystemBase handles registration
     public CSubsystem() {
         super();
@@ -18,5 +18,12 @@ public class CSubsystem extends SubsystemBase {
     // Creating a new command with a name
     public CCommand cCommand( String name ) {
         return new CCommand( name, this );
+    }
+
+    /**
+     * Puts the subsystem on the SmartDashboard
+     */
+    public void logSelf() {
+        SmartDashboard.putData("Subsystems/" + this.getName(), this);
     }
 }

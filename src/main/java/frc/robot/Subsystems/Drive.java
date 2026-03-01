@@ -71,6 +71,8 @@ public class Drive extends CSubsystem {
      * Initializes vision (real or simulated based on robot mode) and configures swerve drive.
      */
     public Drive(CommandXboxController driverController, CommandXboxController codriverController) {
+        setName("DriveSubsystem");
+
         this.driverController = driverController;
         this.codriverController = codriverController;
 
@@ -499,11 +501,18 @@ public class Drive extends CSubsystem {
      * @return SwerveInputStream that aims at the hub and allows driver control of heading with right stick
      */
     public SwerveInputStream buildAimingStream() {
+
+        DoubleSupplier getHeadingXSafe = () -> ShootOnTheMove.heading.isPresent() ? ShootOnTheMove.heading.get().getCos() : 0.0;
+        DoubleSupplier getHeadingYSafe = () -> ShootOnTheMove.heading.isPresent() ? ShootOnTheMove.heading.get().getSin() : 0.0;
+
         return baseStream.copy()
+            .withControllerHeadingAxis(getHeadingXSafe, getHeadingYSafe)
+            .headingWhile(ShootOnTheMove.heading.isPresent())
+            // Fallback
             .aim(FieldConstants.hub.get())
-            .aimWhile(true)
+            .aimWhile(ShootOnTheMove.heading.isEmpty())
             .aimHeadingOffset(Rotation2d.k180deg)
-            .aimHeadingOffset(true);
+            .aimHeadingOffset(ShootOnTheMove.heading.isEmpty());
     }
 
     /**
@@ -545,5 +554,13 @@ public class Drive extends CSubsystem {
             .scaleRotation(1)
             .withControllerHeadingAxis(getHeadingX, getHeadingY)
             .headingWhile(true);
+    }
+
+    @Override
+    public void periodic() {
+        logSelf();
+
+        ShootOnTheMove.calculateLeadHeading(getPose(), swerveDrive.getFieldVelocity());
+        ShootOnTheMove.publish();
     }
 }

@@ -70,6 +70,8 @@ public class Indexer extends CSubsystem {
      * @param intakeSubsystem the intake subsystem instance
      */
     public Indexer( Shooter shooterSubsystem, Intake intakeSubsystem, Drive driveSubsystem ) {
+        setName("IndexerSubsystem");
+
         this.shooterSubsystem = shooterSubsystem;
         this.intakeSubsystem = intakeSubsystem;
         this.driveSubsystem = driveSubsystem;
@@ -138,6 +140,8 @@ public class Indexer extends CSubsystem {
      */
     @Override
     public void periodic() {
+        logSelf();
+
         indexerController.updateTelemetry();
     }
 

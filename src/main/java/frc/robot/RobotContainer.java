@@ -23,8 +23,6 @@ public class RobotContainer {
 
   private final Autos autos;
   private final Drive drive_subsystem;
-
-
   private final Vision vision_subsystem;
   private final Intake intake_subsystem;
   private final Indexer indexer_subsystem;
@@ -234,4 +232,9 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     return this.autos.getAutonomousCommand();
   }
+
+  public Vision getVision() {
+    return this.vision_subsystem;
+  }
+
 }

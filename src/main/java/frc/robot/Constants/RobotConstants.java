@@ -163,4 +163,3 @@ public class RobotConstants {
         public static final double MAX_POSITION = 18.23;
     }
 }
-

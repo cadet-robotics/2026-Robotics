@@ -64,6 +64,8 @@ public class Intake extends CSubsystem {
      * Initializes motor controller, SysId routine, and sets up default command.
      */
     public Intake(Shooter shooter_subsystem, Drive driveSubsystem) {
+        setName("IntakeSubsystem");
+
         this.getShooterState = shooter_subsystem::getState;
         this.isShooterUpToSpeed = shooter_subsystem::isUpToSpeed;
         this.driveSubsystem = driveSubsystem;
@@ -122,6 +124,7 @@ public class Intake extends CSubsystem {
      */
     @Override
     public void periodic() {
+        logSelf();
         intakeController.updateTelemetry();
 
         // Run intake if manually commanded OR if shooter is on and up to speed
