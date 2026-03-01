@@ -69,7 +69,7 @@ public class RobotConstants {
         public static final double maxSpeed = 6; // Meters per second
 
         /** PID constants for translational (x, y) movement control. */
-        public static final PIDConstants translationPidConstants = new PIDConstants(3.5, 0, 1);
+        public static final PIDConstants translationPidConstants = new PIDConstants(4.5, 0, 1);
         /** PID constants for rotational (theta) movement control. */
         public static final PIDConstants rotationPidConstants = new PIDConstants(6, 0, 0);
 
