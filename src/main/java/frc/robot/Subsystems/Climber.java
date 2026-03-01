@@ -44,14 +44,17 @@ public class Climber extends CSubsystem {
     public SmartMotorControllerConfig smc_config = new SmartMotorControllerConfig()
         .withSubsystem(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
-        .withClosedLoopController( new ExponentialProfilePIDController(1, 0, 0, ExponentialProfilePIDController.createConstraints(Volts.of(12), DegreesPerSecond.of(5600 * 360), DegreesPerSecondPerSecond.of(5600 * 360))))
-        .withSimClosedLoopController(1, 0, 0, DegreesPerSecond.of(5600 * 360), DegreesPerSecondPerSecond.of(5600 * 360))
+        .withClosedLoopController(1,0,0)
+        .withSimClosedLoopController( 1, 0, 0 )
+        // .withClosedLoopController(10,0,0.3)
+        // .withSimClosedLoopController( 10, 0, 0.3 )
         .withFeedforward(new SimpleMotorFeedforward(0, 0, 0))
         .withSimFeedforward(new SimpleMotorFeedforward(0, 0, 0))
         .withTelemetry("Climber Motor",SmartMotorControllerConfig.TelemetryVerbosity.HIGH)
         .withGearing(new MechanismGearing(GearBox.fromReductionStages(9)))
         .withMotorInverted(false)
         .withIdleMode(SmartMotorControllerConfig.MotorMode.BRAKE)
+        .withSoftLimit(Rotation.of(0), Rotation.of(18.5))
         .withStatorCurrentLimit(Amps.of(40));
 
     public SmartMotorController climber_motor = new SparkWrapper(
@@ -178,6 +181,6 @@ public class Climber extends CSubsystem {
     @Override
     public void simulationPeriodic() {
         // Update simulation
-        // climber_motor.simIterate();
+        climber_motor.simIterate();
     }
 }
