@@ -126,7 +126,7 @@ public class Indexer extends CSubsystem {
                         }
                     }
 
-                    if ( ((shooterState == ShooterState.On && shooterUpToSpeed) && allowedByDrive && allowedByAim) || intakeState == IntakeState.REV ) {
+                    if ( ((shooterState == ShooterState.On && shooterUpToSpeed) && allowedByDrive && allowedByAim) || intakeState == IntakeState.BARF ) {
                         indexerState = IndexerState.SHOOTER;
                         indexerController.setVoltage(edu.wpi.first.units.Units.Volts.of(-11));
                     } else if ( intakeState == IntakeState.ON ) {

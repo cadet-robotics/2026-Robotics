@@ -7,7 +7,7 @@ public enum IntakeState {
     /** Intake is running forward. */
     ON,
     /** Intake is running in reverse (barfing). */
-    REV,
+    BARF,
     /** Intake is off. */
     OFF
 }

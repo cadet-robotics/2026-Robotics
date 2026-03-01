@@ -145,7 +145,7 @@ public class Intake extends CSubsystem {
      */
     public CCommand IntakeBarf() {
         return cCommand().onInitialize(() -> {
-            state = IntakeState.REV;
+            state = IntakeState.BARF;
         }).onEnd(() -> {
             state = IntakeState.OFF;
         });
@@ -176,7 +176,7 @@ public class Intake extends CSubsystem {
 
         if ( this.state == IntakeState.ON || ((this.getShooterState.get() == ShooterState.On && this.isShooterUpToSpeed.get()) && allowedByDrive && allowedByAim) ) {
             this.intakeController.setVoltage(Volts.of(11));
-        } else if ( this.state == IntakeState.REV ) {
+        } else if ( this.state == IntakeState.BARF ) {
             this.intakeController.setVoltage(Volts.of(-12));
         } else {
             this.intakeController.setVoltage(Volts.of(0));
