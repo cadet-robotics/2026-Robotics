@@ -28,5 +28,8 @@
   "brModuleY": -0.305,
   "bumperOffsetX": 0.0,
   "bumperOffsetY": 0.0,
-  "robotFeatures": []
+  "robotFeatures": [
+    "{\"name\":\"Intake\",\"type\":\"rounded_rect\",\"data\":{\"center\":{\"x\":0.235585,\"y\":0.0},\"size\":{\"width\":0.42525,\"length\":0.214},\"borderRadius\":0.05,\"strokeWidth\":0.01,\"filled\":false}}",
+    "{\"name\":\"Rectangle\",\"type\":\"rounded_rect\",\"data\":{\"center\":{\"x\":0.025,\"y\":0.2946019},\"size\":{\"width\":0.07,\"length\":0.152},\"borderRadius\":0.05,\"strokeWidth\":0.02,\"filled\":false}}"
+  ]
 }
