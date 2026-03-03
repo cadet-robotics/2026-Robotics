@@ -1,10 +1,15 @@
 package frc.robot.Subsystems;
 
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meter;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Rotation;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -21,6 +26,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.DistanceUnit;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -31,6 +37,7 @@ import frc.robot.Robot;
 import frc.robot.Configuration.DriveSubsystemConfiguration;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.RobotConstants.ControllerConstants;
+import frc.robot.Constants.RobotConstants.DriveSubsystemConstants;
 import frc.robot.Constants.RobotConstants.FieldConstants;
 import frc.robot.Constants.RobotConstants.ShooterSubsystemConstants;
 import frc.robot.Libs.CCommand;
@@ -89,7 +96,13 @@ public class Drive extends CSubsystem {
         }
 
         // Temp starting positions for sim
-        boolean blueAlliance = DriverStation.getAlliance().get() == Alliance.Blue;
+        boolean blueAlliance;
+        if (DriverStation.getAlliance().isPresent()) {
+            blueAlliance = DriverStation.getAlliance().get() == Alliance.Blue;
+        } else {
+            // If alliance can't be determined, default to Blue per request
+            blueAlliance = true;
+        }
         Pose2d startingPose = blueAlliance ? new Pose2d(new Translation2d(Meter.of(3),
                 Meter.of(4)),
                 Rotation2d.fromDegrees(0))
@@ -395,59 +408,6 @@ public class Drive extends CSubsystem {
      * 
      * @return command that drives to closest climb position
      */
-    public Command driveToClimb() {
-        Pose2d preTargetPose;
-        Pose2d targetPose;
-
-        if (DriverStation.getAlliance().get() == Alliance.Blue) {
-            // Choose the closest blue climb position
-            Pose2d preBlueRight = RobotConstants.FieldConstants.BLUE_RIGHT_CLIMB_POSITION.transformBy(new Transform2d(5.0, -5.0, Rotation2d.fromDegrees(0)));
-            Pose2d blueRight = RobotConstants.FieldConstants.BLUE_RIGHT_CLIMB_POSITION;
-            Pose2d preBlueLeft = RobotConstants.FieldConstants.BLUE_LEFT_CLIMB_POSITION.transformBy(new Transform2d(-5.0, 5.0, Rotation2d.fromDegrees(0)));
-            Pose2d blueLeft = RobotConstants.FieldConstants.BLUE_LEFT_CLIMB_POSITION;
-            preTargetPose = (getPose().getTranslation().getDistance(preBlueRight.getTranslation()) < 
-                          getPose().getTranslation().getDistance(preBlueLeft.getTranslation())) ? preBlueRight : preBlueLeft;
-            if(preTargetPose.equals(preBlueRight)) {
-                targetPose = blueRight;
-            } else {
-                targetPose = blueLeft;
-            }
-            
-        } else {
-            // Choose the closest red climb position
-            Pose2d preRedRight = RobotConstants.FieldConstants.RED_RIGHT_CLIMB_POSITION.transformBy(new Transform2d(-5.0, -5.0, Rotation2d.fromDegrees(0)));
-            Pose2d redRight = RobotConstants.FieldConstants.RED_RIGHT_CLIMB_POSITION;
-            Pose2d preRedLeft = RobotConstants.FieldConstants.RED_LEFT_CLIMB_POSITION.transformBy(new Transform2d(5.0, 5.0, Rotation2d.fromDegrees(0)));
-            Pose2d redLeft = RobotConstants.FieldConstants.RED_LEFT_CLIMB_POSITION;
-            preTargetPose = (getPose().getTranslation().getDistance(preRedRight.getTranslation()) < 
-                          getPose().getTranslation().getDistance(preRedLeft.getTranslation())) ? preRedRight : preRedLeft;
-            if(preTargetPose.equals(preRedRight)) {
-                targetPose = redRight;
-            } else {
-                targetPose = redLeft;
-            }
-        }
-
-        driveToTargetPose(preTargetPose, 0.0)
-            .beforeStarting(() -> {
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putString("PathPlanner/Status", "Starting pathfind to preClimb");
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putString("PathPlanner/Target", 
-                    String.format("(%.2f, %.2f, %.1f°)", preTargetPose.getX(), preTargetPose.getY(), preTargetPose.getRotation().getDegrees()));
-            })
-            .andThen(() -> {
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putString("PathPlanner/Status", "Pathfind to preClimb complete");
-            });
-
-        return driveToTargetPose(targetPose, 0.0)
-            .beforeStarting(() -> {
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putString("PathPlanner/Status", "Starting pathfind to climb");
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putString("PathPlanner/Target", 
-                    String.format("(%.2f, %.2f, %.1f°)", targetPose.getX(), targetPose.getY(), targetPose.getRotation().getDegrees()));
-            })
-            .andThen(() -> {
-                edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.putString("PathPlanner/Status", "Pathfind to climb complete");
-            });
-    }
 
     // Calculate the distance that the robot is from our alliance's HUB
     public double hubDistance() {
@@ -668,11 +628,186 @@ public class Drive extends CSubsystem {
             .headingWhile(true);
     }
 
+    /** 
+     * Builds a {@link SwerveInputStream}
+     */
+    public SwerveInputStream buildTrenchStream() {
+        return SwerveInputStream.of(
+                swerveDrive, 
+                getTranslationX, 
+                () -> {
+                    Pose2d current = getPose();
+                    Translation2d closestTrench = getClosestTrench();
+                    SmartDashboard.putNumberArray( "ClosestTrench", new double[] { closestTrench.getMeasureX().in(Meters), closestTrench.getMeasureY().in(Meters), 0.0 });
+                    
+                    if (current.getTranslation().getDistance(closestTrench) > 0.8) {
+                        // Do NormalDrive
+                        return getTranslationY.getAsDouble();
+                    }
+
+                    double horizonalDistance = closestTrench.getY() - current.getY();
+                    return Math.min( Math.max( -1.0, horizonalDistance / 0.5 ), 1.0 ); // Clamp between 0 and 1
+                }
+            )
+            .scaleTranslation(0.8)
+            .allianceRelativeControl(true)
+            .deadband(0.12)
+            .withControllerHeadingAxis(getHeadingX, getHeadingY)
+            .headingWhile(true);
+    }
+
+    public SwerveInputStream genericDriveToPoseStream(Supplier<Pose2d> pose) {
+        return baseStream
+            .copy()
+            .driveToPose(pose, DriveSubsystemConstants.translationProfiledController, DriveSubsystemConstants.rotationProfiledController)
+            .driveToPoseEnabled(true);
+    }
+
+    public SwerveInputStream genericDriveToPoseStream(Supplier<Pose2d> pose, BooleanSupplier condition) {
+        return baseStream
+            .copy()
+            .driveToPose(pose, DriveSubsystemConstants.translationProfiledController, DriveSubsystemConstants.rotationProfiledController)
+            .driveToPoseEnabled(condition);
+    }
+
+    /**
+     * Returns the position closes trench
+     * @return
+     */
+    public Translation2d getClosestTrench() {
+        Pose2d current = getPose();
+        if ( Meters.of(current.getX()).in(Inches) > (651/2)) {
+            if (Meters.of(current.getY()).in(Inches) > (317/2)) {
+                return FieldConstants.RED_LEFT_TRENCH;
+            }
+            return FieldConstants.RED_RIGHT_TRENCH;
+        }
+        if (Meters.of(current.getY()).in(Inches) > (317/2)) {
+            return FieldConstants.BLUE_LEFT_TRENCH;
+        }
+        return FieldConstants.BLUE_RIGHT_TRENCH;
+
+    }
+
+    public Pose2d getClosestElevator() {
+        if ( !DriverStation.getAlliance().isPresent() ) {
+            // Safely do nothing if behavior is unknown
+            return getPose();
+        } 
+        System.out.println( "Pos: " + getPose().getY() + " Elevator: " + Inches.of(317/2).in(Meters) );
+        switch( DriverStation.getAlliance().get() ) {
+            case Blue:
+                if ( getPose().getY() > Inches.of(317/2).in(Meters)) {
+                    return FieldConstants.BLUE_LEFT_CLIMB_POSITION;
+                }
+                return FieldConstants.BLUE_RIGHT_CLIMB_POSITION;
+            case Red:
+                if ( getPose().getY() > 317/2) {
+                    return FieldConstants.RED_LEFT_CLIMB_POSITION;
+                }
+                return FieldConstants.RED_RIGHT_CLIMB_POSITION;
+        }
+        return getPose();
+    }
+
+    public SwerveInputStream buildDriveToElevator() {
+        return genericDriveToPoseStream(() -> { 
+            Pose2d closest = getClosestElevator();
+            SmartDashboard.putNumberArray("BestElevator", new double[] {closest.getX(), closest.getY(), closest.getRotation().getDegrees()});
+            return closest;
+        });
+    }
+
+    public Pose2d poseFromTranslation(Translation2d location) {
+        return new Pose2d(location, Rotation2d.kZero);
+    }
+
+    public Command driveThroughTrenchSS() {
+        Supplier<Pose2d> getTargetLocation = () -> {
+            if (DriverStation.getAlliance().isEmpty()) {
+                return getPose();
+            }
+
+            switch ( DriverStation.getAlliance().get()) {
+                case Blue:
+                    if ( getPose().getY() > Inches.of(317/2).in(Meters)) {
+                        if ( getPose().getX() > FieldConstants.BLUE_LEFT_TRENCH.getX() ) {
+                            return poseFromTranslation(FieldConstants.BLUE_BLUE_LEFT_TRENCH);
+                        }
+                        return poseFromTranslation(FieldConstants.BLUE_MID_LEFT_TRENCH);
+                    }
+                    if ( getPose().getX() > FieldConstants.BLUE_LEFT_TRENCH.getX() ) {
+                        return poseFromTranslation(FieldConstants.BLUE_BLUE_RIGHT_TRENCH);
+                    }
+                    return poseFromTranslation(FieldConstants.BLUE_MID_RIGHT_TRENCH);
+                case Red:
+                    if ( getPose().getY() > Inches.of(317/2).in(Meters)) {
+                        if ( getPose().getX() < FieldConstants.RED_LEFT_TRENCH.getX() ) {
+                            return poseFromTranslation(FieldConstants.RED_RED_LEFT_TRENCH);
+                        }
+                        return poseFromTranslation(FieldConstants.RED_MID_LEFT_TRENCH);
+                    }
+                    if ( getPose().getX() < FieldConstants.RED_LEFT_TRENCH.getX() ) {
+                        return poseFromTranslation(FieldConstants.RED_RED_RIGHT_TRENCH);
+                    }
+                    return poseFromTranslation(FieldConstants.RED_MID_RIGHT_TRENCH);
+            }
+
+            return getPose();
+        };
+        return driveToTargetPose(autoDriveTargetLogger(getTargetLocation), 0);
+    }
+
+    public Supplier<Pose2d> autoDriveTargetLogger( Supplier<Pose2d> targetGetter ) {
+        return () -> {
+            Supplier<Pose2d> supplier = targetGetter;
+            Pose2d targetPose = supplier.get();
+            SmartDashboard.putNumberArray("AutoDriveTarget", new double[] {targetPose.getX(), targetPose.getY(), targetPose.getRotation().getDegrees()});
+            return targetPose;
+        };
+    }
+
+    public Command driveThroughTrenchOS() {
+        Supplier<Pose2d> getTargetLocation = () -> {
+            if (DriverStation.getAlliance().isEmpty()) {
+                return getPose();
+            }
+
+            switch ( DriverStation.getAlliance().get()) {
+                case Red:
+                    if ( getPose().getY() > Inches.of(317/2).in(Meters)) {
+                        if ( getPose().getX() > FieldConstants.BLUE_LEFT_TRENCH.getX() ) {
+                            return poseFromTranslation(FieldConstants.BLUE_BLUE_LEFT_TRENCH);
+                        }
+                        return poseFromTranslation(FieldConstants.BLUE_MID_LEFT_TRENCH);
+                    }
+                    if ( getPose().getX() > FieldConstants.BLUE_LEFT_TRENCH.getX() ) {
+                        return poseFromTranslation(FieldConstants.BLUE_BLUE_RIGHT_TRENCH);
+                    }
+                    return poseFromTranslation(FieldConstants.BLUE_MID_RIGHT_TRENCH);
+                case Blue:
+                    if ( getPose().getY() > Inches.of(317/2).in(Meters)) {
+                        if ( getPose().getX() < FieldConstants.RED_LEFT_TRENCH.getX() ) {
+                            return poseFromTranslation(FieldConstants.RED_RED_LEFT_TRENCH);
+                        }
+                        return poseFromTranslation(FieldConstants.RED_MID_LEFT_TRENCH);
+                    }
+                    if ( getPose().getX() < FieldConstants.RED_LEFT_TRENCH.getX() ) {
+                        return poseFromTranslation(FieldConstants.RED_RED_RIGHT_TRENCH);
+                    }
+                    return poseFromTranslation(FieldConstants.RED_MID_RIGHT_TRENCH);
+            }
+
+            return getPose();
+        };
+        return driveToTargetPose( autoDriveTargetLogger(getTargetLocation), 0 );
+    }
+
     @Override
     public void periodic() {
         logSelf();
 
-        ShootOnTheMove.calculateLeadHeading(getPose(), swerveDrive.getFieldVelocity());
+        ShootOnTheMove.calculateLeadHeading(getPose(), swerveDrive.getRobotVelocity());
         ShootOnTheMove.publish();
     }
 }

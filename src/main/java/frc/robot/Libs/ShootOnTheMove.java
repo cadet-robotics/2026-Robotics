@@ -69,10 +69,10 @@ public class ShootOnTheMove {
         Translation2d shotVector = targetVector.div(distance).minus(robotVelocity);
 
         double robotHeading = shotVector.getAngle().getDegrees();
-        // heading = Optional.of(Rotation2d.fromDegrees(robotHeading));
+        heading = Optional.of(Rotation2d.fromDegrees(robotHeading));
 
         double requiredSpeed = shotVector.getNorm();
         double shooterRPM_ = calculateShooterRPM(requiredSpeed);
-        // shooterRPM = Optional.of(RPM.of(shooterRPM_));
+        shooterRPM = Optional.of(RPM.of(shooterRPM_));
     }
 }

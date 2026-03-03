@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RPM;
 
+import java.lang.reflect.Field;
 import java.util.function.Supplier;
 
 import com.pathplanner.lib.config.PIDConstants;
@@ -48,13 +49,33 @@ public class RobotConstants {
             : new Pose2d(RED_HUB_POSITION, Rotation2d.fromDegrees(0)); };
         
         /** Blue alliance rightside climb position (x, y, Rotation2d) in inches and degrees. */
-        public static final Pose2d BLUE_RIGHT_CLIMB_POSITION = new Pose2d(37.6075, 107.5065, Rotation2d.fromDegrees(0));
+        public static final Pose2d BLUE_RIGHT_CLIMB_POSITION = new Pose2d( Inches.of(37.6075) , Inches.of(107.5065), Rotation2d.fromDegrees(0));
         /** Blue alliance leftside climb position (x, y, Rotation2d) in inches and degrees. */
-        public static final Pose2d BLUE_LEFT_CLIMB_POSITION = new Pose2d(42.3925, 187.4335, Rotation2d.fromDegrees(180));
+        public static final Pose2d BLUE_LEFT_CLIMB_POSITION = new Pose2d(Inches.of(42.3925), Inches.of(187.4335), Rotation2d.fromDegrees(180));
         /** Red alliance rightside climb position (x, y, Rotation2d) in inches and degrees. */
-        public static final Pose2d RED_RIGHT_CLIMB_POSITION = new Pose2d(608.8275, 154.5065, Rotation2d.fromDegrees(180));
+        public static final Pose2d RED_RIGHT_CLIMB_POSITION = new Pose2d(Inches.of(608.8275), Inches.of(154.5065), Rotation2d.fromDegrees(180));
         /** Red alliance leftside climb position (x, y, Rotation2d) in inches and degrees. */
-        public static final Pose2d RED_LEFT_CLIMB_POSITION = new Pose2d(613.6125, 234.4335, Rotation2d.fromDegrees(0));
+        public static final Pose2d RED_LEFT_CLIMB_POSITION = new Pose2d(Inches.of(613.6125), Inches.of(234.4335), Rotation2d.fromDegrees(0));
+
+        // Center of Trench positions for blue and red alliance, 
+        public static final Translation2d BLUE_LEFT_TRENCH = new Translation2d(Inches.of(182), Inches.of(317-25));
+        public static final Translation2d BLUE_RIGHT_TRENCH = new Translation2d(Inches.of(182), Inches.of(25));
+        public static final Translation2d RED_LEFT_TRENCH = new Translation2d(Inches.of(651-182), Inches.of(317-25));
+        public static final Translation2d RED_RIGHT_TRENCH = new Translation2d(Inches.of(651-182), Inches.of(25));
+
+        public static Translation2d offset = new Translation2d( 1, 0 );
+        
+        public static final Translation2d RED_RED_LEFT_TRENCH = RED_LEFT_TRENCH.plus(offset);
+        public static final Translation2d RED_MID_LEFT_TRENCH = RED_LEFT_TRENCH.minus(offset);
+
+        public static final Translation2d RED_RED_RIGHT_TRENCH = RED_RIGHT_TRENCH.plus(offset);
+        public static final Translation2d RED_MID_RIGHT_TRENCH = RED_RIGHT_TRENCH.minus(offset);
+        
+        public static final Translation2d BLUE_BLUE_LEFT_TRENCH = BLUE_LEFT_TRENCH.minus(offset);
+        public static final Translation2d BLUE_MID_LEFT_TRENCH = BLUE_LEFT_TRENCH.plus(offset);
+
+        public static final Translation2d BLUE_BLUE_RIGHT_TRENCH = BLUE_RIGHT_TRENCH.minus(offset);
+        public static final Translation2d BLUE_MID_RIGHT_TRENCH = BLUE_RIGHT_TRENCH.plus(offset);
     }
 
     /**

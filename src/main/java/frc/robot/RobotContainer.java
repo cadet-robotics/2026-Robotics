@@ -7,10 +7,13 @@ package frc.robot;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 
+import java.util.Set;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import frc.robot.Constants.IntakeState;
 import frc.robot.Libs.FuelSim;
 import frc.robot.Subsystems.Climber;
@@ -95,11 +98,16 @@ public class RobotContainer {
 
     // Reset Gyro
     driverController.b().whileTrue(drive_subsystem.resetOdom());
+
+    driverController.povUp().whileTrue(new DeferredCommand(drive_subsystem::driveThroughTrenchSS, Set.of(drive_subsystem)));
+    driverController.povDown().whileTrue(new DeferredCommand(drive_subsystem::driveThroughTrenchOS, Set.of(drive_subsystem)));
   
     drive_subsystem.setDefaultCommand(
       drive_subsystem.driveWithChassisSpeedsSupplier(
-        drive_subsystem.buildRelativeTurningStream()
+        drive_subsystem.buildTrenchStream()
       ));
+
+    driverController.a().whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToElevator()));
 
     driverController.leftBumper().and(drive_subsystem::isOnOurSide).whileTrue(
       new ParallelCommandGroup(
@@ -148,15 +156,20 @@ public class RobotContainer {
 
     // right trigger - shoot forwards, but only when robot is on our side of the field
     // Inform Drive when aim mode is active so indexer/intake can require being aimed before feeding
-    driverController.rightTrigger().onTrue(Commands.runOnce(() -> drive_subsystem.setAimModeActive(true)));
-    driverController.rightTrigger().onFalse(Commands.runOnce(() -> drive_subsystem.setAimModeActive(false)));
+    driverController.rightTrigger()
+      .and(() -> drive_subsystem.isOnOurSide())
+      .onTrue(Commands.runOnce(() -> drive_subsystem.setAimModeActive(true)));
+    driverController.rightTrigger()
+      .and(() -> drive_subsystem.isOnOurSide())
+      .onFalse(Commands.runOnce(() -> drive_subsystem.setAimModeActive(false)));
 
     driverController.rightTrigger()
       .and(() -> drive_subsystem.isOnOurSide())
       .whileTrue(new ParallelCommandGroup(shooter_subsystem.Shoot(), drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildAimingStream())));
 
-    // Automatic driving to the closest climb position
-    // codriverController.a().whileTrue(drive_subsystem.driveToClimb());
+    driverController.rightTrigger()
+      .and(() -> !drive_subsystem.isOnOurSide())
+      .whileTrue(shooter_subsystem.Shoot());
 
     codriverController.a().whileTrue(climber_subsystem.manualClimbUpVoltage());
     codriverController.b().whileTrue(climber_subsystem.manualClimbDownVoltage());
@@ -170,98 +183,6 @@ public class RobotContainer {
     // B button - climb down
     codriverController.povDown().whileTrue(climber_subsystem.climbZero());
   }
-
-  // public void configureDriving() {
-  //   DoubleSupplier getTranslationX = () -> -1 * MathUtil.applyDeadband(this.driverController.getLeftY(),
-  //       ControllerConstants.deadbandX);
-  //   DoubleSupplier getTranslationY = () -> -1 * MathUtil.applyDeadband(this.driverController.getLeftX(),
-  //       ControllerConstants.deadbandY);
-  //   DoubleSupplier getHeadingX = () -> -1 * driverController.getRightX();
-  //   DoubleSupplier getHeadingY = () -> -1 * driverController.getRightY();
-
-  //   SwerveInputStream baseStream = SwerveInputStream.of(drive_subsystem.getSwerveDrive(), getTranslationX, getTranslationY)
-  //     .scaleTranslation(0.8)
-  //     .allianceRelativeControl(true)
-  //     .deadband(0.12);
-
-  //   // The default SIS
-  //   SwerveInputStream defaultStream = baseStream.copy()
-  //     .withControllerHeadingAxis(getHeadingX, getHeadingY)
-  //     .headingWhile(true);
-
-  //   // A SIS with relative turning
-  //   SwerveInputStream relativeTurning = baseStream.copy()
-  //     .withControllerRotationAxis(() -> -1 * driverController.getRightX());
-
-  //   SwerveInputStream halfSpeed = baseStream.copy()
-  //     .scaleTranslation(0.5)
-  //     .scaleRotation(0.5);
-
-    // A SIS which looks at the hub but uses a heading vector that's opposite the hub direction
-    // SwerveInputStream looking = baseStream
-    //   .copy()
-    //   .aim(FieldConstants.hub.rotateAround(drive_subsystem.getPose().getTranslation(), Rotation2d.k180deg))
-    //   .aimWhile(true);
-
-    // A SIS which uses the auto drive to pose to align to a point on the curve
-    // SwerveInputStream autoDrive = baseStream
-    //   .copy()
-    //   .driveToPose(
-    //     () -> drive_subsystem.getClosestPointOnCurve(driverController.getLeftX()),
-    //     RobotConstants.DriveSubsystemConstants.translationProfiledController, 
-    //     RobotConstants.DriveSubsystemConstants.rotationProfiledController
-    //   )
-    //   .driveToPoseEnabled(true);
-
-    // Will use default by default
-  //   drive_subsystem.setDefaultCommand(
-  //     drive_subsystem.driveWithChassisSpeedsSupplier(defaultStream).withName("headingDrive")
-  //   );
-
-  //   BooleanSupplier relativeDriveCondition = driverController.leftTrigger()::getAsBoolean;
-  //   BooleanSupplier aimDriveCondition = driverController.rightTrigger()::getAsBoolean;
-  //   BooleanSupplier autoDriveCondition = driverController.a()::getAsBoolean;
-
-  // // We do a little bit of binding here which might be bad idk
-  //   driverController
-  //     .leftTrigger()
-  //     .and(driverController.a().negate())
-  //     .and(() -> !autoDriveCondition.getAsBoolean())
-  //     .whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(relativeTurning).withName("rotationDrive"));
-
-    // driverController
-    //   .rightTrigger()
-    //   .whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(halfSpeed).withName("halfDrive"));
-
-    // driverController
-    //   .rightTrigger()
-    //   .and(() -> {return !autoDriveCondition.getAsBoolean();})
-    //   .whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(looking));
-    // // Inform Drive when aim mode is active so indexer/intake can require being aimed before feeding
-    // driverController.rightTrigger().onTrue(Commands.runOnce(() -> drive_subsystem.setAimModeActive(true)));
-    // driverController.rightTrigger().onFalse(Commands.runOnce(() -> drive_subsystem.setAimModeActive(false)));
-    
-    // driverController
-    //   .a()
-    //   .whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(autoDrive));
-    // // // Keep Drive informed when the drive-to-pose input stream is active so other subsystems
-    // // can gate behavior (indexer/intake) based on whether we're at the pose.
-    // driverController.a().onTrue(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(true)));
-    // driverController.a().onFalse(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(false)));
-
-    // Button to fire a lead shot using SmartDashboard-specified target velocity (for testing)
-    // driverController.x().onTrue(
-    //   Commands.runOnce(() -> {
-    //     double vx = edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.getNumber("Lead/TargetVx", 0.0);
-    //     double vy = edu.wpi.first.wpilibj.smartdashboard.SmartDashboard.getNumber("Lead/TargetVy", 0.0);
-    //     // Subtract robot field velocity so target velocity is relative to the ground minus robot motion.
-    //     var speeds = drive_subsystem.getSwerveDrive().getFieldVelocity();
-    //     double rvx = speeds.vxMetersPerSecond;
-    //     double rvy = speeds.vyMetersPerSecond;
-    //     shooter_subsystem.leadAndLaunch(drive_subsystem.getPose(), RobotConstants.FieldConstants.hub, new edu.wpi.first.math.geometry.Translation2d(vx - rvx, vy - rvy));
-    //   }, shooter_subsystem)
-    // );
-  
 
   public Command getAutonomousCommand() {
     return this.autos.getAutonomousCommand();

@@ -1,0 +1,72 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 3.75,
+        "y": 7.5
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 4.75,
+        "y": 7.5
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 1.0767695,
+        "y": 4.57
+      },
+      "prevControl": {
+        "x": 0.07676949999999994,
+        "y": 4.57
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 1.0,
+      "rotationDegrees": 180.0
+    }
+  ],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [
+    {
+      "name": "Climber Up",
+      "waypointRelativePos": 0.35891772501380476,
+      "endWaypointRelativePos": 0.7070247933884335,
+      "command": null
+    },
+    {
+      "name": "Climber Down",
+      "waypointRelativePos": 1.0,
+      "endWaypointRelativePos": null,
+      "command": null
+    }
+  ],
+  "globalConstraints": {
+    "maxVelocity": 5.0,
+    "maxAcceleration": 4.0,
+    "maxAngularVelocity": 480.0,
+    "maxAngularAcceleration": 480.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 0.0
+  },
+  "reversed": false,
+  "folder": null,
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": 0.0
+  },
+  "useDefaultConstraints": true
+}
