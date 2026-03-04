@@ -33,6 +33,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.Dashboard;
 import frc.robot.Robot;
 import frc.robot.Configuration.DriveSubsystemConfiguration;
 import frc.robot.Constants.RobotConstants;
@@ -64,6 +65,8 @@ public class Drive extends CSubsystem {
     private Vision vision;
     // Height to render poses in meters (matches shooter muzzle height used by sim)
     private static final double POSE_RENDER_Z = 0.9;
+
+    private static Pose2d autoTrenchTarget = new Pose2d();  // Updated by getClosestPointOnCurve for dashboard display
 
     private final SwerveInputStream baseStream;
     private final CommandXboxController driverController;
@@ -113,7 +116,6 @@ public class Drive extends CSubsystem {
         configureSwerveObjects(startingPose);
 
         baseStream = SwerveInputStream.of(swerveDrive, getTranslationX, getTranslationY)
-            .scaleTranslation(0.8)
             .allianceRelativeControl(true)
             .deadband(0.12);
 
@@ -610,7 +612,6 @@ public class Drive extends CSubsystem {
             RobotConstants.DriveSubsystemConstants.rotationProfiledController
         )
         .driveToPoseEnabled(true);
-
     }
 
     public SwerveInputStream buildRelativeTurningStream() {
@@ -649,7 +650,6 @@ public class Drive extends CSubsystem {
                     return Math.min( Math.max( -1.0, horizonalDistance / 0.5 ), 1.0 ); // Clamp between 0 and 1
                 }
             )
-            .scaleTranslation(0.8)
             .allianceRelativeControl(true)
             .deadband(0.12)
             .withControllerHeadingAxis(getHeadingX, getHeadingY)
@@ -763,6 +763,7 @@ public class Drive extends CSubsystem {
             Supplier<Pose2d> supplier = targetGetter;
             Pose2d targetPose = supplier.get();
             SmartDashboard.putNumberArray("AutoDriveTarget", new double[] {targetPose.getX(), targetPose.getY(), targetPose.getRotation().getDegrees()});
+            autoTrenchTarget = targetPose;
             return targetPose;
         };
     }
@@ -806,6 +807,8 @@ public class Drive extends CSubsystem {
     @Override
     public void periodic() {
         logSelf();
+        Dashboard.getField2d().setRobotPose(getPose());
+        Dashboard.getField2d().getObject("traj");
 
         ShootOnTheMove.calculateLeadHeading(getPose(), swerveDrive.getRobotVelocity());
         ShootOnTheMove.publish();
