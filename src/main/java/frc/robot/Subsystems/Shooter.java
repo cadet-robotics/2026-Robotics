@@ -16,6 +16,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.Robot;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.RobotConstants.ShooterSubsystemConstants;
 import frc.robot.Constants.ShooterState;
@@ -223,6 +224,12 @@ public class Shooter extends CSubsystem {
                     state = ShooterState.Off;
                     shooter_motor_controller.setVoltage(0);
                     lastSpawnNs = 0;
+                })
+                .isFinished(() -> {
+                    if (Robot.isSimulation()) {
+                        return intakeSubsystem.getHopperCount() == 0; // if hopper is empty
+                    }
+                    return false;
                 });
     }
 
