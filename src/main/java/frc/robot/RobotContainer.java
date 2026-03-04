@@ -11,9 +11,13 @@ import java.util.Set;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
+import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.DeferredCommand;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.Constants.IntakeState;
 import frc.robot.Libs.FuelSim;
 import frc.robot.Subsystems.Climber;
@@ -58,9 +62,18 @@ public class RobotContainer {
     autos = new Autos(this, drive_subsystem );
 
     configureBindings();
+    configureAuto();
     if ( Robot.isSimulation() ) {
       configureSim();
     }
+  }
+
+  private void configureAuto() {
+    autos.addCommand("Shoot", shooter_subsystem.Shoot());
+    autos.addCommand("Intake", intake_subsystem.IntakeOn());
+    autos.addCommand("ClimberUp", climber_subsystem.climbUp());
+    autos.addCommand("ClimberZero", climber_subsystem.climbZero());
+    autos.addCommand("ClimberDown", climber_subsystem.climb());
   }
 
   private void configureSim() {
@@ -101,7 +114,7 @@ public class RobotContainer {
 
     driverController.povUp().whileTrue(new DeferredCommand(drive_subsystem::driveThroughTrenchSS, Set.of(drive_subsystem)));
     driverController.povDown().whileTrue(new DeferredCommand(drive_subsystem::driveThroughTrenchOS, Set.of(drive_subsystem)));
-  
+    
     drive_subsystem.setDefaultCommand(
       drive_subsystem.driveWithChassisSpeedsSupplier(
         drive_subsystem.buildTrenchStream()
@@ -150,6 +163,17 @@ public class RobotContainer {
     // Toggle the intake on / off
     driverController.x().whileTrue(intake_subsystem.intakeToggler());
 
+    driverController.povLeft().whileTrue(new SequentialCommandGroup(
+      new DeferredCommand( drive_subsystem::driveThroughTrenchSS, Set.of(drive_subsystem)),
+      new InstantCommand(() -> drive_subsystem.setDriveToPoseActive(true)),
+      new DeferredCommand(() -> drive_subsystem.driveToTargetPose(drive_subsystem.getClosestPointOnCurve(0), 0), Set.of(drive_subsystem)),
+      new ParallelDeadlineGroup(
+        drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream()),
+        shooter_subsystem.Shoot()
+      ).withTimeout(10.0),
+      new InstantCommand(() -> drive_subsystem.setDriveToPoseActive(false)),
+      new DeferredCommand( drive_subsystem::driveThroughTrenchSS, Set.of(drive_subsystem))
+    ));
     
     //Co Driver Controls
 
