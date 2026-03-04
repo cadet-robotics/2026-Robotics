@@ -95,10 +95,16 @@ public class Intake extends CSubsystem {
 
     public CCommand intakeToggler() {
         return cCommand().onInitialize(() -> {
-            if (state == IntakeState.OFF) {
-                state = IntakeState.ON;
-            } else {
-                state = IntakeState.OFF;
+            switch(state) {
+                case OFF:
+                    state = IntakeState.ON;
+                    intakeMotorController.setVoltage(8);
+                    break;
+                case ON:
+                case BARF:
+                    state = IntakeState.OFF;
+                    intakeMotorController.setVoltage(0);
+                    break;
             }
         });
     }
