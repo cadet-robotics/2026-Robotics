@@ -52,8 +52,8 @@ public final class DriveSubsystemConfiguration {
                 );
             },
             new PPHolonomicDriveController(
-                    DriveSubsystemConstants.translationPidConstants,
-                    DriveSubsystemConstants.rotationPidConstants
+                    DriveSubsystemConstants.pptranslationPidConstants,
+                    DriveSubsystemConstants.pprotationPidConstants
             ),
             config,
             isRedTeam,

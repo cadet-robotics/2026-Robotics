@@ -63,7 +63,7 @@ public class RobotConstants {
         public static final Translation2d RED_LEFT_TRENCH = new Translation2d(Inches.of(651-182), Inches.of(317-25));
         public static final Translation2d RED_RIGHT_TRENCH = new Translation2d(Inches.of(651-182), Inches.of(25));
 
-        public static Translation2d offset = new Translation2d( 1, 0 );
+        public static Translation2d offset = new Translation2d( 1.25, 0 );
         
         public static final Translation2d RED_RED_LEFT_TRENCH = RED_LEFT_TRENCH.plus(offset);
         public static final Translation2d RED_MID_LEFT_TRENCH = RED_LEFT_TRENCH.minus(offset);
@@ -88,6 +88,11 @@ public class RobotConstants {
         public static final double maxTurnSpeed = 480; // Degrees
         /** Maximum translational speed of the robot in meters per second. */
         public static final double maxSpeed = 6; // Meters per second
+
+        /** PID constants for translational (x, y) movement control. Pathplanner */
+        public static final PIDConstants pptranslationPidConstants = new PIDConstants(20, 0, 1);
+        /** PID constants for rotational (theta) movement control. Pathplanner */
+        public static final PIDConstants pprotationPidConstants = new PIDConstants(6, 0, 0);
 
         /** PID constants for translational (x, y) movement control. */
         public static final PIDConstants translationPidConstants = new PIDConstants(4.5, 0, 1);
