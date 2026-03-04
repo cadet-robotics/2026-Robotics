@@ -649,13 +649,14 @@ public class Drive extends CSubsystem {
                     }
 
                     double horizonalDistance = closestTrench.getY() - current.getY();
-                    return Math.min( Math.max( -1.0, horizonalDistance / 0.5 ), 1.0 ); // Clamp between 0 and 1
+                    return Math.min( Math.max( -1.0, horizonalDistance / 0.4 ), 1.0 ); // Clamp between 0 and 1
                 }
             )
             .allianceRelativeControl(true)
             .deadband(0.12)
-            .withControllerHeadingAxis(getHeadingX, getHeadingY)
-            .headingWhile(true);
+            .withControllerRotationAxis(getHeadingX);
+            // .withControllerHeadingAxis(getHeadingX, getHeadingY)
+            // .headingWhile(true);
     }
 
     public SwerveInputStream genericDriveToPoseStream(Supplier<Pose2d> pose) {
