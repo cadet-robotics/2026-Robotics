@@ -9,7 +9,7 @@ import frc.robot.Libs.CSubsystem;
 public class Shaker extends CSubsystem {
     private SparkMax shaker_motor = new SparkMax(30, MotorType.kBrushless);
 
-    private ShakerState state = ShakerState.Off;
+    private ShakerState state = ShakerState.OFF;
 
     public Shaker( Indexer indexer_subsystem ) {
         setName("ShakerSubsystem");
