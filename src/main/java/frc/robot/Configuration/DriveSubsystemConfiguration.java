@@ -7,11 +7,11 @@ import com.pathplanner.lib.pathfinding.Pathfinding;
 import com.pathplanner.lib.util.DriveFeedforwards;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
+import frc.robot.Dashboard;
 import frc.robot.Constants.RobotConstants.DriveSubsystemConstants;
 import frc.robot.Subsystems.Drive;
 import swervelib.SwerveDrive;
 
-import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
 public final class DriveSubsystemConfiguration {
@@ -30,11 +30,7 @@ public final class DriveSubsystemConfiguration {
         }
 
         BooleanSupplier isRedTeam = () -> {
-            Optional< DriverStation.Alliance > alliance = DriverStation.getAlliance();
-            if ( alliance.isPresent() ) {
-                return alliance.get() == DriverStation.Alliance.Red;
-            }
-            return false;
+            return Dashboard.getAlliance() == DriverStation.Alliance.Red;
         };
 
         // Set the pathfinding implementation to use ADStar

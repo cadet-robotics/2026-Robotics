@@ -100,12 +100,19 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
+    Trigger manualOverride = new Trigger(() -> Dashboard.getManualOverride());
+    Trigger noManualOverride = manualOverride.negate();
 
     Trigger angleDriveApprovesOfShooting = new Trigger(drive_subsystem::isAimModeActive)
-      .and(() -> drive_subsystem.isAimedAtHub(Math.toRadians(6)));
+      .and(() -> Dashboard.getManualOverride() 
+        || drive_subsystem.isAimedAtHub(Math.toRadians(6))
+      );
     
     Trigger curveDriveApprovesOfShooting = new Trigger(drive_subsystem::isDriveToPoseActive)
       .and(() -> {
+        if (manualOverride.getAsBoolean()) {
+          return true; // If manual override is active, don't gate shooting at all
+        }
         // When autodrive is active, allow shooting only if the robot's distance
         // to the hub is within a tolerance of the midRange used to generate the curve.
         double midRange = RobotConstants.ShooterSubsystemConstants.midRange;
@@ -120,6 +127,7 @@ public class RobotContainer {
     Trigger upToSpeedShooting = new Trigger(shooter_subsystem::isUpToSpeed)
       .and(angleDriveApprovesOfShooting)
       .and(curveDriveApprovesOfShooting)
+      .or(manualOverride)
       .whileTrue(Commands.parallel(
         indexer_subsystem.IndexerOut(),
         intake_subsystem.IntakeIn()
@@ -177,17 +185,19 @@ public class RobotContainer {
     //     drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildHalfDriveStream())
     //   );
 
-    driverController.povLeft().whileTrue(new SequentialCommandGroup(
-      new DeferredCommand( drive_subsystem::driveThroughTrenchSS, Set.of(drive_subsystem)),
-      new InstantCommand(() -> drive_subsystem.setDriveToPoseActive(true)),
-      new DeferredCommand(() -> drive_subsystem.driveToTargetPose(drive_subsystem.getClosestPointOnCurve(0), 0), Set.of(drive_subsystem)),
-      new ParallelDeadlineGroup(
-        drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream()),
-        shooter_subsystem.Shoot()
-      ).withTimeout(10.0),
-      new InstantCommand(() -> drive_subsystem.setDriveToPoseActive(false)),
-      new DeferredCommand( drive_subsystem::driveThroughTrenchSS, Set.of(drive_subsystem))
-    ));
+    driverController.povLeft()
+      .and(noManualOverride)
+      .whileTrue(new SequentialCommandGroup(
+        new DeferredCommand( drive_subsystem::driveThroughTrenchSS, Set.of(drive_subsystem)),
+        new InstantCommand(() -> drive_subsystem.setDriveToPoseActive(true)),
+        new DeferredCommand(() -> drive_subsystem.driveToTargetPose(drive_subsystem.getClosestPointOnCurve(0), 0), Set.of(drive_subsystem)),
+        new ParallelDeadlineGroup(
+          drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream()),
+          shooter_subsystem.Shoot()
+        ).withTimeout(10.0),
+        new InstantCommand(() -> drive_subsystem.setDriveToPoseActive(false)),
+        new DeferredCommand( drive_subsystem::driveThroughTrenchSS, Set.of(drive_subsystem))
+      ));
     
     //Co Driver Controls
 
@@ -195,18 +205,22 @@ public class RobotContainer {
     // right trigger - shoot forwards, but only when robot is on our side of the field
     // Inform Drive when aim mode is active so indexer/intake can require being aimed before feeding
     driverController.rightTrigger()
+      .and(noManualOverride)
       .and(() -> drive_subsystem.isOnOurSide())
       .onTrue(Commands.runOnce(() -> drive_subsystem.setAimModeActive(true)));
     driverController.rightTrigger()
+      .and(noManualOverride)
       .and(() -> drive_subsystem.isOnOurSide())
       .onFalse(Commands.runOnce(() -> drive_subsystem.setAimModeActive(false)));
 
     driverController.rightTrigger()
       .and(() -> drive_subsystem.isOnOurSide())
+      .and(noManualOverride)
       .whileTrue(new ParallelCommandGroup(shooter_subsystem.Shoot(), drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildAimingStream())));
 
     driverController.rightTrigger()
       .and(() -> !drive_subsystem.isOnOurSide())
+      .and(noManualOverride)
       .whileTrue(shooter_subsystem.Shoot());
 
     codriverController.a().whileTrue(climber_subsystem.manualClimbUpVoltage());

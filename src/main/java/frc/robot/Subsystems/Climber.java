@@ -1,12 +1,7 @@
 package frc.robot.Subsystems;
 
 import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Degree;
-import static edu.wpi.first.units.Units.DegreesPerSecond;
-import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Rotation;
-import static edu.wpi.first.units.Units.Volts;
-
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -14,13 +9,12 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import frc.robot.Dashboard;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
 import yams.gearing.MechanismGearing;
-import yams.math.ExponentialProfilePIDController;
 import yams.gearing.GearBox;
 import yams.motorcontrollers.SmartMotorController;
 import yams.motorcontrollers.SmartMotorControllerConfig;
@@ -65,7 +59,7 @@ public class Climber extends CSubsystem {
         smc_config
     );
     
-    public CCommand climbUp() {
+    public ConditionalCommand climbUp() {
         return cCommand("ClimberSubsystem.ClimbUp")
             .onInitialize(() -> {
                 climber_motor.startClosedLoopController();
@@ -77,10 +71,10 @@ public class Climber extends CSubsystem {
             .isFinished(() -> {
                 // Command finishes when position is reached (within tolerance)
                 return isAtPosition(max_position);
-            });
+            }).onlyIf(()->zeroed);
     }
 
-    public CCommand climb() {
+    public ConditionalCommand climb() {
         return cCommand("ClimberSubsystem.ClimbDown")
             .onInitialize(() -> {
                 climber_motor.startClosedLoopController();
@@ -92,7 +86,7 @@ public class Climber extends CSubsystem {
             .isFinished(() -> {
                 // Command finishes when position is reached (within tolerance) or limit switch hit
                 return isAtPosition(climb_position) || isLimitSwitchPressed();
-            });
+            }).onlyIf(() -> zeroed); // Only allow climbing if we've been zeroed (to prevent trying to climb up when we don't know where we are)
     }
 
     public CCommand climbZero() {
@@ -170,10 +164,9 @@ public class Climber extends CSubsystem {
         Dashboard.setElevatorStatus(isAtPosition(zero_position));
         
         // Reset encoder when limit switch is pressed (auto-zero)
-        if (isLimitSwitchPressed()) {
+        if (!zeroed && isLimitSwitchPressed()) {
             climber_encoder.setPosition(zero_position);
             zeroed = true;
-
         }
     }
 

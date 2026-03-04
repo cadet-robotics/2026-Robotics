@@ -3,6 +3,7 @@ package frc.robot.Libs;
 import edu.wpi.first.util.struct.Struct;
 import edu.wpi.first.util.struct.StructSerializable;
 import edu.wpi.first.wpilibj.DriverStation;
+import frc.robot.Dashboard;
 import java.nio.ByteBuffer;
 import java.util.function.Supplier;
 
@@ -78,9 +79,7 @@ public class MatchTime implements StructSerializable {
   public static final Supplier<Long> kGameData2026 =
       () -> {
         final var message = DriverStation.getGameSpecificMessage();
-        final var alliance = DriverStation.getAlliance();
-        final var bit1 =
-            alliance.isPresent() && alliance.get() == DriverStation.Alliance.Red ? 1 : 0;
+    final var bit1 = Dashboard.getAlliance() == DriverStation.Alliance.Red ? 1 : 0;
 
         var bit0 = 0;
         if (message.length() > 0) {

@@ -3,11 +3,8 @@ package frc.robot.Subsystems;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meter;
 import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.Rotation;
-
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -15,20 +12,14 @@ import java.util.function.Supplier;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
-import com.pathplanner.lib.trajectory.PathPlannerTrajectory;
-import com.pathplanner.lib.util.PPLibTelemetry;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.util.Units;
-import edu.wpi.first.units.DistanceUnit;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -100,14 +91,8 @@ public class Drive extends CSubsystem {
         } else {
         }
 
-        // Temp starting positions for sim
-        boolean blueAlliance;
-        if (DriverStation.getAlliance().isPresent()) {
-            blueAlliance = DriverStation.getAlliance().get() == Alliance.Blue;
-        } else {
-            // If alliance can't be determined, default to Blue per request
-            blueAlliance = true;
-        }
+        // Temp starting positions for sim — use safe Dashboard.getAlliance() which provides a fallback
+        boolean blueAlliance = Dashboard.getAlliance() == Alliance.Blue;
         Pose2d startingPose = blueAlliance ? new Pose2d(new Translation2d(Meter.of(3),
                 Meter.of(4)),
                 Rotation2d.fromDegrees(0))
@@ -219,13 +204,8 @@ public class Drive extends CSubsystem {
         Pose2d pose = getPose();
         double x = pose.getX();
 
-        // If alliance can't be determined, default to true per request
-        if (!DriverStation.getAlliance().isPresent()) {
-            return true;
-        }
-
-        DriverStation.Alliance alliance = DriverStation.getAlliance().get();
-
+        // Use safe Dashboard.getAlliance() which will always return a value (with a sensible default)
+        DriverStation.Alliance alliance = Dashboard.getAlliance();
         if (alliance == DriverStation.Alliance.Blue) {
             return x < FieldConstants.BLUE_HUB_POSITION.getX();
         } else {
@@ -693,19 +673,16 @@ public class Drive extends CSubsystem {
     }
 
     public Pose2d getClosestElevator() {
-        if ( !DriverStation.getAlliance().isPresent() ) {
-            // Safely do nothing if behavior is unknown
-            return getPose();
-        } 
+        // Use safe Dashboard.getAlliance() — no optional handling required
         System.out.println( "Pos: " + getPose().getY() + " Elevator: " + Inches.of(317/2).in(Meters) );
-        switch( DriverStation.getAlliance().get() ) {
+        switch( Dashboard.getAlliance() ) {
             case Blue:
-                if ( getPose().getY() > Inches.of(317/2).in(Meters)) {
+                if ( getPose().getY() > Inches.of(317/2).in(Meters) ) {
                     return FieldConstants.BLUE_LEFT_CLIMB_POSITION;
                 }
                 return FieldConstants.BLUE_RIGHT_CLIMB_POSITION;
             case Red:
-                if ( getPose().getY() > 317/2) {
+                if ( getPose().getY() > Inches.of(317/2).in(Meters) ) {
                     return FieldConstants.RED_LEFT_CLIMB_POSITION;
                 }
                 return FieldConstants.RED_RIGHT_CLIMB_POSITION;
@@ -727,11 +704,7 @@ public class Drive extends CSubsystem {
 
     public Command driveThroughTrenchSS() {
         Supplier<Pose2d> getTargetLocation = () -> {
-            if (DriverStation.getAlliance().isEmpty()) {
-                return getPose();
-            }
-
-            switch ( DriverStation.getAlliance().get()) {
+            switch ( Dashboard.getAlliance() ) {
                 case Blue:
                     if ( getPose().getY() > Inches.of(317/2).in(Meters)) {
                         if ( getPose().getX() > FieldConstants.BLUE_LEFT_TRENCH.getX() ) {
@@ -773,11 +746,7 @@ public class Drive extends CSubsystem {
 
     public Command driveThroughTrenchOS() {
         Supplier<Pose2d> getTargetLocation = () -> {
-            if (DriverStation.getAlliance().isEmpty()) {
-                return getPose();
-            }
-
-            switch ( DriverStation.getAlliance().get()) {
+            switch ( Dashboard.getAlliance() ) {
                 case Red:
                     if ( getPose().getY() > Inches.of(317/2).in(Meters)) {
                         if ( getPose().getX() > FieldConstants.BLUE_LEFT_TRENCH.getX() ) {
