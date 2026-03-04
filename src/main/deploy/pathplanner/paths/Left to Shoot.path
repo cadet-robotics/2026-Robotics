@@ -12,20 +12,20 @@
         "y": 6.362270822988322
       },
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "LeftStarting"
     },
     {
       "anchor": {
-        "x": 2.978088445078458,
-        "y": 5.218887303851641
+        "x": 2.9482048192771084,
+        "y": 5.269831325301205
       },
       "prevControl": {
-        "x": 2.972517269743695,
-        "y": 5.468825220153649
+        "x": 2.9569296934527336,
+        "y": 5.01998361854643
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "LeftShoot"
     }
   ],
   "rotationTargets": [],
@@ -33,16 +33,16 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 5.0,
-    "maxAcceleration": 4.0,
+    "maxVelocity": 4.5,
+    "maxAcceleration": 2.2,
     "maxAngularVelocity": 480.0,
-    "maxAngularAcceleration": 480.0,
+    "maxAngularAcceleration": 360.0,
     "nominalVoltage": 12.0,
     "unlimited": false
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -42.64670313389167
+    "rotation": -35.60755065918108
   },
   "reversed": false,
   "folder": null,
