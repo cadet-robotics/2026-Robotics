@@ -108,7 +108,7 @@ public class Intake extends CSubsystem {
      * 
      * @return command that sets intake state to On
      */
-    public CCommand IntakeOn() {
+    public CCommand IntakeIn() {
         return cCommand().onInitialize(() -> {
             state = IntakeState.ON;
             intakeMotorController.setVoltage(8);
