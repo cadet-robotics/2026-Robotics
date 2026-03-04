@@ -148,6 +148,7 @@ public class RobotContainer {
       indexer_subsystem.IndexerIn()
     );
     autos.addCommand("Intake", intake);
+    codriverController.x().whileTrue(intake);
 
     driverController.rightBumper().whileTrue(barf);
 
@@ -208,6 +209,7 @@ public class RobotContainer {
       .and(noManualOverride)
       .and(() -> drive_subsystem.isOnOurSide())
       .onTrue(Commands.runOnce(() -> drive_subsystem.setAimModeActive(true)));
+
     driverController.rightTrigger()
       .and(noManualOverride)
       .and(() -> drive_subsystem.isOnOurSide())
