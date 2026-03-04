@@ -70,7 +70,6 @@ public class RobotContainer {
 
   private void configureAuto() {
     autos.addCommand("Shoot", shooter_subsystem.Shoot());
-    autos.addCommand("Intake", intake_subsystem.IntakeOn());
     autos.addCommand("ClimberUp", climber_subsystem.climbUp());
     autos.addCommand("ClimberZero", climber_subsystem.climbZero());
     autos.addCommand("ClimberDown", climber_subsystem.climb());
@@ -123,7 +122,7 @@ public class RobotContainer {
       .and(curveDriveApprovesOfShooting)
       .whileTrue(Commands.parallel(
         indexer_subsystem.IndexerOut(),
-        intake_subsystem.IntakeOn()
+        intake_subsystem.IntakeIn()
       ));
 
     Trigger indexerGoingOut = new Trigger(() -> !indexer_subsystem.IndexerOut().isFinished())
@@ -133,11 +132,21 @@ public class RobotContainer {
       intake_subsystem.IntakeBarf(),
       indexer_subsystem.IndexerOut()
     );
+    autos.addCommand("Barf", barf);
+    
+
+    Command intake = Commands.parallel(
+      intake_subsystem.IntakeIn(),
+      indexer_subsystem.IndexerIn()
+    );
+    autos.addCommand("Intake", intake);
+
     driverController.rightBumper().whileTrue(barf);
 
     // Reset Gyro
     driverController.b().whileTrue(drive_subsystem.resetOdom());
 
+    // Commands for auto driving through trenches
     driverController.povUp().whileTrue(new DeferredCommand(drive_subsystem::driveThroughTrenchSS, Set.of(drive_subsystem)));
     driverController.povDown().whileTrue(new DeferredCommand(drive_subsystem::driveThroughTrenchOS, Set.of(drive_subsystem)));
     
@@ -153,19 +162,10 @@ public class RobotContainer {
         drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream()),
         shooter_subsystem.Shoot()
       ));
-    // Keep Drive informed when the drive-to-curve input stream is active so other subsystems
-    // can gate behavior (indexer/intake) based on whether we're at the pose.
+
     driverController.leftBumper().onTrue(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(true)));
     driverController.leftBumper().onFalse(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(false)));
-    // Shoots, Shakes, and Aims
-    // driverController.rightTrigger()
-    //   .whileTrue( 
-    //     new ParallelCommandGroup(
-    //       shooter_subsystem.Shoot(),
-    //       drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildAimingStream())
-    //     ));
-    
-    // Uses Relative Turning
+
     driverController.leftTrigger()
       .whileTrue(
         drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDefaultStream())
@@ -176,17 +176,6 @@ public class RobotContainer {
     //   .whileTrue(
     //     drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildHalfDriveStream())
     //   );
-
-    // Drives to a point on the curve (the arc where we are best equipped to shoot accurately)
-    // driverController.a()
-    //   .whileTrue(
-    //     drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream())
-    //   );
-
-    // Barf
-
-    // Toggle the intake on / off
-    driverController.x().whileTrue(intake_subsystem.intakeToggler());
 
     driverController.povLeft().whileTrue(new SequentialCommandGroup(
       new DeferredCommand( drive_subsystem::driveThroughTrenchSS, Set.of(drive_subsystem)),
@@ -222,6 +211,8 @@ public class RobotContainer {
 
     codriverController.a().whileTrue(climber_subsystem.manualClimbUpVoltage());
     codriverController.b().whileTrue(climber_subsystem.manualClimbDownVoltage());
+
+    codriverController.rightBumper().whileTrue(intake);
 
     // Climber controls on codriver X, Y, and B
     codriverController.povUp().whileTrue(climber_subsystem.climbUp());
