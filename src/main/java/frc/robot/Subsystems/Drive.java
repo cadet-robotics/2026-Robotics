@@ -15,6 +15,8 @@ import java.util.function.Supplier;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.trajectory.PathPlannerTrajectory;
+import com.pathplanner.lib.util.PPLibTelemetry;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -808,7 +810,6 @@ public class Drive extends CSubsystem {
     public void periodic() {
         logSelf();
         Dashboard.getField2d().setRobotPose(getPose());
-        Dashboard.getField2d().getObject("traj");
 
         ShootOnTheMove.calculateLeadHeading(getPose(), swerveDrive.getRobotVelocity());
         ShootOnTheMove.publish();

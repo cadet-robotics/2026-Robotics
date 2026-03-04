@@ -10,15 +10,16 @@ import static edu.wpi.first.units.Units.Meters;
 import java.util.Set;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
-import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
-import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.IntakeState;
+import frc.robot.Constants.RobotConstants;
 import frc.robot.Libs.FuelSim;
 import frc.robot.Subsystems.Climber;
 import frc.robot.Subsystems.Drive;
@@ -27,7 +28,6 @@ import frc.robot.Subsystems.Intake;
 import frc.robot.Subsystems.Shaker;
 import frc.robot.Subsystems.Shooter;
 import frc.robot.Subsystems.Vision.Vision;
-import swervelib.parser.json.modules.DriveConversionFactorsJson;
 
 public class RobotContainer {
 
@@ -101,13 +101,39 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
-    // Driver Controls
 
-    // SysId complete routine for shooter characterization - runs all 4 tests in sequence
-    // driverController.a().onTrue(shooter_subsystem.getCompleteSysIdRoutine());
+    Trigger angleDriveApprovesOfShooting = new Trigger(drive_subsystem::isAimModeActive)
+      .and(() -> drive_subsystem.isAimedAtHub(Math.toRadians(6)));
+    
+    Trigger curveDriveApprovesOfShooting = new Trigger(drive_subsystem::isDriveToPoseActive)
+      .and(() -> {
+        // When autodrive is active, allow shooting only if the robot's distance
+        // to the hub is within a tolerance of the midRange used to generate the curve.
+        double midRange = RobotConstants.ShooterSubsystemConstants.midRange;
+        double posTol = midRange * 0.05; // 5% tolerance around midRange
+        double hubDist = drive_subsystem.getPose().getTranslation().getDistance(
+            RobotConstants.FieldConstants.hub.get().getTranslation());
+        boolean distOk = Math.abs(hubDist - midRange) <= posTol;
+        boolean angleOk = drive_subsystem.isAimedAtHub(Math.toRadians(6.0));
+        return distOk && angleOk;
+      });
 
-    // Reset odometry to current Limelight pose
-    // driverController.b().onTrue(drive_subsystem.resetOdometryWithVision());
+    Trigger upToSpeedShooting = new Trigger(shooter_subsystem::isUpToSpeed)
+      .and(angleDriveApprovesOfShooting)
+      .and(curveDriveApprovesOfShooting)
+      .whileTrue(Commands.parallel(
+        indexer_subsystem.IndexerOut(),
+        intake_subsystem.IntakeOn()
+      ));
+
+    Trigger indexerGoingOut = new Trigger(() -> !indexer_subsystem.IndexerOut().isFinished())
+      .whileTrue(shaker_subsystem.Shake());
+
+    Command barf = Commands.parallel(
+      intake_subsystem.IntakeBarf(),
+      indexer_subsystem.IndexerOut()
+    );
+    driverController.rightBumper().whileTrue(barf);
 
     // Reset Gyro
     driverController.b().whileTrue(drive_subsystem.resetOdom());
@@ -158,7 +184,6 @@ public class RobotContainer {
     //   );
 
     // Barf
-    driverController.rightBumper().whileTrue(intake_subsystem.IntakeBarf());
 
     // Toggle the intake on / off
     driverController.x().whileTrue(intake_subsystem.intakeToggler());

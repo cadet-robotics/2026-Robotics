@@ -14,6 +14,7 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Robot;
 import frc.robot.Constants.IntakeState;
 import frc.robot.Constants.ShooterState;
 import frc.robot.Libs.CCommand;
@@ -31,18 +32,6 @@ import yams.motorcontrollers.local.SparkWrapper;
 public class Intake extends CSubsystem {
     /** Motor controller for the intake mechanism. */
     private final SparkMax intakeMotorController = new SparkMax(15, SparkLowLevel.MotorType.kBrushless);
-    /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
-    private final SmartMotorControllerConfig smcConfig  = new SmartMotorControllerConfig(this)
-        .withFeedforward(new SimpleMotorFeedforward(0, 0, 0))
-        .withSimFeedforward(new SimpleMotorFeedforward(0, 0, 0))
-        .withTelemetry("IntakeMotor",SmartMotorControllerConfig.TelemetryVerbosity.HIGH)
-        .withGearing(new MechanismGearing(GearBox.fromReductionStages(9)))
-        .withMotorInverted(false)
-        .withIdleMode(SmartMotorControllerConfig.MotorMode.COAST)
-        .withStatorCurrentLimit(Amps.of(40));
-
-    /** Smart motor controller wrapper for the intake motor. */
-    private final SmartMotorController intakeController = new SparkWrapper( intakeMotorController, DCMotor.getNeoVortex(1), smcConfig);
 
     /** Target state of the intake mechanism. */
     private IntakeState state = IntakeState.OFF;
@@ -122,8 +111,10 @@ public class Intake extends CSubsystem {
     public CCommand IntakeOn() {
         return cCommand().onInitialize(() -> {
             state = IntakeState.ON;
+            intakeMotorController.setVoltage(8);
         }).onEnd(() -> {
             state = IntakeState.OFF;
+            intakeMotorController.setVoltage(0);
         });
     }
 
@@ -135,6 +126,7 @@ public class Intake extends CSubsystem {
     public CCommand IntakeOff() {
         return cCommand().onInitialize(() -> {
             state = IntakeState.OFF;
+            intakeMotorController.setVoltage(0);
         });
     }
 
@@ -146,8 +138,10 @@ public class Intake extends CSubsystem {
     public CCommand IntakeBarf() {
         return cCommand().onInitialize(() -> {
             state = IntakeState.BARF;
+            intakeMotorController.setVoltage(-8);
         }).onEnd(() -> {
             state = IntakeState.OFF;
+            intakeMotorController.setVoltage(0);
         });
     }
 
@@ -158,41 +152,12 @@ public class Intake extends CSubsystem {
     @Override
     public void periodic() {
         logSelf();
-        intakeController.updateTelemetry();
 
-        // Run intake if manually commanded OR if shooter is on and up to speed
-        boolean allowedByDrive = true;
-        boolean allowedByAim = true;
-        if (driveSubsystem != null) {
-            // if drive-to-pose input stream is active, require being at the pose
-            if (driveSubsystem.isDriveToPoseActive()) {
-                allowedByDrive = true;
-            }
-            // if aim mode input stream is active, require being aimed at hub within tolerance
-            if (driveSubsystem.isAimModeActive()) {
-                allowedByAim = driveSubsystem.isAimedAtHub(Math.toRadians(6.0)); // ~6 deg tolerance
-            }
+        if (Robot.isSimulation()) {
+            // Publish whether the simulation intake condition is active
+            // (matches the supplier used by FuelSim.registerIntake)
+            boolean simIntakeActive = (this.state == IntakeState.ON) && (!this.isHopperFull());
+            SmartDashboard.putBoolean("Intake/SimActive", simIntakeActive);
         }
-
-        if ( this.state == IntakeState.ON || ((this.getShooterState.get() == ShooterState.On && this.isShooterUpToSpeed.get()) && allowedByDrive && allowedByAim) ) {
-            this.intakeController.setVoltage(Volts.of(11));
-        } else if ( this.state == IntakeState.BARF ) {
-            this.intakeController.setVoltage(Volts.of(-12));
-        } else {
-            this.intakeController.setVoltage(Volts.of(0));
-        }
-        // Publish whether the simulation intake condition is active
-        // (matches the supplier used by FuelSim.registerIntake)
-        boolean simIntakeActive = (this.state == IntakeState.ON) && (!this.isHopperFull());
-        SmartDashboard.putBoolean("Intake/SimActive", simIntakeActive);
-    }
-
-    /**
-     * Iterates the motor controller simulation.
-     * Called periodically during simulation mode.
-     */
-    @Override
-    public void simulationPeriodic() {
-        intakeController.simIterate();
     }
 }

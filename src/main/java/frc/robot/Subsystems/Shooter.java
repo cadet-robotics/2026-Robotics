@@ -2,8 +2,10 @@ package frc.robot.Subsystems;
 
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Pounds;
+import static edu.wpi.first.units.Units.Rotation;
 
 import java.util.Optional;
 
@@ -214,22 +216,22 @@ public class Shooter extends CSubsystem {
                     }
                 })
                 .onExecute(() -> {
-                    if (ShootOnTheMove.shooterRPM.isPresent()) {
-                        shooter_controller.setMechanismVelocitySetpoint(ShootOnTheMove.shooterRPM.get());
-                    } else {
-                        shooter_controller.setMechanismVelocitySetpoint(ShooterSubsystemConstants.forwardsOnSpeeds);
-                    }
+                    // if (ShootOnTheMove.shooterRPM.isPresent()) {
+                    //     shooter_controller.setMechanismVelocitySetpoint(ShootOnTheMove.shooterRPM.get());
+                    // } else {
+                    //     shooter_controller.setMechanismVelocitySetpoint(ShooterSubsystemConstants.forwardsOnSpeeds);
+                    // }
                 })
                 .onEnd(() -> {
                     state = ShooterState.Off;
-                    shooter_motor_controller.setVoltage(0);
+                    shooter_controller.setMechanismVelocitySetpoint(DegreesPerSecond.of(0));
                     lastSpawnNs = 0;
                 })
                 .isFinished(() -> {
                     if (Robot.isSimulation()) {
                         return intakeSubsystem.getHopperCount() == 0; // if hopper is empty
                     }
-                    return false;
+                    return false; // Some method to stop shooting irl, most likely current
                 });
     }
 

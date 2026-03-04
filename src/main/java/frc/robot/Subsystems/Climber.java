@@ -15,6 +15,7 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Dashboard;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
@@ -34,6 +35,8 @@ public class Climber extends CSubsystem {
     private final double zero_position = RobotConstants.ClimberSubsystemConstants.ZERO_POSITION;
     private final double climb_position = RobotConstants.ClimberSubsystemConstants.CLIMB_POSITION;
     private final double max_position = RobotConstants.ClimberSubsystemConstants.MAX_POSITION;
+
+    private boolean zeroed = false;
 
     public RelativeEncoder climber_encoder = climber_motor_controller.getEncoder();
 
@@ -145,7 +148,7 @@ public class Climber extends CSubsystem {
 
     private boolean isAtPosition(double target_position) {
         double currentPos = this.climber_encoder.getPosition();
-        return Math.abs(currentPos - target_position) < 0.05; // 5% tolerance
+        return Math.abs(currentPos - target_position) < 0.02; // 5% tolerance
     }
 
     /**
@@ -164,16 +167,13 @@ public class Climber extends CSubsystem {
         // Update telemetry
         climber_motor.updateTelemetry();
         
-        // Publish limit switch state to SmartDashboard
-        SmartDashboard.putBoolean("Climber/Limit Switch", isLimitSwitchPressed());
-        
-        // Publish alternate encoder readings to SmartDashboard
-        SmartDashboard.putNumber("Climber/Alternate Encoder Position", climber_encoder.getPosition());
-        SmartDashboard.putNumber("Climber/Alternate Encoder Velocity", climber_encoder.getVelocity());
+        Dashboard.setElevatorStatus(isAtPosition(zero_position));
         
         // Reset encoder when limit switch is pressed (auto-zero)
         if (isLimitSwitchPressed()) {
             climber_encoder.setPosition(zero_position);
+            zeroed = true;
+
         }
     }
 

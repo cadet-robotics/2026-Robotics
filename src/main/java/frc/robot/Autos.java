@@ -6,6 +6,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.path.PathPlannerPath;
 
+import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -19,12 +20,10 @@ import frc.robot.Subsystems.Drive;
  * Provides auto selection through a SendableChooser and individual auto commands.
  */
 public class Autos {
-
-    private static class FieldWayPoints {
-    }
-
     private SendableChooser<Command> autoChooser;
     private HashMap<String, Command> namedCommands = new HashMap<>();
+    private HashMap<String, PathPlannerPath> paths = new HashMap<>();
+    private HashMap<String, Trajectory> trajectories = new HashMap<>();
 
     /**
      * Constructs the Autos object and initializes the auto chooser.
@@ -84,5 +83,10 @@ public class Autos {
             DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
             return new PathPlannerAuto("Test1");
         }
+    }
+
+    public void disabledPath() {
+        Trajectory currentTrajectory = new Trajectory();
+        Dashboard.getField2d().getObject("traj").setTrajectory(null);
     }
 }
