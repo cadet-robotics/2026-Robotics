@@ -1,24 +1,11 @@
 package frc.robot.Subsystems;
 
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.DegreesPerSecond;
-import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.SparkMax;
 
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
-import edu.wpi.first.math.system.plant.DCMotor;
 import frc.robot.Constants.IndexerState;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
-import yams.gearing.GearBox;
-import yams.gearing.MechanismGearing;
-import yams.motorcontrollers.SmartMotorController;
-import yams.motorcontrollers.SmartMotorControllerConfig;
-import yams.motorcontrollers.local.SparkWrapper;
-import frc.robot.Constants.IntakeState;
-import frc.robot.Constants.ShooterState;
-import frc.robot.Constants.RobotConstants;
 
 /**
  * Indexer subsystem that moves game pieces between the intake and shooter.
