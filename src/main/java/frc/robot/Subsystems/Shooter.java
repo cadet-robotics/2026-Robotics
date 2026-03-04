@@ -5,8 +5,6 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Pounds;
-import static edu.wpi.first.units.Units.Rotation;
-
 import java.util.Optional;
 
 import com.revrobotics.spark.SparkFlex;
@@ -14,9 +12,7 @@ import com.revrobotics.spark.SparkLowLevel;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.Robot;
 import frc.robot.Constants.RobotConstants;
@@ -25,8 +21,6 @@ import frc.robot.Constants.ShooterState;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
 import frc.robot.Libs.FuelSim;
-import frc.robot.Libs.ShootOnTheMove;
-
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Meters;
 import yams.mechanisms.config.FlyWheelConfig;
