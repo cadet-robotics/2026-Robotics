@@ -13,7 +13,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
-import java.util.logging.Logger;
 
 /**
  * Lightweight projectile simulation manager for simulation mode.
@@ -41,7 +40,6 @@ public class ProjectileSimManager {
     private static final String[] POS_Y_METHODS = new String[] {"getY", "y", "getPosY", "getPositionY", "posY", "getPoseY"};
     private static final String[] POS_Z_METHODS = new String[] {"getZ", "z", "getPosZ", "getPositionZ", "posZ", "getPoseZ"};
     // totalSpawned removed — not used when not publishing to NetworkTables
-    private static final Logger logger = Logger.getLogger(ProjectileSimManager.class.getName());
 
     private ProjectileSimManager() {}
 
@@ -84,7 +82,7 @@ public class ProjectileSimManager {
 
             // If we found an arena instance, consider Maple available. We'll only spawn when we
             // have a usable create method; otherwise we intentionally do NOT fall back to local physics.
-            mapleAvailable = mapleArenaInstance != null;
+        mapleAvailable = mapleArenaInstance != null;
         } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
             // MapleSim not present or unexpected API; we will not run local physics anymore — we
             // rely on Maple to create projectiles. Keep mapleAvailable false so spawns are skipped.
@@ -92,7 +90,7 @@ public class ProjectileSimManager {
             mapleArenaInstance = null;
             mapleCreateMethod = null;
         }
-        logger.fine("MapleSim available: " + mapleAvailable);
+        // MapleSim availability determined; logging removed to save disk space
     }
 
     /** Spawn a projectile from a given pose. yaw is robot heading (radians). */
@@ -110,7 +108,7 @@ public class ProjectileSimManager {
         // We no longer run our own projectile physics. If MapleSim is present and exposes a
         // factory method taking (x,y,z,vx,vy,vz) we'll call it to create a Maple-managed projectile.
         if (!mapleAvailable || mapleCreateMethod == null || mapleArenaInstance == null) {
-            logger.warning("MapleSim not available or no create method found — skipping projectile spawn.");
+            // MapleSim not available — skip spawning projectiles
             return;
         }
 
@@ -123,10 +121,10 @@ public class ProjectileSimManager {
                     mapleEntities.put(p, mapleEntity);
                 }
             } else {
-                logger.warning("MapleSim create method returned null when spawning projectile.");
+                // Maple create method returned null; skip
             }
         } catch (IllegalAccessException | InvocationTargetException ex) {
-            logger.warning("Failed to invoke MapleSim create method: " + ex.getMessage());
+            // Invocation failed; skip spawn
         }
     }
 
