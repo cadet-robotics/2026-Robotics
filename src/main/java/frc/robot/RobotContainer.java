@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.IntakeState;
@@ -109,6 +110,11 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
+    drive_subsystem.setDefaultCommand(
+      drive_subsystem.driveWithChassisSpeedsSupplier(
+        drive_subsystem.buildRelativeTurningStream()
+      ));
+
     Trigger manualOverride = new Trigger(() -> Dashboard.getManualOverride());
     Trigger noManualOverride = manualOverride.negate();
 
@@ -133,15 +139,6 @@ public class RobotContainer {
         return distOk && angleOk;
       });
 
-    Trigger upToSpeedShooting = new Trigger(shooter_subsystem::isUpToSpeed)
-      // .and(angleDriveApprovesOfShooting)
-      // .and(curveDriveApprovesOfShooting)
-      .or(manualOverride)
-      .onTrue(Commands.parallel(
-        indexer_subsystem.IndexerOut(),
-        intake_subsystem.IntakeIn()
-      ));
-
     Trigger indexerGoingOut = new Trigger(() -> !indexer_subsystem.IndexerOut().isFinished())
       .whileTrue(shaker_subsystem.Shake());
 
@@ -160,26 +157,23 @@ public class RobotContainer {
       indexer_subsystem.IndexerIn()
     );
     autos.addCommand("Intake", intake);
-    driverController.x().whileTrue(intake);
+    driverController.a().whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToElevator()));
 
     // Reset Gyro
     driverController.b().whileTrue(drive_subsystem.resetOdom());
+    // driverController.x().whileTrue(intake);
 
     // Commands for auto driving through trenches
     driverController.povUp().whileTrue(new DeferredCommand(drive_subsystem::driveThroughTrenchSS, Set.of(drive_subsystem)));
     driverController.povDown().whileTrue(new DeferredCommand(drive_subsystem::driveThroughTrenchOS, Set.of(drive_subsystem)));
     
-    drive_subsystem.setDefaultCommand(
-      drive_subsystem.driveWithChassisSpeedsSupplier(
-        drive_subsystem.buildRelativeTurningStream()
-      ));
 
-    driverController.a().whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToElevator()));
 
+    
     driverController.leftBumper().and(drive_subsystem::isOnOurSide).whileTrue(
       Commands.parallel(
         drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream()),
-        shooter_subsystem.Shoot()
+        this.shootGroup()
       ))
       .onTrue(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(true)))
       .onFalse(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(false)));
@@ -204,12 +198,13 @@ public class RobotContainer {
         new DeferredCommand(() -> drive_subsystem.driveToTargetPose(drive_subsystem.getClosestPointOnCurve(0), 0), Set.of(drive_subsystem)),
         Commands.parallel(
           drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream()),
-          shooter_subsystem.Shoot()
+          this.shootGroup()
         ).withTimeout(10.0),
         new InstantCommand(() -> drive_subsystem.setDriveToPoseActive(false)),
         new DeferredCommand( drive_subsystem::driveThroughTrenchSS, Set.of(drive_subsystem))
       ));
     
+
     //Co Driver Controls
 
 
@@ -228,12 +223,12 @@ public class RobotContainer {
     driverController.rightTrigger()
       .and(() -> drive_subsystem.isOnOurSide())
       .and(noManualOverride)
-      .whileTrue(new ParallelCommandGroup(shooter_subsystem.Shoot(), drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildAimingStream())));
+      .whileTrue(new ParallelCommandGroup(this.shootGroup(), drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildAimingStream())));
 
     driverController.rightTrigger()
       .and(() -> !drive_subsystem.isOnOurSide())
       .and(noManualOverride)
-      .whileTrue(shooter_subsystem.Shoot());
+      .whileTrue(this.shootGroup());
 
     codriverController.a().whileTrue(climber_subsystem.manualClimbUpVoltage());
     codriverController.b().whileTrue(climber_subsystem.manualClimbDownVoltage());
@@ -265,4 +260,16 @@ public class RobotContainer {
     return this.vision_subsystem;
   }
 
+  private Command shootGroup(){
+    return Commands.parallel(
+      shooter_subsystem.Shoot(),
+      Commands.sequence(
+        new WaitUntilCommand(shooter_subsystem::isUpToSpeed).withTimeout(3),
+        Commands.parallel(
+          indexer_subsystem.IndexerOut(),
+          intake_subsystem.IntakeIn()
+        )
+      )
+    );
+  }
 }
