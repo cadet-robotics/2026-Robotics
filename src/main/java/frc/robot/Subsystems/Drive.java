@@ -380,8 +380,9 @@ public class Drive extends CSubsystem {
     }
 
     public CCommand resetOdom() {
+        Rotation2d correctOffset = Dashboard.getAlliance() == Alliance.Blue ? Rotation2d.kZero : Rotation2d.k180deg;
         return cCommand("DriveSubsystem.ResetOdom").onInitialize(() -> {
-            Pose2d newPose = new Pose2d( swerveDrive.getPose().getX(), swerveDrive.getPose().getY(), Rotation2d.k180deg );
+            Pose2d newPose = new Pose2d( swerveDrive.getPose().getX(), swerveDrive.getPose().getY(), correctOffset );
             swerveDrive.resetOdometry(newPose);
             SmartDashboard.putString("Drive/Odometry Reset", "Odometry reset to (0, 0, 0)");
         });
