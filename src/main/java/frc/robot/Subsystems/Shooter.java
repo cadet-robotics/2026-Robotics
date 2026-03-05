@@ -202,6 +202,7 @@ public class Shooter extends CSubsystem {
                 .onInitialize(() -> {
                     smc.startClosedLoopController();
                     state = ShooterState.On;
+                    
                     shooter_controller.setMechanismVelocitySetpoint(ShooterSubsystemConstants.forwardsOnSpeeds);
                     // In simulation, spawn a projectile when shooting starts so visuals match the command
                     if (RobotBase.isSimulation()) {

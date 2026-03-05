@@ -37,8 +37,8 @@ public class Dashboard {
     }
     
     public static Alliance getAlliance() {
-        Optional<Alliance> shordingersAlliance = DriverStation.getAlliance();
-        if ( shordingersAlliance.isEmpty() ) {
+        Optional<Alliance> shrodingersAlliance = DriverStation.getAlliance();
+        if ( shrodingersAlliance.isEmpty() ) {
             if (allianceBackupSelector.get().equals("Blue")) {
                 return Alliance.Blue;
             } else if (allianceBackupSelector.get().equals("Red")) {
@@ -47,6 +47,6 @@ public class Dashboard {
                 return Alliance.Blue;
             }
         }
-        return shordingersAlliance.get();
+        return shrodingersAlliance.get();
     } 
 }
