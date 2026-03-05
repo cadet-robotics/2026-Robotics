@@ -53,7 +53,7 @@ public class Indexer extends CSubsystem {
         return cCommand("IndexerOut")
             .onInitialize(() -> {
                 indexerState = IndexerState.SHOOTER;
-                indexerMotorController.setVoltage(9);
+                indexerMotorController.setVoltage(-10);
             })
             .onEnd(() -> {
                 indexerState = IndexerState.OFF;
@@ -65,11 +65,11 @@ public class Indexer extends CSubsystem {
         return cCommand("IndexIn")
             .onInitialize(() -> {
                 indexerState = IndexerState.HOPPER;
-                indexerMotorController.setVoltage(-9);
+                indexerMotorController.setVoltage(10);
             })
             .onEnd(() -> {
                 indexerState = IndexerState.OFF;
-                indexerMotorController.setVoltage(-9);
+                indexerMotorController.setVoltage(0);
             });
     }
 

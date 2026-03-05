@@ -85,7 +85,7 @@ public class Intake extends CSubsystem {
             switch(state) {
                 case OFF:
                     state = IntakeState.ON;
-                    intakeMotorController.setVoltage(8);
+                    intakeMotorController.setVoltage(10);
                     break;
                 case ON:
                 case BARF:
@@ -104,7 +104,7 @@ public class Intake extends CSubsystem {
     public CCommand IntakeIn() {
         return cCommand().onInitialize(() -> {
             state = IntakeState.ON;
-            intakeMotorController.setVoltage(8);
+            intakeMotorController.setVoltage(10);
         }).onEnd(() -> {
             state = IntakeState.OFF;
             intakeMotorController.setVoltage(0);
@@ -131,7 +131,7 @@ public class Intake extends CSubsystem {
     public CCommand IntakeBarf() {
         return cCommand().onInitialize(() -> {
             state = IntakeState.BARF;
-            intakeMotorController.setVoltage(-8);
+            intakeMotorController.setVoltage(-10);
         }).onEnd(() -> {
             state = IntakeState.OFF;
             intakeMotorController.setVoltage(0);
@@ -151,6 +151,15 @@ public class Intake extends CSubsystem {
             // (matches the supplier used by FuelSim.registerIntake)
             boolean simIntakeActive = (this.state == IntakeState.ON) && (!this.isHopperFull());
             SmartDashboard.putBoolean("Intake/SimActive", simIntakeActive);
+            switch (state) {
+                case ON:
+                    SmartDashboard.putString("Intake/intakeState","on" );
+                    break;
+                case OFF:
+                    SmartDashboard.putString("Intake/intakeState", "off");
+                    break;
+                case BARF:
+            }
         }
     }
 }
