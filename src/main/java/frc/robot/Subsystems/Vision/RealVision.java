@@ -38,6 +38,8 @@ public class RealVision extends SubsystemBase implements Vision {
     private final LimelightPoseEstimator backPoseEstimatorM1;
     private final LimelightPoseEstimator backPoseEstimatorM2;
 
+    private boolean seeded = false;
+
     public RealVision(Drive driveSubsystem) {
         this.driveSubsystem = driveSubsystem;
         this.front_limelight = new Limelight("limelight-front");
@@ -91,12 +93,22 @@ public class RealVision extends SubsystemBase implements Vision {
         return Optional.empty();
     }
 
-    public void disbaledPeriodic() {
-        Optional<PoseEstimate> throwaway = frontPoseEstimatorM1.getPoseEstimate();
-        Optional<PoseEstimate> throwaway2 = frontPoseEstimatorM1.getPoseEstimate();
-        
-        Orientation3d robotOrientation = new Orientation3d( new Rotation3d(driveSubsystem.getSwerveDrive().getOdometryHeading()), new AngularVelocity3d(RPM.of(0), RPM.of(0), RPM.of(0)));
+    public void seed() {
+        Optional<PoseEstimate> limelight1seed = frontPoseEstimatorM1.getPoseEstimate();
+        Optional<PoseEstimate> limelight2seed = frontPoseEstimatorM2.getPoseEstimate();
 
+        if (limelight1seed.isPresent()) {
+            driveSubsystem.updatePose(limelight1seed.get().pose.toPose2d(), limelight1seed.get().timestampSeconds);
+            seeded = true;
+        } else if (limelight2seed.isPresent()) {
+            driveSubsystem.updatePose(limelight2seed.get().pose.toPose2d(), limelight2seed.get().timestampSeconds);
+            seeded = true;
+        }
+    }
+
+    public void disbaledPeriodic() {
+
+        Orientation3d robotOrientation = new Orientation3d( new Rotation3d(driveSubsystem.getSwerveDrive().getOdometryHeading()), new AngularVelocity3d(RPM.of(0), RPM.of(0), RPM.of(0)));
         front_limelight.getSettings().withRobotOrientation(robotOrientation);
         back_limelight.getSettings().withRobotOrientation(robotOrientation);
     }
@@ -104,13 +116,22 @@ public class RealVision extends SubsystemBase implements Vision {
     @Override
     public void periodic() {
         seesAprilTag();
-        Optional<Pose2d> shrodingersPose = getRobotPose();
-        if (shrodingersPose.isPresent()) {
-            Pose2d pose = shrodingersPose.get();
-            driveSubsystem.updatePose(pose, frontSeesAprilTag() 
-                ? frontPoseEstimatorM2.getPoseEstimate().get().timestampSeconds
-                : backPoseEstimatorM2.getPoseEstimate().get().timestampSeconds
-            );
+
+        Orientation3d robotOrientation = new Orientation3d( new Rotation3d(driveSubsystem.getSwerveDrive().getOdometryHeading()), new AngularVelocity3d(RPM.of(0), RPM.of(0), RPM.of(0)));
+        front_limelight.getSettings().withRobotOrientation(robotOrientation);
+        back_limelight.getSettings().withRobotOrientation(robotOrientation);
+
+        if (!seeded) {
+            seed();
+        } else {
+            Optional<Pose2d> shrodingersPose = getRobotPose();
+            if (shrodingersPose.isPresent()) {
+                Pose2d pose = shrodingersPose.get();
+                driveSubsystem.updatePose(pose, frontSeesAprilTag() 
+                    ? frontPoseEstimatorM2.getPoseEstimate().get().timestampSeconds
+                    : backPoseEstimatorM2.getPoseEstimate().get().timestampSeconds
+                );
+            }
         }
     }
 }
