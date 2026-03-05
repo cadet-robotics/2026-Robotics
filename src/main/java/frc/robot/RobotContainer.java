@@ -138,7 +138,10 @@ public class RobotContainer {
 
     Command barf = Commands.parallel(
       intake_subsystem.IntakeBarf(),
-      indexer_subsystem.IndexerOut()
+      Commands.sequence(
+        indexer_subsystem.IndexerIn().withTimeout(0.5),
+        indexer_subsystem.IndexerOut()
+      )
     );
     autos.addCommand("Barf", barf);
     
@@ -148,9 +151,7 @@ public class RobotContainer {
       indexer_subsystem.IndexerIn()
     );
     autos.addCommand("Intake", intake);
-    codriverController.x().whileTrue(intake);
-
-    driverController.rightBumper().whileTrue(barf);
+    driverController.x().whileTrue(intake);
 
     // Reset Gyro
     driverController.b().whileTrue(drive_subsystem.resetOdom());
@@ -161,19 +162,19 @@ public class RobotContainer {
     
     drive_subsystem.setDefaultCommand(
       drive_subsystem.driveWithChassisSpeedsSupplier(
-        drive_subsystem.buildTrenchStream()
+        drive_subsystem.buildRelativeTurningStream()
       ));
 
     driverController.a().whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToElevator()));
 
     driverController.leftBumper().and(drive_subsystem::isOnOurSide).whileTrue(
-      new ParallelCommandGroup(
+      Commands.parallel(
         drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream()),
         shooter_subsystem.Shoot()
-      ));
+      ))
+      .onTrue(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(true)))
+      .onFalse(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(false)));
 
-    driverController.leftBumper().onTrue(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(true)));
-    driverController.leftBumper().onFalse(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(false)));
 
     driverController.leftTrigger()
       .whileTrue(
@@ -188,11 +189,11 @@ public class RobotContainer {
 
     driverController.povLeft()
       .and(noManualOverride)
-      .whileTrue(new SequentialCommandGroup(
+      .whileTrue( Commands.sequence(
         new DeferredCommand( drive_subsystem::driveThroughTrenchSS, Set.of(drive_subsystem)),
         new InstantCommand(() -> drive_subsystem.setDriveToPoseActive(true)),
         new DeferredCommand(() -> drive_subsystem.driveToTargetPose(drive_subsystem.getClosestPointOnCurve(0), 0), Set.of(drive_subsystem)),
-        new ParallelDeadlineGroup(
+        Commands.parallel(
           drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream()),
           shooter_subsystem.Shoot()
         ).withTimeout(10.0),
@@ -228,7 +229,11 @@ public class RobotContainer {
     codriverController.a().whileTrue(climber_subsystem.manualClimbUpVoltage());
     codriverController.b().whileTrue(climber_subsystem.manualClimbDownVoltage());
 
+    // Right bumper - intake balls into the hopper
     codriverController.rightBumper().whileTrue(intake);
+
+    // Left bumper - barf balls out of the hopper/intake
+    codriverController.leftBumper().whileTrue(barf);
 
     // Climber controls on codriver X, Y, and B
     codriverController.povUp().whileTrue(climber_subsystem.climbUp());
@@ -238,6 +243,9 @@ public class RobotContainer {
     
     // B button - climb down
     codriverController.povDown().whileTrue(climber_subsystem.climbZero());
+
+    //Right Trigger - manual shoot
+    codriverController.rightTrigger().whileTrue(shooter_subsystem.Shoot());
   }
 
   public Command getAutonomousCommand() {
