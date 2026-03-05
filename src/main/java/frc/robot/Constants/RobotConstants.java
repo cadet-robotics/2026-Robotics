@@ -57,7 +57,7 @@ public class RobotConstants {
         /** Red alliance rightside climb position (x, y, Rotation2d) in inches and degrees. */
         public static final Pose2d RED_RIGHT_CLIMB_POSITION = new Pose2d(Inches.of(608.8275), Inches.of(135.5065), Rotation2d.fromRadians(0));
         /** Red alliance leftside climb position (x, y, Rotation2d) in inches and degrees. */
-        public static final Pose2d RED_LEFT_CLIMB_POSITION = new Pose2d(Inches.of(613.6125), Inches.of(205.4335), Rotation2d.fromRadians(Math.PI));
+        public static final Pose2d RED_LEFT_CLIMB_POSITION = new Pose2d(Inches.of(612.6125), Inches.of(208.4335), Rotation2d.fromRadians(Math.PI));
 
         // Center of Trench positions for blue and red alliance, 
         public static final Translation2d BLUE_LEFT_TRENCH = new Translation2d(Inches.of(182), Inches.of(317-25));

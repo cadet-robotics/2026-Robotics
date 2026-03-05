@@ -134,10 +134,10 @@ public class RobotContainer {
       });
 
     Trigger upToSpeedShooting = new Trigger(shooter_subsystem::isUpToSpeed)
-      .and(angleDriveApprovesOfShooting)
-      .and(curveDriveApprovesOfShooting)
+      // .and(angleDriveApprovesOfShooting)
+      // .and(curveDriveApprovesOfShooting)
       .or(manualOverride)
-      .whileTrue(Commands.parallel(
+      .onTrue(Commands.parallel(
         indexer_subsystem.IndexerOut(),
         intake_subsystem.IntakeIn()
       ));
