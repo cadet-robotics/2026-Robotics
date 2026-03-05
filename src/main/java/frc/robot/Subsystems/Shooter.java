@@ -199,6 +199,7 @@ public class Shooter extends CSubsystem {
         return cCommand("StartShooting")
                 .onInitialize(() -> {
                     state = ShooterState.On;
+                    
                     shooter_controller.setMechanismVelocitySetpoint(ShooterSubsystemConstants.forwardsOnSpeeds);
                     // In simulation, spawn a projectile when shooting starts so visuals match the command
                     if (RobotBase.isSimulation()) {
