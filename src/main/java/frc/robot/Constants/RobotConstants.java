@@ -15,6 +15,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Dashboard;
 
 /**
@@ -50,13 +51,13 @@ public class RobotConstants {
         };
         
         /** Blue alliance rightside climb position (x, y, Rotation2d) in inches and degrees. */
-        public static final Pose2d BLUE_RIGHT_CLIMB_POSITION = new Pose2d( Inches.of(37.6075) , Inches.of(107.5065), Rotation2d.fromDegrees(0));
+        public static final Pose2d BLUE_RIGHT_CLIMB_POSITION = new Pose2d(Inches.of(37.6075), Inches.of(112.5065), Rotation2d.fromRadians(0));
         /** Blue alliance leftside climb position (x, y, Rotation2d) in inches and degrees. */
-        public static final Pose2d BLUE_LEFT_CLIMB_POSITION = new Pose2d(Inches.of(42.3925), Inches.of(187.4335), Rotation2d.fromDegrees(180));
+        public static final Pose2d BLUE_LEFT_CLIMB_POSITION = new Pose2d(Inches.of(42.3925), Inches.of(182.4335), Rotation2d.fromRadians(Math.PI));
         /** Red alliance rightside climb position (x, y, Rotation2d) in inches and degrees. */
-        public static final Pose2d RED_RIGHT_CLIMB_POSITION = new Pose2d(Inches.of(608.8275), Inches.of(154.5065), Rotation2d.fromDegrees(180));
+        public static final Pose2d RED_RIGHT_CLIMB_POSITION = new Pose2d(Inches.of(608.8275), Inches.of(135.5065), Rotation2d.fromRadians(0));
         /** Red alliance leftside climb position (x, y, Rotation2d) in inches and degrees. */
-        public static final Pose2d RED_LEFT_CLIMB_POSITION = new Pose2d(Inches.of(613.6125), Inches.of(234.4335), Rotation2d.fromDegrees(0));
+        public static final Pose2d RED_LEFT_CLIMB_POSITION = new Pose2d(Inches.of(613.6125), Inches.of(205.4335), Rotation2d.fromRadians(Math.PI));
 
         // Center of Trench positions for blue and red alliance, 
         public static final Translation2d BLUE_LEFT_TRENCH = new Translation2d(Inches.of(182), Inches.of(317-25));

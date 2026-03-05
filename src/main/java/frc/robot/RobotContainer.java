@@ -9,6 +9,7 @@ import static edu.wpi.first.units.Units.Meters;
 
 import java.util.Set;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.DeferredCommand;
@@ -20,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.IntakeState;
 import frc.robot.Constants.RobotConstants;
+import frc.robot.Constants.RobotConstants.FieldConstants;
 import frc.robot.Libs.FuelSim;
 import frc.robot.Subsystems.Climber;
 import frc.robot.Subsystems.Drive;
@@ -45,6 +47,8 @@ public class RobotContainer {
   private final CommandXboxController driverController = new CommandXboxController(0);
   private final CommandXboxController codriverController = new CommandXboxController(1);
 
+  
+
   public RobotContainer() {
     // Setup and initialize Subsystems here
     drive_subsystem = new Drive(driverController, codriverController);
@@ -58,6 +62,11 @@ public class RobotContainer {
     indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem, drive_subsystem );
     climber_subsystem = new Climber();
     shaker_subsystem = new Shaker(indexer_subsystem);
+
+    // SmartDashboard.putNumberArray("BlueRightClimb", new double[] {FieldConstants.BLUE_RIGHT_CLIMB_POSITION.getX(), FieldConstants.BLUE_RIGHT_CLIMB_POSITION.getY(), FieldConstants.BLUE_RIGHT_CLIMB_POSITION.getRotation().getRadians()});
+    // SmartDashboard.putNumberArray("BlueLeftClimb", new double[] {FieldConstants.BLUE_LEFT_CLIMB_POSITION.getX(), FieldConstants.BLUE_LEFT_CLIMB_POSITION.getY(), FieldConstants.BLUE_LEFT_CLIMB_POSITION.getRotation().getRadians()});
+    // SmartDashboard.putNumberArray("RedRightClimb", new double[] {FieldConstants.RED_RIGHT_CLIMB_POSITION.getX(), FieldConstants.RED_RIGHT_CLIMB_POSITION.getY(), FieldConstants.RED_RIGHT_CLIMB_POSITION.getRotation().getRadians()});
+    // SmartDashboard.putNumberArray("RedLeftClimb", new double[] {FieldConstants.RED_LEFT_CLIMB_POSITION.getX(), FieldConstants.RED_LEFT_CLIMB_POSITION.getY(), FieldConstants.RED_LEFT_CLIMB_POSITION.getRotation().getRadians()});
 
     autos = new Autos(this, drive_subsystem );
 
