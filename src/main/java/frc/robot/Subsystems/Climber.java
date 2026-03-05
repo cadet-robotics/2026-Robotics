@@ -50,7 +50,7 @@ public class Climber extends CSubsystem {
         .withGearing(new MechanismGearing(GearBox.fromReductionStages(9)))
         .withMotorInverted(false)
         .withIdleMode(SmartMotorControllerConfig.MotorMode.BRAKE)
-        .withSoftLimit(Rotation.of(0), Rotation.of(18.5))
+        .withSoftLimit(null, Rotation.of(18.5))
         .withStatorCurrentLimit(Amps.of(40));
 
     public SmartMotorController climber_motor = new SparkWrapper(
@@ -137,7 +137,8 @@ public class Climber extends CSubsystem {
             })
             .onEnd(() -> {
                 this.climber_motor.setDutyCycle(0);
-            });
+            })
+            .isFinished(this::isLimitSwitchPressed);
     }
 
     private boolean isAtPosition(double target_position) {
