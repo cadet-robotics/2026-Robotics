@@ -5,6 +5,8 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Pounds;
+import static edu.wpi.first.units.Units.Volts;
+
 import java.util.Optional;
 
 import com.revrobotics.spark.SparkFlex;
@@ -52,7 +54,7 @@ public class Shooter extends CSubsystem {
             RobotConstants.ShooterSubsystemConstants.SHOOTER_KI, 
             RobotConstants.ShooterSubsystemConstants.SHOOTER_KD)
         // Feedforward Constants
-        .withFeedforward(new SimpleMotorFeedforward(0, 0, 0))
+        .withFeedforward(new SimpleMotorFeedforward(0.108, 0, 0))
         .withSimFeedforward(new SimpleMotorFeedforward(0, 0, 0))
         // Telemetry name and verbosity level
         .withTelemetry("ShooterMotor",SmartMotorControllerConfig.TelemetryVerbosity.HIGH)
@@ -164,9 +166,9 @@ public class Shooter extends CSubsystem {
      */
     public boolean isUpToSpeed() {
         // TODO, rework entire system to use velocity setpoints based on the distance, I need sleep
-        if (state == ShooterState.Off) {
-            return false;
-        }
+        // if (state == ShooterState.Off) {
+        //     return false;
+        // }
         
         // Get current velocity in RPM from the motor controller encoder
         double currentVelocityRPM = shooter_motor_controller.getEncoder().getVelocity();
@@ -198,6 +200,7 @@ public class Shooter extends CSubsystem {
     public CCommand Shoot() {
         return cCommand("StartShooting")
                 .onInitialize(() -> {
+                    smc.startClosedLoopController();
                     state = ShooterState.On;
                     shooter_controller.setMechanismVelocitySetpoint(ShooterSubsystemConstants.forwardsOnSpeeds);
                     // In simulation, spawn a projectile when shooting starts so visuals match the command
@@ -218,7 +221,8 @@ public class Shooter extends CSubsystem {
                 })
                 .onEnd(() -> {
                     state = ShooterState.Off;
-                    shooter_controller.setMechanismVelocitySetpoint(DegreesPerSecond.of(0));
+                    smc.stopClosedLoopController();
+                    shooter_motor_controller.setVoltage(0);
                     lastSpawnNs = 0;
                 })
                 .isFinished(() -> {
@@ -318,7 +322,7 @@ public class Shooter extends CSubsystem {
                     }
 
                     if (allowSpawn && removeBallFromHopper()) {
-                        fuelSim.launchFuel(MetersPerSecond.of(8), Degrees.of(80.0), Degrees.of(180.0), Meters.of(0.9));
+                        fuelSim.launchFuel(MetersPerSecond.of(8), Degrees.of(75.0), Degrees.of(180.0), Meters.of(0.9));
                     }
                 } catch (IllegalStateException ex) {
                     // Robot not registered with fuelSim yet; ignore spawn attempt
