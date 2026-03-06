@@ -27,7 +27,6 @@ public class Robot extends TimedRobot {
         .getTable("Robot")
         .getStructTopic("MatchTime", MatchTime.struct)
         .publish();
-  private final Vision visionSubsystem;
 
   /**
    * Constructor for the Robot class.
@@ -45,7 +44,6 @@ public class Robot extends TimedRobot {
     Dashboard.field2dInit();
     
     this.robotContainer = new RobotContainer();
-    this.visionSubsystem = robotContainer.getVision();
   }
 
   //runs continuously regardless of mode, execues the command scheduler
@@ -70,11 +68,9 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void disabledPeriodic() {
-      // Update vision system in disabled mode to keep limelights seeded with robot pose for accurate autonomous readings when transitioning to autonomous mode
-      // Only need to do this with the real robot
-      if (Robot.isReal()) {
-        visionSubsystem.disabledPeriodic();
-      }
+      // Delegate disabled-periodic work to RobotContainer so Autos can update previews
+      // only when the chooser selection changes.
+      this.robotContainer.disabledPeriodic();
   }
 
   /**
