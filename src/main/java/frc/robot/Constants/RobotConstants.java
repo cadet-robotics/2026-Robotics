@@ -67,17 +67,19 @@ public class RobotConstants {
 
         public static Translation2d offset = new Translation2d( 1.25, 0 );
         
-        public static final Translation2d RED_RED_LEFT_TRENCH = RED_LEFT_TRENCH.plus(offset);
-        public static final Translation2d RED_MID_LEFT_TRENCH = RED_LEFT_TRENCH.minus(offset);
+        public static final Translation2d MID_2_RED_LEFT_TRENCH = RED_LEFT_TRENCH.plus(offset);
+        public static final Translation2d RED_2_MID_LEFT_TRENCH = RED_LEFT_TRENCH.minus(offset);
 
-        public static final Translation2d RED_RED_RIGHT_TRENCH = RED_RIGHT_TRENCH.plus(offset);
-        public static final Translation2d RED_MID_RIGHT_TRENCH = RED_RIGHT_TRENCH.minus(offset);
+        public static final Translation2d MID_2_RED_RIGHT_TRENCH = RED_RIGHT_TRENCH.plus(offset);
+        public static final Translation2d RED_2_MID_RIGHT_TRENCH = RED_RIGHT_TRENCH.minus(offset);
         
-        public static final Translation2d BLUE_BLUE_LEFT_TRENCH = BLUE_LEFT_TRENCH.minus(offset);
-        public static final Translation2d BLUE_MID_LEFT_TRENCH = BLUE_LEFT_TRENCH.plus(offset);
+        public static final Translation2d MID_2_BLUE_LEFT_TRENCH = BLUE_LEFT_TRENCH.minus(offset);
+        public static final Translation2d BLUE_2_MID_LEFT_TRENCH = BLUE_LEFT_TRENCH.plus(offset);
 
-        public static final Translation2d BLUE_BLUE_RIGHT_TRENCH = BLUE_RIGHT_TRENCH.minus(offset);
-        public static final Translation2d BLUE_MID_RIGHT_TRENCH = BLUE_RIGHT_TRENCH.plus(offset);
+        public static final Translation2d MID_2_BLUE_RIGHT_TRENCH = BLUE_RIGHT_TRENCH.minus(offset);
+        public static final Translation2d BLUE_2_MID_RIGHT_TRENCH = BLUE_RIGHT_TRENCH.plus(offset);
+
+        public static final double yHalfLine = Inches.of(317/2).in(Meters);
     }
 
     /**
