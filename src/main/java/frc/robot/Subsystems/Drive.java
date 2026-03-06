@@ -708,6 +708,8 @@ public class Drive extends CSubsystem {
      * If opponentSide is true, compute the target on the opponent's side (mirror alliances).
      */
     private Pose2d computeTrenchTarget(boolean opponentSide) {
+        // If this is too hard to understand can be replaced 
+        //      with rectangles from the poses of the corners of each zone
         DriverStation.Alliance alliance = Dashboard.getAlliance();
         if (opponentSide) {
             alliance = (alliance == DriverStation.Alliance.Blue) ? DriverStation.Alliance.Red : DriverStation.Alliance.Blue;
@@ -744,6 +746,9 @@ public class Drive extends CSubsystem {
      */
     public Command driveThroughTrenchSS() {
         Supplier<Pose2d> getTargetLocation = () -> computeTrenchTarget(false);
+        if (Robot.isReal()) {
+            return driveToTargetPose(getTargetLocation, 0);
+        }
         return driveToTargetPose(autoDriveTargetLogger(getTargetLocation), 0);
     }
 
@@ -753,6 +758,9 @@ public class Drive extends CSubsystem {
      */
     public Command driveThroughTrenchOS() {
         Supplier<Pose2d> getTargetLocation = () -> computeTrenchTarget(true);
+        if (Robot.isReal()) {
+            return driveToTargetPose(getTargetLocation, 0);
+        }
         return driveToTargetPose(autoDriveTargetLogger(getTargetLocation), 0);
     }
 
