@@ -51,7 +51,7 @@ public class ShootOnTheMove {
     }
 
     public static void calculateLeadHeading(Pose2d robotPose, ChassisSpeeds robotSpeeds) {
-        Pose2d hubPose = FieldConstants.hub.get();
+        Translation2d hubPose = FieldConstants.hubPosition.get();
 
         double targetX = hubPose.getX() - robotPose.getX();
         double targetY = hubPose.getY() - robotPose.getY();
