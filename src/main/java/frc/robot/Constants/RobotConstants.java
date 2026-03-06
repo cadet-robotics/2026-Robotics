@@ -44,10 +44,14 @@ public class RobotConstants {
         /** Red alliance hub/speaker position (x, y) in inches. */
         public static final Translation2d RED_HUB_POSITION = new Translation2d( Inches.of(469.11).in(Meters), Inches.of(158.84).in(Meters) );
 
-        public static Supplier<Pose2d> hub = () -> {
-            return Dashboard.getAlliance() == Alliance.Blue
-                ? new Pose2d(BLUE_HUB_POSITION, Rotation2d.fromDegrees(0))
-                : new Pose2d(RED_HUB_POSITION, Rotation2d.fromDegrees(0));
+        public static Pose2d blueHubPose = new Pose2d(BLUE_HUB_POSITION, Rotation2d.fromDegrees(0));
+        public static Pose2d redHubPose = new Pose2d(RED_HUB_POSITION, Rotation2d.fromDegrees(0));
+
+        public static Supplier<Pose2d> hubPose = () -> {
+            return Dashboard.getAlliance() == Alliance.Blue ? blueHubPose : redHubPose;
+        };
+        public static Supplier<Translation2d> hubPosition = () -> {
+            return Dashboard.getAlliance() == Alliance.Blue ? BLUE_HUB_POSITION : RED_HUB_POSITION;
         };
         
         /** Blue alliance rightside climb position (x, y, Rotation2d) in inches and degrees. */
