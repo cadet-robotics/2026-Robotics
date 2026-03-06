@@ -1,5 +1,6 @@
 package frc.robot.Subsystems;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import com.revrobotics.spark.SparkLowLevel;
@@ -105,6 +106,26 @@ public class Intake extends CSubsystem {
         return cCommand().onInitialize(() -> {
             state = IntakeState.ON;
             intakeMotorController.setVoltage(10);
+        }).onEnd(() -> {
+            state = IntakeState.OFF;
+            intakeMotorController.setVoltage(0);
+        });
+    }
+
+    /**
+     * Creates a command to turn the intake on.
+     * 
+     * @return command that sets intake state to On
+     */
+    public CCommand IntakeIn(BooleanSupplier condition) {
+        return cCommand().onExecute(() -> {
+            if (condition.getAsBoolean()) {
+                state = IntakeState.ON;
+                intakeMotorController.setVoltage(10);
+            } else {
+                state = IntakeState.OFF;
+                intakeMotorController.setVoltage(0);
+            }
         }).onEnd(() -> {
             state = IntakeState.OFF;
             intakeMotorController.setVoltage(0);
