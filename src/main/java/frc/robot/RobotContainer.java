@@ -10,20 +10,15 @@ import static edu.wpi.first.units.Units.Meters;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
-import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.IntakeState;
 import frc.robot.Constants.RobotConstants;
-import frc.robot.Constants.RobotConstants.FieldConstants;
 import frc.robot.Libs.FuelSim;
 import frc.robot.Subsystems.Climber;
 import frc.robot.Subsystems.Drive;
@@ -44,14 +39,17 @@ public class RobotContainer {
   private final Climber climber_subsystem;
   private final Shaker shaker_subsystem;
 
-  public FuelSim fuelSim = new FuelSim("FuelSim");
+  public FuelSim fuelSim;
 
   private final CommandXboxController driverController = new CommandXboxController(0);
   private final CommandXboxController codriverController = new CommandXboxController(1);
 
   public RobotContainer() {
+    if ( Robot.isSimulation() ) {
+      fuelSim = new FuelSim("FuelSim");
+    }
     // Setup and initialize Subsystems here
-    drive_subsystem = new Drive(driverController, codriverController);
+    drive_subsystem = new Drive(driverController);
     vision_subsystem = drive_subsystem.getVision();
     shooter_subsystem = new Shooter(fuelSim);
       // Provide shooter with drive reference so sim spawning can be gated to autodrive target
@@ -73,12 +71,29 @@ public class RobotContainer {
     // SmartDashboard.putNumberArray("RedRightClimb", new double[] {FieldConstants.RED_RIGHT_CLIMB_POSITION.getX(), FieldConstants.RED_RIGHT_CLIMB_POSITION.getY(), FieldConstants.RED_RIGHT_CLIMB_POSITION.getRotation().getRadians()});
     // SmartDashboard.putNumberArray("RedLeftClimb", new double[] {FieldConstants.RED_LEFT_CLIMB_POSITION.getX(), FieldConstants.RED_LEFT_CLIMB_POSITION.getY(), FieldConstants.RED_LEFT_CLIMB_POSITION.getRotation().getRadians()});
 
+    if ( Robot.isSimulation() ) {
+      configureSim();
+    }
+
     autos = new Autos(this, drive_subsystem );
 
     configureBindings();
     configureAuto();
-    if ( Robot.isSimulation() ) {
-      configureSim();
+  }
+
+  /**
+   * Called from Robot.disabledPeriodic so we can run disabled-mode work for
+   * subsystems and autos. This centralizes the checks so heavy work in Autos
+   * runs only when the chooser selection actually changes.
+   */
+  public void disabledPeriodic() {
+    // Keep vision update behavior consistent with previous Robot.disabledPeriodic
+    if (Robot.isReal()) {
+      vision_subsystem.disabledPeriodic();
+    }
+
+    if (this.autos != null) {
+      this.autos.maybeUpdateDisabledPath();
     }
   }
 
@@ -92,6 +107,7 @@ public class RobotContainer {
   }
 
   private void configureSim() {
+    fuelSim = new FuelSim("FuelSim");
     fuelSim.registerRobot(
         Inches.of(27.5).in(Meters), // from left to right in meters
         Inches.of(27.5).in(Meters), // from front to back in meters
@@ -116,38 +132,7 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
-    Trigger manualOverride = new Trigger(() -> Dashboard.getManualOverride());
-    Trigger noManualOverride = manualOverride.negate();
-
-    Trigger angleDriveApprovesOfShooting = new Trigger(drive_subsystem::isAimModeActive)
-      .and(() -> Dashboard.getManualOverride() 
-        || drive_subsystem.isAimedAtHub(Math.toRadians(6))
-      );
-    
-    Trigger curveDriveApprovesOfShooting = new Trigger(drive_subsystem::isDriveToPoseActive)
-      .and(() -> {
-        if (manualOverride.getAsBoolean()) {
-          return true; // If manual override is active, don't gate shooting at all
-        }
-        // When autodrive is active, allow shooting only if the robot's distance
-        // to the hub is within a tolerance of the midRange used to generate the curve.
-        double midRange = RobotConstants.ShooterSubsystemConstants.midRange;
-        double posTol = midRange * 0.05; // 5% tolerance around midRange
-        double hubDist = drive_subsystem.getPose().getTranslation().getDistance(
-            RobotConstants.FieldConstants.hub.get().getTranslation());
-        boolean distOk = Math.abs(hubDist - midRange) <= posTol;
-        boolean angleOk = drive_subsystem.isAimedAtHub(Math.toRadians(6.0));
-        return distOk && angleOk;
-      });
-
-    new Trigger(shooter_subsystem::isUpToSpeed)
-      // .and(angleDriveApprovesOfShooting)
-      // .and(curveDriveApprovesOfShooting)
-      .or(manualOverride)
-      .whileTrue(Commands.parallel(
-        indexer_subsystem.IndexerOut(),
-        intake_subsystem.IntakeIn()
-      ));
+    BooleanSupplier noManualOverride = () -> !Dashboard.getManualOverride();
 
     driverController.a().whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToElevator()));
 
@@ -157,7 +142,7 @@ public class RobotContainer {
     driverController.leftBumper().and(drive_subsystem::isOnOurSide).whileTrue(
       Commands.parallel(
         drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream()),
-        this.shootGroup(()-> angleDriveApprovesOfShooting.getAsBoolean() || curveDriveApprovesOfShooting.getAsBoolean())
+        this.shootGroup()
       ))
       .onTrue(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(true)))
       .onFalse(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(false)));
@@ -246,22 +231,55 @@ public class RobotContainer {
   }
 
   private Command shootGroup(){
-    return this.shootGroup(()->true);
-  }
+    BooleanSupplier manualOverride = () -> Dashboard.getManualOverride();
 
-  private Command shootGroup(BooleanSupplier aimWaitCondition){
+    BooleanSupplier angleDriveApprovesOfShooting = () ->
+      drive_subsystem.isAimModeActive() && (Dashboard.getManualOverride() || drive_subsystem.isAimedAtHub(Math.toRadians(6)));
+
+    BooleanSupplier curveDriveApprovesOfShooting = () -> {
+        if (manualOverride.getAsBoolean()) {
+          return true; // If manual override is active, don't gate shooting at all
+        }
+        if (!drive_subsystem.isDriveToPoseActive()) {
+          return false;
+        }
+        // When autodrive is active, allow shooting only if the robot's distance
+        // to the hub is within a tolerance of the midRange used to generate the curve.
+        double midRange = RobotConstants.ShooterSubsystemConstants.midRange + Dashboard.getOverride;
+        double posTol = midRange * 0.05; // 5% tolerance around midRange
+        double hubDist = drive_subsystem.getPose().getTranslation().getDistance(
+            RobotConstants.FieldConstants.hubPosition.get());
+        boolean distOk = Math.abs(hubDist - midRange) <= posTol;
+        boolean angleOk = drive_subsystem.isAimedAtHub(Math.toRadians(6.0));
+        return distOk && angleOk;
+    };
+
+    // TODO check why curve isn't approving of shooting
+    BooleanSupplier doShootFeeding = () -> {
+      return shooter_subsystem.isUpToSpeed() 
+        && (
+          (
+            // We don't check for correct pose or angle when not using either mode
+            ((angleDriveApprovesOfShooting.getAsBoolean() || !drive_subsystem.isAimModeActive()) 
+            && (curveDriveApprovesOfShooting.getAsBoolean() || !drive_subsystem.isDriveToPoseActive())
+          )
+          // Manual override stops from requiring pose or angle while in those modes
+          || manualOverride.getAsBoolean()
+        )
+      );
+    };
+    
     return Commands.parallel(
       shooter_subsystem.Shoot(),
       shaker_subsystem.Shake(),
       Commands.sequence(
-        // Commands.parallel(
-        // new WaitUntilCommand(shooter_subsystem::isUpToSpeed),
-        //   // new WaitUntilCommand(aimWaitCondition)
-        // ).withTimeout(3),
-        // Commands.parallel(
-        //   indexer_subsystem.IndexerOut(),
-        //   intake_subsystem.IntakeIn()
-        // )//.onlyIf(shooter_subsystem::isUpToSpeed)
+        Commands.parallel(
+          new WaitUntilCommand(shooter_subsystem::isUpToSpeed)
+        ).withTimeout(3),
+        Commands.parallel(
+          indexer_subsystem.IndexerOut(doShootFeeding),
+          intake_subsystem.IntakeIn()
+        )
       )
     );
   }
@@ -271,7 +289,7 @@ public class RobotContainer {
       intake_subsystem.IntakeBarf(),
       shaker_subsystem.Shake(),
       Commands.sequence(
-        indexer_subsystem.IndexerIn().withTimeout(0.5),
+        indexer_subsystem.IndexerIn().withTimeout(0.25),
         indexer_subsystem.IndexerOut()
       )
     );
