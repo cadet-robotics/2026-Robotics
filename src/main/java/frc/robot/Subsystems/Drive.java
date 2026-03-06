@@ -59,11 +59,9 @@ public class Drive extends CSubsystem {
     // Height to render poses in meters (matches shooter muzzle height used by sim)
     private static final double POSE_RENDER_Z = 0.9;
 
-    private static Pose2d autoTrenchTarget = new Pose2d();  // Updated by getClosestPointOnCurve for dashboard display
 
     private final SwerveInputStream baseStream;
     private final CommandXboxController driverController;
-    private final CommandXboxController codriverController;
 
     private final DoubleSupplier getTranslationX;
     private final DoubleSupplier getTranslationY;
@@ -73,11 +71,10 @@ public class Drive extends CSubsystem {
      * Constructs a new Drive subsystem.
      * Initializes vision (real or simulated based on robot mode) and configures swerve drive.
      */
-    public Drive(CommandXboxController driverController, CommandXboxController codriverController) {
+    public Drive(CommandXboxController driverController) {
         setName("DriveSubsystem");
 
         this.driverController = driverController;
-        this.codriverController = codriverController;
 
         getTranslationX = () -> -1 * MathUtil.applyDeadband(this.driverController.getLeftY(),
             ControllerConstants.deadbandX);
@@ -396,7 +393,7 @@ public class Drive extends CSubsystem {
 
     // Calculate the distance that the robot is from our alliance's HUB
     public double hubDistance() {
-        Translation2d allianceHub = FieldConstants.hub.get().getTranslation();
+        Translation2d allianceHub = FieldConstants.hubPosition.get();
         Pose2d currentPose = getPose();
 
         double xDistance = Math.abs(currentPose.getX() - allianceHub.getX());
@@ -408,7 +405,7 @@ public class Drive extends CSubsystem {
 
     // Calculate the angular distance in degree that the robot is facing from our alliance's HUB
     public double hubAngle() {
-        Translation2d allianceHub = FieldConstants.hub.get().getTranslation();
+        Translation2d allianceHub = FieldConstants.hubPosition.get();
         Pose2d currentPose = getPose();
 
         double xDistance = Math.abs(currentPose.getX() - allianceHub.getX());
@@ -425,7 +422,7 @@ public class Drive extends CSubsystem {
     public Pose2d getClosestPointOnCurve(double controllerOffset) {
         // p = robot position, h = hub position, d = desired distance (midRange)
         Translation2d p = getPose().getTranslation();
-        Translation2d h = FieldConstants.hub.get().getTranslation();
+        Translation2d h = FieldConstants.hubPosition.get();
 
         SmartDashboard.putNumber("ControllerOffset", controllerOffset);
 
@@ -475,8 +472,6 @@ public class Drive extends CSubsystem {
 
             // relative angle from hub->robot to travel vector
             double rel = travelAngle - baseAngle;
-            // sign of lateral component (sin(rel) > 0 means movement is 'left' of the hub->robot line)
-            double lateralSign = Math.signum(Math.sin(rel));
 
             // scale: fraction of max chassis speed (guard positive)
             double speedFraction = 0.0;
@@ -523,7 +518,7 @@ public class Drive extends CSubsystem {
     }
 
     public Pose2d posePointingAtAllianceHub(Translation2d position) {
-        Translation2d hubPosition = frc.robot.Constants.RobotConstants.FieldConstants.hub.get().getTranslation();
+        Translation2d hubPosition = frc.robot.Constants.RobotConstants.FieldConstants.hubPosition.get();
 
         // Publish hub location for debugging as Pose3d: [x, y, z, rollDeg, pitchDeg, yawDeg]
         SmartDashboard.putNumberArray("Drive/HubPose", new double[] { hubPosition.getX(), hubPosition.getY(), POSE_RENDER_Z, 0.0, 0.0, 0.0 });
@@ -561,7 +556,7 @@ public class Drive extends CSubsystem {
             .withControllerHeadingAxis(getHeadingXSafe, getHeadingYSafe)
             .headingWhile(ShootOnTheMove.heading.isPresent())
             // Fallback
-            .aim(FieldConstants.hub.get())
+            .aim(FieldConstants.hubPose.get())
             .aimWhile(ShootOnTheMove.heading.isEmpty())
             .aimHeadingOffset(Rotation2d.k180deg)
             .aimHeadingOffset(ShootOnTheMove.heading.isEmpty());
@@ -769,7 +764,6 @@ public class Drive extends CSubsystem {
             Supplier<Pose2d> supplier = targetGetter;
             Pose2d targetPose = supplier.get();
             SmartDashboard.putNumberArray("AutoDriveTarget", new double[] {targetPose.getX(), targetPose.getY(), targetPose.getRotation().getDegrees()});
-            autoTrenchTarget = targetPose;
             return targetPose;
         };
     }
