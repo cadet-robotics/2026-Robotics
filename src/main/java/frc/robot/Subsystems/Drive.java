@@ -704,38 +704,46 @@ public class Drive extends CSubsystem {
     }
 
     /**
+     * Compute the appropriate trench target for the current pose.
+     * If opponentSide is true, compute the target on the opponent's side (mirror alliances).
+     */
+    private Pose2d computeTrenchTarget(boolean opponentSide) {
+        DriverStation.Alliance alliance = Dashboard.getAlliance();
+        if (opponentSide) {
+            alliance = (alliance == DriverStation.Alliance.Blue) ? DriverStation.Alliance.Red : DriverStation.Alliance.Blue;
+        }
+
+        if (alliance == DriverStation.Alliance.Blue) {
+            if ( getPose().getY() > FieldConstants.yHalfLine ) {
+                if ( getPose().getX() > FieldConstants.BLUE_LEFT_TRENCH.getX() ) {
+                    return poseFromTranslation(FieldConstants.MID_2_BLUE_LEFT_TRENCH);
+                }
+                return poseFromTranslation(FieldConstants.BLUE_2_MID_LEFT_TRENCH);
+            }
+            if ( getPose().getX() > FieldConstants.BLUE_LEFT_TRENCH.getX() ) {
+                return poseFromTranslation(FieldConstants.MID_2_BLUE_RIGHT_TRENCH);
+            }
+            return poseFromTranslation(FieldConstants.BLUE_2_MID_RIGHT_TRENCH);
+        } else {
+            if ( getPose().getY() > FieldConstants.yHalfLine ) {
+                if ( getPose().getX() < FieldConstants.RED_LEFT_TRENCH.getX() ) {
+                    return poseFromTranslation(FieldConstants.MID_2_RED_LEFT_TRENCH);
+                }
+                return poseFromTranslation(FieldConstants.RED_2_MID_LEFT_TRENCH);
+            }
+            if ( getPose().getX() < FieldConstants.RED_LEFT_TRENCH.getX() ) {
+                return poseFromTranslation(FieldConstants.MID_2_RED_RIGHT_TRENCH);
+            }
+            return poseFromTranslation(FieldConstants.RED_2_MID_RIGHT_TRENCH);
+        }
+    }
+
+    /**
      * drive through trench on your alliance side
      * @return
      */
     public Command driveThroughTrenchSS() {
-        Supplier<Pose2d> getTargetLocation = () -> {
-            switch ( Dashboard.getAlliance() ) {
-                case Blue:
-                    if ( getPose().getY() > FieldConstants.yHalfLine ) {
-                        if ( getPose().getX() > FieldConstants.BLUE_LEFT_TRENCH.getX() ) {
-                            return poseFromTranslation(FieldConstants.MID_2_BLUE_LEFT_TRENCH);
-                        }
-                        return poseFromTranslation(FieldConstants.BLUE_2_MID_LEFT_TRENCH);
-                    }else
-                    if ( getPose().getX() > FieldConstants.BLUE_LEFT_TRENCH.getX() ) {
-                        return poseFromTranslation(FieldConstants.MID_2_BLUE_RIGHT_TRENCH);
-                    }
-                    return poseFromTranslation(FieldConstants.BLUE_2_MID_RIGHT_TRENCH);
-                case Red:
-                    if ( getPose().getY() > FieldConstants.yHalfLine) {
-                        if ( getPose().getX() < FieldConstants.RED_LEFT_TRENCH.getX() ) {
-                            return poseFromTranslation(FieldConstants.MID_2_RED_LEFT_TRENCH);
-                        }
-                        return poseFromTranslation(FieldConstants.RED_2_MID_LEFT_TRENCH);
-                    }
-                    if ( getPose().getX() < FieldConstants.RED_LEFT_TRENCH.getX() ) {
-                        return poseFromTranslation(FieldConstants.MID_2_RED_RIGHT_TRENCH);
-                    }
-                    return poseFromTranslation(FieldConstants.RED_2_MID_RIGHT_TRENCH);
-            }
-
-            return getPose();
-        };
+        Supplier<Pose2d> getTargetLocation = () -> computeTrenchTarget(false);
         return driveToTargetPose(autoDriveTargetLogger(getTargetLocation), 0);
     }
 
@@ -744,35 +752,8 @@ public class Drive extends CSubsystem {
      * @return
      */
     public Command driveThroughTrenchOS() {
-        Supplier<Pose2d> getTargetLocation = () -> {
-            switch ( Dashboard.getAlliance() ) {
-                case Red:
-                    if ( getPose().getY() > FieldConstants.yHalfLine) {
-                        if ( getPose().getX() > FieldConstants.BLUE_LEFT_TRENCH.getX() ) {
-                            return poseFromTranslation(FieldConstants.MID_2_BLUE_LEFT_TRENCH);
-                        }
-                        return poseFromTranslation(FieldConstants.BLUE_2_MID_LEFT_TRENCH);
-                    }
-                    if ( getPose().getX() > FieldConstants.BLUE_LEFT_TRENCH.getX() ) {
-                        return poseFromTranslation(FieldConstants.MID_2_BLUE_RIGHT_TRENCH);
-                    }
-                    return poseFromTranslation(FieldConstants.BLUE_2_MID_RIGHT_TRENCH);
-                case Blue:
-                    if ( getPose().getY() > FieldConstants.yHalfLine) {
-                        if ( getPose().getX() < FieldConstants.RED_LEFT_TRENCH.getX() ) {
-                            return poseFromTranslation(FieldConstants.MID_2_RED_LEFT_TRENCH);
-                        }
-                        return poseFromTranslation(FieldConstants.RED_2_MID_LEFT_TRENCH);
-                    }
-                    if ( getPose().getX() < FieldConstants.RED_LEFT_TRENCH.getX() ) {
-                        return poseFromTranslation(FieldConstants.MID_2_RED_RIGHT_TRENCH);
-                    }
-                    return poseFromTranslation(FieldConstants.RED_2_MID_RIGHT_TRENCH);
-            }
-
-            return getPose();
-        };
-        return driveToTargetPose( autoDriveTargetLogger(getTargetLocation), 0 );
+        Supplier<Pose2d> getTargetLocation = () -> computeTrenchTarget(true);
+        return driveToTargetPose(autoDriveTargetLogger(getTargetLocation), 0);
     }
 
     public Supplier<Pose2d> autoDriveTargetLogger( Supplier<Pose2d> targetGetter ) {
