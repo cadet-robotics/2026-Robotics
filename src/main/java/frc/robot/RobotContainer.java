@@ -140,6 +140,15 @@ public class RobotContainer {
         return distOk && angleOk;
       });
 
+    new Trigger(shooter_subsystem::isUpToSpeed)
+      // .and(angleDriveApprovesOfShooting)
+      // .and(curveDriveApprovesOfShooting)
+      .or(manualOverride)
+      .whileTrue(Commands.parallel(
+        indexer_subsystem.IndexerOut(),
+        intake_subsystem.IntakeIn()
+      ));
+
     driverController.a().whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToElevator()));
 
     // Reset Gyro
@@ -153,7 +162,7 @@ public class RobotContainer {
       .onTrue(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(true)))
       .onFalse(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(false)));
 
-    driverController.rightBumper().whileTrue(this.intake());
+    // driverController.rightBumper().whileTrue(this.intake());
 
     driverController.leftTrigger()
       .whileTrue(
@@ -245,14 +254,14 @@ public class RobotContainer {
       shooter_subsystem.Shoot(),
       shaker_subsystem.Shake(),
       Commands.sequence(
-        Commands.parallel(
-          new WaitUntilCommand(shooter_subsystem::isUpToSpeed),
-          new WaitUntilCommand(aimWaitCondition)
-        ).withTimeout(3),
-        Commands.parallel(
-          indexer_subsystem.IndexerOut(),
-          intake_subsystem.IntakeIn()
-        )
+        // Commands.parallel(
+        // new WaitUntilCommand(shooter_subsystem::isUpToSpeed),
+        //   // new WaitUntilCommand(aimWaitCondition)
+        // ).withTimeout(3),
+        // Commands.parallel(
+        //   indexer_subsystem.IndexerOut(),
+        //   intake_subsystem.IntakeIn()
+        // )//.onlyIf(shooter_subsystem::isUpToSpeed)
       )
     );
   }
