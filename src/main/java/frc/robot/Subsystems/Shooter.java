@@ -110,7 +110,13 @@ public class Shooter extends CSubsystem {
     public Shooter(FuelSim fuelSim) {
         setName("ShooterSubsystem");
 
-        this.fuelSim = fuelSim;
+        if (RobotBase.isSimulation() && fuelSim == null) {
+            throw new IllegalArgumentException("FuelSim reference must be provided in simulation mode");
+        } else if (RobotBase.isSimulation()) {
+            this.fuelSim = fuelSim;
+        } else {
+            this.fuelSim = null; // No fuel sim on real robot
+        }
     }
 
     /**
@@ -312,7 +318,7 @@ public class Shooter extends CSubsystem {
                             double midRange = RobotConstants.ShooterSubsystemConstants.midRange;
                             double posTol = midRange * 0.05; // 5% tolerance around midRange
                             double hubDist = this.driveSubsystem.getPose().getTranslation().getDistance(
-                                RobotConstants.FieldConstants.hub.get().getTranslation());
+                            RobotConstants.FieldConstants.hubPosition.get());
                             boolean distOk = Math.abs(hubDist - midRange) <= posTol;
                             boolean angleOk = this.driveSubsystem.isAimedAtHub(Math.toRadians(6.0));
                             allowSpawn = distOk && angleOk;
