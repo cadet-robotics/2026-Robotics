@@ -156,11 +156,11 @@ public class RobotConstants {
         // public static final double SHOOTER_KD = 5.0;
 
         /** Proportional gain for shooter velocity PID control. */
-        public static final double SHOOTER_KP = 0.125;
+        public static final double SHOOTER_KP = 1.5;
         /** Integral gain for shooter velocity PID control. */
         public static final double SHOOTER_KI = 0.0;
         /** Derivative gain for shooter velocity PID control. */
-        public static final double SHOOTER_KD = 5;
+        public static final double SHOOTER_KD = 0;//5;
 
         /** Distance in feet of the middle of the shooting range from the hub */
         public static final double midRange = 2.9

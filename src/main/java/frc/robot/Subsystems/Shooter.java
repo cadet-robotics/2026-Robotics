@@ -54,7 +54,7 @@ public class Shooter extends CSubsystem {
             RobotConstants.ShooterSubsystemConstants.SHOOTER_KI, 
             RobotConstants.ShooterSubsystemConstants.SHOOTER_KD)
         // Feedforward Constants
-        .withFeedforward(new SimpleMotorFeedforward(0.108, 0, 0))
+        .withFeedforward(new SimpleMotorFeedforward(0,0,0))//0.108, 0, 0))
         .withSimFeedforward(new SimpleMotorFeedforward(0, 0, 0))
         // Telemetry name and verbosity level
         .withTelemetry("ShooterMotor",SmartMotorControllerConfig.TelemetryVerbosity.HIGH)
@@ -63,7 +63,7 @@ public class Shooter extends CSubsystem {
         // Motor properties to prevent over currenting.
         .withMotorInverted(false)
         .withIdleMode(SmartMotorControllerConfig.MotorMode.COAST)
-        .withStatorCurrentLimit(Amps.of(40));
+        .withStatorCurrentLimit(Amps.of(50));
 
     /** Smart motor controller wrapper for the shooter motor. */
     public SmartMotorController smc = new SparkWrapper(shooter_motor_controller, DCMotor.getNeoVortex(1), smc_config);
