@@ -1,5 +1,7 @@
 package frc.robot.Subsystems;
 
+import java.util.function.BooleanSupplier;
+
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.SparkMax;
 
@@ -54,6 +56,23 @@ public class Indexer extends CSubsystem {
             .onInitialize(() -> {
                 indexerState = IndexerState.SHOOTER;
                 indexerMotorController.setVoltage(-10);
+            })
+            .onEnd(() -> {
+                indexerState = IndexerState.OFF;
+                indexerMotorController.setVoltage(0);
+            });
+    }
+
+    public CCommand IndexerOut(BooleanSupplier condition) {
+        return cCommand("IndexerOut")
+            .onExecute(() -> {
+                if (condition.getAsBoolean()) {
+                    indexerState = IndexerState.SHOOTER;
+                    indexerMotorController.setVoltage(-10);
+                } else {
+                    indexerState = IndexerState.OFF;
+                    indexerMotorController.setVoltage(0);
+                }
             })
             .onEnd(() -> {
                 indexerState = IndexerState.OFF;
