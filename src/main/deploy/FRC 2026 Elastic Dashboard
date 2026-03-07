@@ -9,7 +9,7 @@
         "containers": [
           {
             "title": "Drive Under Trench",
-            "x": 256.0,
+            "x": 768.0,
             "y": 384.0,
             "width": 384.0,
             "height": 128.0,
@@ -22,19 +22,6 @@
               "false_color": 4294198070,
               "true_icon": "None",
               "false_icon": "None"
-            }
-          },
-          {
-            "title": "USB Camera 0",
-            "x": 256.0,
-            "y": 0.0,
-            "width": 384.0,
-            "height": 384.0,
-            "type": "Camera Stream",
-            "properties": {
-              "topic": "/CameraPublisher/USB Camera 0",
-              "period": 0.06,
-              "rotation_turns": 0
             }
           },
           {
@@ -72,7 +59,7 @@
           },
           {
             "title": "FMSInfo",
-            "x": 640.0,
+            "x": 1152.0,
             "y": 384.0,
             "width": 384.0,
             "height": 128.0,
@@ -84,7 +71,7 @@
           },
           {
             "title": "Field",
-            "x": 640.0,
+            "x": 768.0,
             "y": 0.0,
             "width": 768.0,
             "height": 384.0,
@@ -101,6 +88,19 @@
               "robot_color": 4278255369,
               "trajectory_color": 4294967295,
               "show_robot_outside_widget": true
+            }
+          },
+          {
+            "title": "limelight-front",
+            "x": 256.0,
+            "y": 0.0,
+            "width": 512.0,
+            "height": 512.0,
+            "type": "Camera Stream",
+            "properties": {
+              "topic": "/CameraPublisher/limelight-front",
+              "period": 0.06,
+              "rotation_turns": 0
             }
           }
         ]
