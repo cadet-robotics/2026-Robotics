@@ -13,6 +13,7 @@ import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -42,9 +43,19 @@ import yams.motorcontrollers.local.SparkWrapper;
 public class Shooter extends CSubsystem {
     /** Motor controller for the shooter mechanism. */
     public SparkFlex shooter_motor_controller = new SparkFlex(10, SparkLowLevel.MotorType.kBrushless);
+    // public SparkFlex shooter_follow_controller = new SparkFlex(11, SparkLowLevel.MotorType.kBrushless);
+
     public SparkFlexConfig shooter_SM_config = new SparkFlexConfig();
     {  
-        shooter_SM_config.closedLoop.minOutput(0);
+        shooter_SM_config
+            // .inverted(false)
+            // .idleMode(IdleMode.kCoast)
+            // .smartCurrentLimit(50)
+            // .secondaryCurrentLimit(50)
+            .closedLoop.minOutput(0)
+                .p(RobotConstants.ShooterSubsystemConstants.SHOOTER_KP)
+                .i(RobotConstants.ShooterSubsystemConstants.SHOOTER_KI)
+                .d(RobotConstants.ShooterSubsystemConstants.SHOOTER_KD);
 
     }
     /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
@@ -124,6 +135,7 @@ public class Shooter extends CSubsystem {
         } else {
             this.fuelSim = null; // No fuel sim on real robot
         }
+        // shooter_motor_controller.
     }
 
     /**
