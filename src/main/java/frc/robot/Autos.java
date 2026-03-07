@@ -1,5 +1,6 @@
 package frc.robot; 
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -83,12 +84,12 @@ public class Autos {
             // Build trajectory for visualization
             getTrajectoryOfCombinedPaths(p1);
            
-            // drive_subsystem.resetOdometry(p1.getStartingDifferentialPose());
+            drive_subsystem.resetOdometry(p1.getStartingDifferentialPose());
 
             return Commands.sequence(
-                drive_subsystem.driveToTargetPose(p1.getStartingDifferentialPose(), 0),
+                // drive_subsystem.driveToTargetPose(p1.getStartingDifferentialPose(), 0),
                 AutoBuilder.followPath(p1),
-                namedCommands.get("Shoot").get().withTimeout(5)
+                namedCommands.get("Shoot").get().withTimeout(10)
                 // namedCommands.get("Shoot"),
                 // Commands.parallel(
                 //     AutoBuilder.followPath(p2),
@@ -99,6 +100,62 @@ public class Autos {
         } catch (Exception e) {
             DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
             return Commands.none();
+        }
+    }
+
+    public Command rightCollectShootClimb() {
+        try {
+            PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightMid");
+            PathPlannerPath p2 = PathPlannerPath.fromChoreoTrajectory("RightCollectBallsPath");
+            PathPlannerPath p3 = PathPlannerPath.fromChoreoTrajectory("RightBalls_RightMid");
+            PathPlannerPath p4 = PathPlannerPath.fromChoreoTrajectory("RightMid_RightStart");
+            PathPlannerPath p5 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot");
+            PathPlannerPath p6 = PathPlannerPath.fromChoreoTrajectory("RightShoot_RightClimb");
+
+            getTrajectoryOfCombinedPaths(p1, p2, p3, p4, p5, p6);
+
+            return Commands.sequence(
+                AutoBuilder.followPath(p1),
+                Commands.parallel(
+                    namedCommands.get("Intake").get(),
+                    AutoBuilder.followPath(p2)
+                ), 
+                AutoBuilder.followPath(p3),
+                AutoBuilder.followPath(p4),
+                AutoBuilder.followPath(p5),
+                namedCommands.get("Shoot").get(),
+                Commands.parallel(
+                    AutoBuilder.followPath(p6),
+                    namedCommands.get("ClimberUp").get()
+                ),
+                namedCommands.get("ClimberDown").get()
+            );
+        } catch (Exception e) {
+            DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
+            return new PathPlannerAuto("Test1");
+        }
+    }
+
+    public Command rightTrifecta() {
+        try {
+            PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot");
+            PathPlannerPath p2 = PathPlannerPath.fromChoreoTrajectory("RightShoot_RightClimb");
+
+            // Build trajectory for visualization
+            getTrajectoryOfCombinedPaths(p1, p2);
+
+            return Commands.sequence(
+                AutoBuilder.followPath(p1),
+                namedCommands.get("Shoot").get(),
+                Commands.parallel(
+                    AutoBuilder.followPath(p2),
+                    namedCommands.get("ClimberUp").get()
+                ),
+                namedCommands.get("ClimberDown").get()
+            );
+        } catch (Exception e) {
+            DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
+            return new PathPlannerAuto("Test1");
         }
     }
 

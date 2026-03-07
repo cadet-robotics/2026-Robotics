@@ -11,6 +11,8 @@ import java.util.Optional;
 
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
+import com.revrobotics.spark.config.SparkFlexConfig;
+import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -40,7 +42,11 @@ import yams.motorcontrollers.local.SparkWrapper;
 public class Shooter extends CSubsystem {
     /** Motor controller for the shooter mechanism. */
     public SparkFlex shooter_motor_controller = new SparkFlex(10, SparkLowLevel.MotorType.kBrushless);
-    
+    public SparkFlexConfig shooter_SM_config = new SparkFlexConfig();
+    {  
+        shooter_SM_config.closedLoop.minOutput(0);
+
+    }
     /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
     public SmartMotorControllerConfig smc_config = new SmartMotorControllerConfig(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
@@ -63,7 +69,8 @@ public class Shooter extends CSubsystem {
         // Motor properties to prevent over currenting.
         .withMotorInverted(false)
         .withIdleMode(SmartMotorControllerConfig.MotorMode.COAST)
-        .withStatorCurrentLimit(Amps.of(50));
+        .withStatorCurrentLimit(Amps.of(50))
+        .withVendorConfig(shooter_SM_config);
 
     /** Smart motor controller wrapper for the shooter motor. */
     public SmartMotorController smc = new SparkWrapper(shooter_motor_controller, DCMotor.getNeoVortex(1), smc_config);
