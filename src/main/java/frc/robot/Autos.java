@@ -3,6 +3,7 @@ package frc.robot;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.Supplier;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.PathPlannerAuto;
@@ -24,12 +25,13 @@ import frc.robot.Subsystems.Drive;
  */
 public class Autos {
     private SendableChooser<Command> autoChooser;
-    private HashMap<String, Command> namedCommands = new HashMap<>();
+    private HashMap<String, Supplier<Command>> namedCommands = new HashMap<>();
     private HashMap<String, PathPlannerPath> paths = new HashMap<>();
     private HashMap<String, Trajectory> trajectories = new HashMap<>();
     // Track the last selection from the SendableChooser so we only recompute when it changes
     private Command lastSelectedCommand = null;
 
+    private Drive drive_subsystem;
     /**
      * Constructs the Autos object and initializes the auto chooser.
      * 
@@ -38,6 +40,7 @@ public class Autos {
      */
     public Autos( RobotContainer robotContainer, Drive driveSubsystem ) {
         // AutoBuilder might not be configured if PathPlanner config has errors
+        this.drive_subsystem = driveSubsystem;
         try {
             autoChooser = AutoBuilder.buildAutoChooser();
             SmartDashboard.putData("Auto Chooser", autoChooser);
@@ -50,7 +53,7 @@ public class Autos {
         }
     }
 
-    public void addCommand( String name, Command command) {
+    public void addCommand( String name, Supplier<Command> command) {
         namedCommands.put(name, command);
     }
 
@@ -61,7 +64,7 @@ public class Autos {
      */
     public Command getAutonomousCommand() {
         // return new PathPlannerAuto("Test1");
-        return leftTrifecta();
+        return rightShoot();
     }
 
     /**
@@ -71,6 +74,32 @@ public class Autos {
      */
     public Command example_auto() {
         return new PathPlannerAuto("Dummy1");
+    }
+    
+    public Command rightShoot() {
+        try {
+            PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot");
+            
+            // Build trajectory for visualization
+            getTrajectoryOfCombinedPaths(p1);
+           
+            // drive_subsystem.resetOdometry(p1.getStartingDifferentialPose());
+
+            return Commands.sequence(
+                drive_subsystem.driveToTargetPose(p1.getStartingDifferentialPose(), 0),
+                AutoBuilder.followPath(p1),
+                namedCommands.get("Shoot").get().withTimeout(5)
+                // namedCommands.get("Shoot"),
+                // Commands.parallel(
+                //     AutoBuilder.followPath(p2),
+                //     namedCommands.get("ClimberUp")
+                // ),
+                // namedCommands.get("ClimberDown")
+            );
+        } catch (Exception e) {
+            DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
+            return Commands.none();
+        }
     }
 
     public Command leftTrifecta() {
@@ -83,12 +112,12 @@ public class Autos {
             
             return Commands.sequence(
                 AutoBuilder.followPath(p1),
-                namedCommands.get("Shoot"),
+                namedCommands.get("Shoot").get(),
                 Commands.parallel(
                     AutoBuilder.followPath(p2),
-                    namedCommands.get("ClimberUp")
+                    namedCommands.get("ClimberUp").get()
                 ),
-                namedCommands.get("ClimberDown")
+                namedCommands.get("ClimberDown").get()
             );
         } catch (Exception e) {
             DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());

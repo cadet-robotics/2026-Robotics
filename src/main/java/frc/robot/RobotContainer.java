@@ -43,7 +43,7 @@ public class RobotContainer {
 
   private final CommandXboxController driverController = new CommandXboxController(0);
   private final CommandXboxController codriverController = new CommandXboxController(1);
-
+  
   public RobotContainer() {
     if ( Robot.isSimulation() ) {
       fuelSim = new FuelSim("FuelSim");
@@ -89,7 +89,9 @@ public class RobotContainer {
   public void disabledPeriodic() {
     // Keep vision update behavior consistent with previous Robot.disabledPeriodic
     if (Robot.isReal()) {
-      vision_subsystem.disabledPeriodic();
+      if (vision_subsystem.seesAprilTag()) {
+        vision_subsystem.disabledPeriodic();
+      }
     }
 
     if (this.autos != null) {
@@ -98,12 +100,12 @@ public class RobotContainer {
   }
 
   private void configureAuto() {
-    autos.addCommand("Shoot", shooter_subsystem.Shoot());
-    autos.addCommand("ClimberUp", climber_subsystem.climbUp());
-    autos.addCommand("ClimberZero", climber_subsystem.climbZero());
-    autos.addCommand("ClimberDown", climber_subsystem.climb());
-    autos.addCommand("Barf", this.barf());
-    autos.addCommand("Intake", this.intake());
+    autos.addCommand("Shoot", this::shootGroup);
+    autos.addCommand("ClimberUp", climber_subsystem::climbUp);
+    autos.addCommand("ClimberZero", climber_subsystem::climbZero);
+    autos.addCommand("ClimberDown", climber_subsystem::climb);
+    autos.addCommand("Barf", this::barf);
+    autos.addCommand("Intake", this::intake);
   }
 
   private void configureSim() {

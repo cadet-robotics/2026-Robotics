@@ -199,7 +199,7 @@ public class RealVision extends SubsystemBase implements Vision {
         // This ensures MegaTag2 has the latest odometry data
         double yawDegrees = currentDrivePose.getRotation().getDegrees();
         LimelightHelpers.SetRobotOrientation("limelight-front", yawDegrees, 0, 0, 0, 0, 0);
-        LimelightHelpers.SetRobotOrientation("limelight-rear", yawDegrees, 0, 0, 0, 0, 0);
+        LimelightHelpers.SetRobotOrientation("limelight-rear", yawDegrees, 1, 0, 0, 0, 0);
         
         SmartDashboard.putNumber("Vision/Sending Rotation (deg)", yawDegrees);
         

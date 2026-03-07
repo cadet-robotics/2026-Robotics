@@ -5,6 +5,7 @@ import static edu.wpi.first.units.Units.Meter;
 import static edu.wpi.first.units.Units.Meters;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -25,6 +26,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Dashboard;
 import frc.robot.Robot;
@@ -702,7 +704,7 @@ public class Drive extends CSubsystem {
      * Compute the appropriate trench target for the current pose.
      * If opponentSide is true, compute the target on the opponent's side (mirror alliances).
      */
-    private Pose2d computeTrenchTarget(boolean opponentSide) {
+    private Pose2d[] computeTrenchTarget(boolean opponentSide) {
         // If this is too hard to understand can be replaced 
         //      with rectangles from the poses of the corners of each zone
         DriverStation.Alliance alliance = Dashboard.getAlliance();
@@ -713,25 +715,25 @@ public class Drive extends CSubsystem {
         if (alliance == DriverStation.Alliance.Blue) {
             if ( getPose().getY() > FieldConstants.yHalfLine ) {
                 if ( getPose().getX() > FieldConstants.BLUE_LEFT_TRENCH.getX() ) {
-                    return poseFromTranslation(FieldConstants.MID_2_BLUE_LEFT_TRENCH);
+                    return new Pose2d[] { poseFromTranslation(FieldConstants.BLUE_2_MID_LEFT_TRENCH), poseFromTranslation(FieldConstants.MID_2_BLUE_LEFT_TRENCH)};
                 }
-                return poseFromTranslation(FieldConstants.BLUE_2_MID_LEFT_TRENCH);
+                return new Pose2d[] { poseFromTranslation(FieldConstants.MID_2_BLUE_LEFT_TRENCH), poseFromTranslation(FieldConstants.BLUE_2_MID_LEFT_TRENCH)};
             }
             if ( getPose().getX() > FieldConstants.BLUE_LEFT_TRENCH.getX() ) {
-                return poseFromTranslation(FieldConstants.MID_2_BLUE_RIGHT_TRENCH);
+                return new Pose2d[] { poseFromTranslation(FieldConstants.BLUE_2_MID_RIGHT_TRENCH), poseFromTranslation(FieldConstants.MID_2_BLUE_RIGHT_TRENCH)};
             }
-            return poseFromTranslation(FieldConstants.BLUE_2_MID_RIGHT_TRENCH);
+            return new Pose2d[] { poseFromTranslation(FieldConstants.MID_2_BLUE_RIGHT_TRENCH), poseFromTranslation(FieldConstants.BLUE_2_MID_RIGHT_TRENCH)};
         } else {
             if ( getPose().getY() > FieldConstants.yHalfLine ) {
                 if ( getPose().getX() < FieldConstants.RED_LEFT_TRENCH.getX() ) {
-                    return poseFromTranslation(FieldConstants.MID_2_RED_LEFT_TRENCH);
+                    return new Pose2d[] { poseFromTranslation(FieldConstants.RED_2_MID_LEFT_TRENCH),poseFromTranslation(FieldConstants.MID_2_RED_LEFT_TRENCH)};
                 }
-                return poseFromTranslation(FieldConstants.RED_2_MID_LEFT_TRENCH);
+                return new Pose2d[] { poseFromTranslation(FieldConstants.MID_2_RED_LEFT_TRENCH), poseFromTranslation(FieldConstants.RED_2_MID_LEFT_TRENCH)};
             }
             if ( getPose().getX() < FieldConstants.RED_LEFT_TRENCH.getX() ) {
-                return poseFromTranslation(FieldConstants.MID_2_RED_RIGHT_TRENCH);
+                return new Pose2d[] { poseFromTranslation(FieldConstants.RED_2_MID_RIGHT_TRENCH), poseFromTranslation(FieldConstants.MID_2_RED_RIGHT_TRENCH)};
             }
-            return poseFromTranslation(FieldConstants.RED_2_MID_RIGHT_TRENCH);
+            return new Pose2d[] {poseFromTranslation(FieldConstants.MID_2_RED_RIGHT_TRENCH), poseFromTranslation(FieldConstants.RED_2_MID_RIGHT_TRENCH)};
         }
     }
 
@@ -740,11 +742,15 @@ public class Drive extends CSubsystem {
      * @return
      */
     public Command driveThroughTrenchSS() {
-        Supplier<Pose2d> getTargetLocation = () -> computeTrenchTarget(false);
+        Supplier<Pose2d[]> getTargetLocation = () -> computeTrenchTarget(false);
+        Pose2d[] poses = getTargetLocation.get();
         if (Robot.isReal()) {
-            return driveToTargetPose(getTargetLocation, 0);
+            return Commands.sequence(
+                driveToTargetPose(poses[0], 0),
+                driveToTargetPose(poses[1], 0)
+            );
         }
-        return driveToTargetPose(autoDriveTargetLogger(getTargetLocation), 0);
+        return driveToTargetPose(poses[1], 0);
     }
 
     /**
@@ -752,11 +758,15 @@ public class Drive extends CSubsystem {
      * @return
      */
     public Command driveThroughTrenchOS() {
-        Supplier<Pose2d> getTargetLocation = () -> computeTrenchTarget(true);
+        Supplier<Pose2d[]> getTargetLocation = () -> computeTrenchTarget(true);
+        Pose2d[] poses = getTargetLocation.get();
         if (Robot.isReal()) {
-            return driveToTargetPose(getTargetLocation, 0);
+            return Commands.sequence(
+                driveToTargetPose(poses[0], 0),
+                driveToTargetPose(poses[1], 0)
+            );
         }
-        return driveToTargetPose(autoDriveTargetLogger(getTargetLocation), 0);
+        return driveToTargetPose(poses[1], 0);
     }
 
     public Supplier<Pose2d> autoDriveTargetLogger( Supplier<Pose2d> targetGetter ) {

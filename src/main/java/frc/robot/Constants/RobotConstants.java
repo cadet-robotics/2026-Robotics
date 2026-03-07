@@ -97,9 +97,9 @@ public class RobotConstants {
         public static final double maxSpeed = 6; // Meters per second
 
         /** PID constants for translational (x, y) movement control. Pathplanner */
-        public static final PIDConstants pptranslationPidConstants = new PIDConstants(4, 0, 0);
+        public static final PIDConstants pptranslationPidConstants = new PIDConstants(5, 0, 0);
         /** PID constants for rotational (theta) movement control. Pathplanner */
-        public static final PIDConstants pprotationPidConstants = new PIDConstants(5, 0, 0);
+        public static final PIDConstants pprotationPidConstants = new PIDConstants(8, 0, 0);
 
         /** PID constants for translational (x, y) movement control. */
         public static final PIDConstants translationPidConstants = new PIDConstants(4.5, 0, 1);
@@ -145,7 +145,7 @@ public class RobotConstants {
      */
     public static final class ShooterSubsystemConstants {
         /** Flywheel motor speed in RPM when shooting game pieces (forwards operation). */
-        public static final AngularVelocity forwardsOnSpeeds = RPM.of(3250);
+        public static final AngularVelocity forwardsOnSpeeds = RPM.of(3200);
         /** Flywheel motor speed in RPM when shooting game pieces backwards (reverse operation). */
         public static final AngularVelocity backwardsOnSpeeds = RPM.of(-3250);
         /** Manual spin speed in RPM for slow manual control. */

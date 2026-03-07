@@ -2,6 +2,7 @@
   "download": {
     "deleteAfter": false,
     "localDir": "C:\\Users\\Student\\Code\\2026-Robotics\\.SysId",
+    "remoteDir": "/home/lvuser",
     "serverTeam": "6868"
   },
   "output": {
