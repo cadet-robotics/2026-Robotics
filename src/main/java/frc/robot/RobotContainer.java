@@ -106,6 +106,7 @@ public class RobotContainer {
     autos.addCommand("ClimberDown", climber_subsystem::climb);
     autos.addCommand("Barf", this::barf);
     autos.addCommand("Intake", this::intake);
+    autos.addAutos();
   }
 
   private void configureSim() {

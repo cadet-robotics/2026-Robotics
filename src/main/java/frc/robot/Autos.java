@@ -48,7 +48,6 @@ public class Autos {
         this.drive_subsystem = driveSubsystem;
         try {
             autoChooser = AutoBuilder.buildAutoChooser();
-            SmartDashboard.putData("Auto Chooser", autoChooser);
         } catch (RuntimeException e) {
             edu.wpi.first.wpilibj.DriverStation.reportWarning(
                 "Could not build auto chooser - PathPlanner may not be configured: " + e.getMessage(), 
@@ -62,6 +61,15 @@ public class Autos {
         namedCommands.put(name, command);
     }
 
+    public void addAutos() {
+        SmartDashboard.putData("Auto Chooser", autoChooser);
+        autoChooser.setDefaultOption("Do Nothing", Commands.none());
+        autoChooser.addOption("RightShootClimb", rightTrifecta());
+        autoChooser.addOption("RightRefilTrifecta", rightRefilTrifecta());
+        autoChooser.addOption("LeftShootClimb", leftTrifecta());
+        autoChooser.addOption("RightShoot", rightShoot());
+    }
+
     /**
      * Gets the selected autonomous command from the auto chooser.
      * 
@@ -69,7 +77,7 @@ public class Autos {
      */
     public Command getAutonomousCommand() {
         // return new PathPlannerAuto("Test1");
-        return rightRefilTrifecta();
+        return autoChooser.getSelected();
     }
 
     /**
@@ -87,10 +95,16 @@ public class Autos {
             
             // Build trajectory for visualization
             getTrajectoryOfCombinedPaths(p1);
+            if (Dashboard.getAlliance() == Alliance.Blue ) {
+                drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
+            } else {
+                drive_subsystem.resetOdometry(p1.flipPath().getStartingHolonomicPose().get());
+            }
             // System.out.println("the angle:"+p1.getStartingHolonomicPose().get().getRotation().getDegrees());
-            drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
+            // drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
 
             return Commands.sequence(
+                Commands.runOnce(()->drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get()), drive_subsystem),
                 // drive_subsystem.driveToTargetPose(p1.getStartingDifferentialPose(), 0),
                 AutoBuilder.followPath(p1),
                 namedCommands.get("Shoot").get().withTimeout(10)
@@ -117,6 +131,11 @@ public class Autos {
             PathPlannerPath p6 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightShoot_RightClimb"));
 
             getTrajectoryOfCombinedPaths(p1, p2, p3, p4, p5, p6);
+            if (Dashboard.getAlliance() == Alliance.Blue ) {
+                drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
+            } else {
+                drive_subsystem.resetOdometry(p1.flipPath().getStartingHolonomicPose().get());
+            }
 
             return Commands.sequence(
                 AutoBuilder.followPath(p1),
@@ -152,7 +171,7 @@ public class Autos {
 
     }
     public Command adjustLeft() {
-        return drive_subsystem.driveWithChassisSpeedsSupplier( SwerveInputStream.of(drive_subsystem.getSwerveDrive(), ()->-0.0,()->0.2).withControllerHeadingAxis(()->1,()->0));
+        return drive_subsystem.driveWithChassisSpeedsSupplier( SwerveInputStream.of(drive_subsystem.getSwerveDrive(), ()->-0.0,()->0.2).allianceRelativeControl(true).withControllerHeadingAxis(()->1,()->0));
     }
     
     public Command rightRefilTrifecta() {
@@ -173,7 +192,7 @@ public class Autos {
                 AutoBuilder.followPath(p1),
                 new WaitCommand(3),
                 AutoBuilder.followPath(p2),
-                namedCommands.get("Shoot").get().withTimeout(6.0),
+                namedCommands.get("Shoot").get().withTimeout(5.0),
                 Commands.parallel(
                     AutoBuilder.followPath(p3),
                     namedCommands.get("ClimberUp").get()
@@ -195,7 +214,11 @@ public class Autos {
 
             // Build trajectory for visualization
             getTrajectoryOfCombinedPaths(p1, p2);
-            drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
+            if (Dashboard.getAlliance() == Alliance.Blue ) {
+                drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
+            } else {
+                drive_subsystem.resetOdometry(p1.flipPath().getStartingHolonomicPose().get());
+            }
 
             return Commands.sequence(
                 AutoBuilder.followPath(p1),
@@ -236,11 +259,6 @@ public class Autos {
         }
     }
 
-    public void disabledPath() {
-        // Clear any preview by default
-        Dashboard.getField2d().getObject("traj").setTrajectory(null);
-    }
-
     /**
      * Called periodically while disabled to optionally update any heavy/autonomous preview work.
      * This will only actually run the disabledPath computation if the choice in the chooser changed
@@ -248,6 +266,9 @@ public class Autos {
      * disabled loop so work is only done on selection changes.
      */
     public void maybeUpdateDisabledPath() {
+        if (true) {
+            return;
+        }
         if (autoChooser == null) {
             return;
         }
