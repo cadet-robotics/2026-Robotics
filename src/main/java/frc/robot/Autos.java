@@ -104,6 +104,7 @@ public class Autos {
             // drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
 
             return Commands.sequence(
+                resetOdom(p1),
                 Commands.runOnce(()->drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get()), drive_subsystem),
                 // drive_subsystem.driveToTargetPose(p1.getStartingDifferentialPose(), 0),
                 AutoBuilder.followPath(p1),
@@ -138,6 +139,7 @@ public class Autos {
             }
 
             return Commands.sequence(
+                resetOdom(p1),
                 AutoBuilder.followPath(p1),
                 Commands.parallel(
                     namedCommands.get("Intake").get(),
@@ -189,6 +191,7 @@ public class Autos {
             }
 
             return Commands.sequence(
+                resetOdom(p1),
                 AutoBuilder.followPath(p1),
                 new WaitCommand(3),
                 AutoBuilder.followPath(p2),
@@ -214,13 +217,9 @@ public class Autos {
 
             // Build trajectory for visualization
             getTrajectoryOfCombinedPaths(p1, p2);
-            if (Dashboard.getAlliance() == Alliance.Blue ) {
-                drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
-            } else {
-                drive_subsystem.resetOdometry(p1.flipPath().getStartingHolonomicPose().get());
-            }
 
             return Commands.sequence(
+                resetOdom(p1),
                 AutoBuilder.followPath(p1),
                 namedCommands.get("Shoot").get().withTimeout(6.0),
                 Commands.parallel(
@@ -236,6 +235,15 @@ public class Autos {
         }
     }
 
+    public Command resetOdom(PathPlannerPath path) {
+        return Commands.runOnce(() -> {
+            if (Dashboard.getAlliance() == Alliance.Blue ) {
+                drive_subsystem.resetOdometry(path.getStartingHolonomicPose().get());
+            } else {
+                drive_subsystem.resetOdometry(path.flipPath().getStartingHolonomicPose().get());
+            }
+        });
+    }
     public Command leftTrifecta() {
         try {
             PathPlannerPath p1 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("LeftStart_LeftShoot"));
@@ -245,13 +253,14 @@ public class Autos {
             getTrajectoryOfCombinedPaths(p1, p2);
             
             return Commands.sequence(
+                resetOdom(p1),
                 AutoBuilder.followPath(p1),
-                namedCommands.get("Shoot").get(),
-                Commands.parallel(
-                    AutoBuilder.followPath(p2),
-                    namedCommands.get("ClimberUp").get()
-                ),
-                namedCommands.get("ClimberDown").get()
+                namedCommands.get("Shoot").get()
+                // Commands.parallel(
+                //     AutoBuilder.followPath(p2),
+                //     namedCommands.get("ClimberUp").get()
+                // ),
+                // namedCommands.get("ClimberDown").get()
             );
         } catch (Exception e) {
             DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
