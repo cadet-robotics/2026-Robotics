@@ -68,7 +68,7 @@ public class Autos {
      */
     public Command getAutonomousCommand() {
         // return new PathPlannerAuto("Test1");
-        return rightTrifecta();
+        return rightRefilTrifecta();
     }
 
     /**
