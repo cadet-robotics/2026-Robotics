@@ -55,7 +55,7 @@ public class RobotConstants {
         };
         
         /** Blue alliance rightside climb position (x, y, Rotation2d) in inches and degrees. */
-        public static final Pose2d BLUE_RIGHT_CLIMB_POSITION = new Pose2d(Inches.of(37.6075), Inches.of(112.5065), Rotation2d.fromRadians(0));
+        public static final Pose2d BLUE_RIGHT_CLIMB_POSITION = new Pose2d(Inches.of(36.6075), Inches.of(129.5065), Rotation2d.fromRadians(0));
         /** Blue alliance leftside climb position (x, y, Rotation2d) in inches and degrees. */
         public static final Pose2d BLUE_LEFT_CLIMB_POSITION = new Pose2d(Inches.of(42.3925), Inches.of(182.4335), Rotation2d.fromRadians(Math.PI));
         /** Red alliance rightside climb position (x, y, Rotation2d) in inches and degrees. */
@@ -97,9 +97,9 @@ public class RobotConstants {
         public static final double maxSpeed = 6; // Meters per second
 
         /** PID constants for translational (x, y) movement control. Pathplanner */
-        public static final PIDConstants pptranslationPidConstants = new PIDConstants(20, 0, 1);
+        public static final PIDConstants pptranslationPidConstants = new PIDConstants(4, 0, 0);
         /** PID constants for rotational (theta) movement control. Pathplanner */
-        public static final PIDConstants pprotationPidConstants = new PIDConstants(6, 0, 0);
+        public static final PIDConstants pprotationPidConstants = new PIDConstants(5, 0, 0);
 
         /** PID constants for translational (x, y) movement control. */
         public static final PIDConstants translationPidConstants = new PIDConstants(4.5, 0, 1);
@@ -167,7 +167,7 @@ public class RobotConstants {
         public static final double SHOOTER_KD = 0;//5;
 
         /** Distance in feet of the middle of the shooting range from the hub */
-        public static final double midRange = 2.9
+        public static final double midRange = 2.8
         ;
     }
 

@@ -245,7 +245,7 @@ public class RobotContainer {
         }
         // When autodrive is active, allow shooting only if the robot's distance
         // to the hub is within a tolerance of the midRange used to generate the curve.
-        double midRange = RobotConstants.ShooterSubsystemConstants.midRange + Dashboard.getOverride;
+        double midRange = RobotConstants.ShooterSubsystemConstants.midRange;
         double posTol = midRange * 0.05; // 5% tolerance around midRange
         double hubDist = drive_subsystem.getPose().getTranslation().getDistance(
             RobotConstants.FieldConstants.hubPosition.get());
