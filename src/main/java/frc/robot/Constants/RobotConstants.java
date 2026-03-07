@@ -59,7 +59,7 @@ public class RobotConstants {
         /** Blue alliance leftside climb position (x, y, Rotation2d) in inches and degrees. */
         public static final Pose2d BLUE_LEFT_CLIMB_POSITION = new Pose2d(Inches.of(42.3925), Inches.of(182.4335), Rotation2d.fromRadians(Math.PI));
         /** Red alliance rightside climb position (x, y, Rotation2d) in inches and degrees. */
-        public static final Pose2d RED_RIGHT_CLIMB_POSITION = new Pose2d(Inches.of(608.8275), Inches.of(135.5065), Rotation2d.fromRadians(0));
+        public static final Pose2d RED_RIGHT_CLIMB_POSITION = new Pose2d(Inches.of(600.7075), Inches.of(135.5065), Rotation2d.fromRadians(0));
         /** Red alliance leftside climb position (x, y, Rotation2d) in inches and degrees. */
         public static final Pose2d RED_LEFT_CLIMB_POSITION = new Pose2d(Inches.of(612.6125), Inches.of(208.4335), Rotation2d.fromRadians(Math.PI));
 
