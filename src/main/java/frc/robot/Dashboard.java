@@ -103,6 +103,7 @@ public class Dashboard {
 
         // We're teleop enabled, compute.
         double matchTime = DriverStation.getMatchTime();
+
         String gameData = DriverStation.getGameSpecificMessage();
         // If we have no game data, we cannot compute, assume hub is active, as its likely early in teleop.
         if (gameData.isEmpty()) {
@@ -122,21 +123,28 @@ public class Dashboard {
             case Red -> !redInactiveFirst;
             case Blue -> redInactiveFirst; };
 
+        
+
         if (matchTime > 130) {
             // Transition shift, hub is active.
             hubActivePublisher.set(true);
+            return;
         } else if (matchTime > 105) {
             // Shift 1
             hubActivePublisher.set(shift1Active);
+            return;
         } else if (matchTime > 80) {
             // Shift 2
             hubActivePublisher.set(!shift1Active);
+            return;
         } else if (matchTime > 55) {
             // Shift 3
             hubActivePublisher.set(shift1Active);
+            return;
         } else if (matchTime > 30) {
             // Shift 4
             hubActivePublisher.set(!shift1Active);
+            return;
         } else {
             // End game, hub always active.
             hubActivePublisher.set(true); 

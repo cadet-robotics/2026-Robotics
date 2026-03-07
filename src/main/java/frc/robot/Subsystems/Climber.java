@@ -162,13 +162,13 @@ public class Climber extends CSubsystem {
         // Update telemetry
         climber_motor.updateTelemetry();
         
-        Dashboard.setElevatorStatus(isAtPosition(zero_position));
-        
         // Reset encoder when limit switch is pressed (auto-zero)
         if (!zeroed && isLimitSwitchPressed()) {
             climber_encoder.setPosition(zero_position);
             zeroed = true;
         }
+
+         Dashboard.setElevatorStatus(zeroed);
     }
 
     @Override
