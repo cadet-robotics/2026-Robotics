@@ -14,6 +14,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.Trajectory.State;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -82,7 +83,7 @@ public class Autos {
     
     public Command rightShoot() {
         try {
-            PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot");
+            PathPlannerPath p1 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot"));
             
             // Build trajectory for visualization
             getTrajectoryOfCombinedPaths(p1);
@@ -108,12 +109,12 @@ public class Autos {
 
     public Command rightCollectShootClimb() {
         try {
-            PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightMid");
-            PathPlannerPath p2 = PathPlannerPath.fromChoreoTrajectory("RightCollectBallsPath");
-            PathPlannerPath p3 = PathPlannerPath.fromChoreoTrajectory("RightBalls_RightMid");
-            PathPlannerPath p4 = PathPlannerPath.fromChoreoTrajectory("RightMid_RightStart");
-            PathPlannerPath p5 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot");
-            PathPlannerPath p6 = PathPlannerPath.fromChoreoTrajectory("RightShoot_RightClimb");
+            PathPlannerPath p1 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightStart_RightMid"));
+            PathPlannerPath p2 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightCollectBallsPath"));
+            PathPlannerPath p3 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightBalls_RightMid"));
+            PathPlannerPath p4 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightMid_RightStart"));
+            PathPlannerPath p5 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot"));
+            PathPlannerPath p6 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightShoot_RightClimb"));
 
             getTrajectoryOfCombinedPaths(p1, p2, p3, p4, p5, p6);
 
@@ -139,6 +140,17 @@ public class Autos {
         }
     }
 
+    public PathPlannerPath handleAlliance(PathPlannerPath path) {
+        // if (Dashboard.getAlliance() == DriverStation.Alliance.Red) {
+        //     PathPlannerPath C= path.flipPath();
+
+        // } else {
+        //     // For blue alliance, mirror the path across the field's center line
+        //     return path;
+        // }
+        return path;
+
+    }
     public Command adjustLeft() {
         return drive_subsystem.driveWithChassisSpeedsSupplier( SwerveInputStream.of(drive_subsystem.getSwerveDrive(), ()->-0.0,()->0.2).withControllerHeadingAxis(()->1,()->0));
     }
@@ -151,7 +163,11 @@ public class Autos {
 
             // Build trajectory for visualization
             getTrajectoryOfCombinedPaths(p1, p2, p3);
-            drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
+            if (Dashboard.getAlliance() == Alliance.Blue ) {
+                drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
+            } else {
+                drive_subsystem.resetOdometry(p1.flipPath().getStartingHolonomicPose().get());
+            }
 
             return Commands.sequence(
                 AutoBuilder.followPath(p1),
@@ -174,8 +190,8 @@ public class Autos {
 
     public Command rightTrifecta() {
         try {
-            PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot");
-            PathPlannerPath p2 = PathPlannerPath.fromChoreoTrajectory("RightShoot_RightClimb");
+            PathPlannerPath p1 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot"));
+            PathPlannerPath p2 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightShoot_RightClimb"));
 
             // Build trajectory for visualization
             getTrajectoryOfCombinedPaths(p1, p2);
@@ -199,8 +215,8 @@ public class Autos {
 
     public Command leftTrifecta() {
         try {
-            PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("LeftStart_LeftShoot");
-            PathPlannerPath p2 = PathPlannerPath.fromChoreoTrajectory("LeftShoot_LeftClimb");
+            PathPlannerPath p1 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("LeftStart_LeftShoot"));
+            PathPlannerPath p2 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("LeftShoot_LeftClimb"));
             
             // Build trajectory for visualization
             getTrajectoryOfCombinedPaths(p1, p2);
