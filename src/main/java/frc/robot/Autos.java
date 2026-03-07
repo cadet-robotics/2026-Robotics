@@ -84,7 +84,7 @@ public class Autos {
             // Build trajectory for visualization
             getTrajectoryOfCombinedPaths(p1);
            
-            drive_subsystem.resetOdometry(p1.getStartingDifferentialPose());
+            drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
 
             return Commands.sequence(
                 // drive_subsystem.driveToTargetPose(p1.getStartingDifferentialPose(), 0),
