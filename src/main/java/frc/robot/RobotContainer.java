@@ -290,7 +290,7 @@ public class RobotContainer {
     return Commands.parallel(
       intake_subsystem.IntakeBarf(),
       shaker_subsystem.Shake(),
-      shooter_subsystem.ShootBackwards(),
+      shooter_subsystem.ShootBackwards().withTimeout(1),
       Commands.sequence(
         indexer_subsystem.IndexerIn().withTimeout(0.25),
         indexer_subsystem.IndexerOut()
