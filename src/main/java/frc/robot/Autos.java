@@ -65,7 +65,7 @@ public class Autos {
      */
     public Command getAutonomousCommand() {
         // return new PathPlannerAuto("Test1");
-        return rightShoot();
+        return rightTrifecta();
     }
 
     /**
@@ -83,7 +83,7 @@ public class Autos {
             
             // Build trajectory for visualization
             getTrajectoryOfCombinedPaths(p1);
-           
+            // System.out.println("the angle:"+p1.getStartingHolonomicPose().get().getRotation().getDegrees());
             drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
 
             return Commands.sequence(

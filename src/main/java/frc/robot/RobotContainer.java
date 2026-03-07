@@ -95,7 +95,7 @@ public class RobotContainer {
     }
 
     if (this.autos != null) {
-      this.autos.maybeUpdateDisabledPath();
+      // this.autos.maybeUpdateDisabledPath();
     }
   }
 
