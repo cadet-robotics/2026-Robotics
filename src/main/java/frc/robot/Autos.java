@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Subsystems.Drive;
 import swervelib.SwerveInputStream;
 import swervelib.encoders.SwerveAbsoluteEncoder;
@@ -67,7 +68,7 @@ public class Autos {
      */
     public Command getAutonomousCommand() {
         // return new PathPlannerAuto("Test1");
-        return rightTrifecta();
+        return rightRefilTrifecta();
     }
 
     /**
@@ -141,6 +142,35 @@ public class Autos {
     public Command adjustLeft() {
         return drive_subsystem.driveWithChassisSpeedsSupplier( SwerveInputStream.of(drive_subsystem.getSwerveDrive(), ()->-0.0,()->0.2).withControllerHeadingAxis(()->1,()->0));
     }
+    
+    public Command rightRefilTrifecta() {
+        try {
+            PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("RightStart_HumanPlayerStation");
+            PathPlannerPath p2 = PathPlannerPath.fromChoreoTrajectory("HumanPlayerStation_RightShoot");
+            PathPlannerPath p3 = PathPlannerPath.fromChoreoTrajectory("RightShoot_RightClimb");
+
+            // Build trajectory for visualization
+            getTrajectoryOfCombinedPaths(p1, p2, p3);
+            drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
+
+            return Commands.sequence(
+                AutoBuilder.followPath(p1),
+                new WaitCommand(3),
+                AutoBuilder.followPath(p2),
+                namedCommands.get("Shoot").get().withTimeout(6.0),
+                Commands.parallel(
+                    AutoBuilder.followPath(p3),
+                    namedCommands.get("ClimberUp").get()
+                ),
+                adjustLeft().withTimeout(0.6)
+                // namedCommands.get("ClimberDown").get()
+            );
+        } catch (Exception e) {
+            DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
+            return new PathPlannerAuto("Test1");
+        }
+    }
+
 
     public Command rightTrifecta() {
         try {
