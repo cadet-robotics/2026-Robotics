@@ -4,13 +4,17 @@
 
 package frc.robot;
 
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.net.WebServer;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import swervelib.simulation.ironmaple.simulation.SimulatedArena;
+import frc.robot.Libs.Elastic;
 import frc.robot.Libs.MatchTime;
 import frc.robot.Subsystems.Vision.Vision;
 
@@ -42,7 +46,10 @@ public class Robot extends TimedRobot {
     }
     
     Dashboard.field2dInit();
-    
+    WebServer.start(5800, Filesystem.getDeployDirectory().getPath());
+    CameraServer.startAutomaticCapture();
+    Elastic.selectTab("Autonomous");
+
     this.robotContainer = new RobotContainer();
   }
 
@@ -53,6 +60,8 @@ public class Robot extends TimedRobot {
     
     matchTime.update(MatchTime.kGameData2026.get());
     matchTimeTopic.set(matchTime);
+    
+    Dashboard.matchPhaseChange();
   }
 
 
@@ -102,7 +111,9 @@ public class Robot extends TimedRobot {
    * Called every 20ms while the robot is in autonomous operation.
    */
   @Override
-  public void autonomousPeriodic() {}
+  public void autonomousPeriodic() {
+    Dashboard.isHubActive();
+  }
 
   /**
    * Called once when autonomous mode ends.
@@ -110,7 +121,9 @@ public class Robot extends TimedRobot {
    * Use this method to clean up autonomous-specific operations.
    */
   @Override
-  public void autonomousExit() {}
+  public void autonomousExit() {
+    Elastic.selectTab("Teleoperated");
+  }
   
   /**
    * Called once when teleoperated (driver control) mode starts.
@@ -131,7 +144,9 @@ public class Robot extends TimedRobot {
    * Called every 20ms while drivers have control of the robot.
    */
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+    Dashboard.isHubActive();
+  }
 
   /**
    * Called once when teleoperated mode ends.
