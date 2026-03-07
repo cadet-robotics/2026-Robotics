@@ -268,7 +268,8 @@ public class Shooter extends CSubsystem {
         return cCommand("ShootBackwards")
                 .onInitialize(() -> {
                     state = ShooterState.Backwards;
-                    shooter_controller.setMechanismVelocitySetpoint(ShooterSubsystemConstants.backwardsOnSpeeds);
+                    smc.stopClosedLoopController();
+                    shooter_motor_controller.setVoltage(-4);
                 })
                 .onEnd(() -> {
                     state = ShooterState.Off;
@@ -285,6 +286,7 @@ public class Shooter extends CSubsystem {
         return cCommand("StopShooting")
                 .onExecute(() -> {
                     state = ShooterState.Off;
+                    smc.stopClosedLoopController();
                     shooter_motor_controller.setVoltage(0);
                 });
     }

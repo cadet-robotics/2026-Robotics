@@ -212,7 +212,7 @@ public class RobotContainer {
     codriverController.rightBumper().whileTrue(this.intake());
 
     //Right Trigger - manual shoot
-    codriverController.rightTrigger().whileTrue(shooter_subsystem.Shoot());
+    codriverController.rightTrigger().whileTrue(this.shootGroup());
 
     // Climber controls on codriver X, Y, and B
     codriverController.povUp().whileTrue(climber_subsystem.climbUp());
@@ -243,7 +243,7 @@ public class RobotContainer {
           return true; // If manual override is active, don't gate shooting at all
         }
         if (!drive_subsystem.isDriveToPoseActive()) {
-          return false;
+          return true;
         }
         // When autodrive is active, allow shooting only if the robot's distance
         // to the hub is within a tolerance of the midRange used to generate the curve.
@@ -290,6 +290,7 @@ public class RobotContainer {
     return Commands.parallel(
       intake_subsystem.IntakeBarf(),
       shaker_subsystem.Shake(),
+      shooter_subsystem.ShootBackwards(),
       Commands.sequence(
         indexer_subsystem.IndexerIn().withTimeout(0.25),
         indexer_subsystem.IndexerOut()

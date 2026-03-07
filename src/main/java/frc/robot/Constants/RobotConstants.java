@@ -147,7 +147,7 @@ public class RobotConstants {
         /** Flywheel motor speed in RPM when shooting game pieces (forwards operation). */
         public static final AngularVelocity forwardsOnSpeeds = RPM.of(3200);
         /** Flywheel motor speed in RPM when shooting game pieces backwards (reverse operation). */
-        public static final AngularVelocity backwardsOnSpeeds = RPM.of(-3250);
+        public static final AngularVelocity backwardsOnSpeeds = RPM.of(-100);
         /** Manual spin speed in RPM for slow manual control. */
         public static final AngularVelocity manualSpinSpeed = RPM.of(20);
         
@@ -192,7 +192,7 @@ public class RobotConstants {
         /** Zero/retracted position of the climber (rotations). */
         public static final double ZERO_POSITION = 0;
         /** Climbing position of the climber - between zero and max (rotations). Tune on robot. */
-        public static final double CLIMB_POSITION = 11.984;
+        public static final double CLIMB_POSITION = 11.584;
         /** Maximum extended position of the climber (rotations). Tune on robot. */
         public static final double MAX_POSITION = 18.23;
     }

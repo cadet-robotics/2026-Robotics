@@ -19,6 +19,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Subsystems.Drive;
+import swervelib.SwerveInputStream;
+import swervelib.encoders.SwerveAbsoluteEncoder;
 
 /**
  * Class for managing autonomous routines.
@@ -136,6 +138,10 @@ public class Autos {
         }
     }
 
+    public Command adjustLeft() {
+        return drive_subsystem.driveWithChassisSpeedsSupplier( SwerveInputStream.of(drive_subsystem.getSwerveDrive(), ()->-0.0,()->0.2).withControllerHeadingAxis(()->1,()->0));
+    }
+
     public Command rightTrifecta() {
         try {
             PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot");
@@ -143,14 +149,16 @@ public class Autos {
 
             // Build trajectory for visualization
             getTrajectoryOfCombinedPaths(p1, p2);
+            drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
 
             return Commands.sequence(
                 AutoBuilder.followPath(p1),
-                namedCommands.get("Shoot").get(),
+                namedCommands.get("Shoot").get().withTimeout(6.0),
                 Commands.parallel(
                     AutoBuilder.followPath(p2),
                     namedCommands.get("ClimberUp").get()
                 ),
+                adjustLeft().withTimeout(0.6),
                 namedCommands.get("ClimberDown").get()
             );
         } catch (Exception e) {

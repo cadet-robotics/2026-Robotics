@@ -711,29 +711,32 @@ public class Drive extends CSubsystem {
         if (opponentSide) {
             alliance = (alliance == DriverStation.Alliance.Blue) ? DriverStation.Alliance.Red : DriverStation.Alliance.Blue;
         }
+        // Use the robot's current rotation for all returned poses so downstream
+        // path-following/aiming preserves the robot's orientation intent.
+        Rotation2d currentRotation = getPose().getRotation();
 
         if (alliance == DriverStation.Alliance.Blue) {
             if ( getPose().getY() > FieldConstants.yHalfLine ) {
                 if ( getPose().getX() > FieldConstants.BLUE_LEFT_TRENCH.getX() ) {
-                    return new Pose2d[] { poseFromTranslation(FieldConstants.BLUE_2_MID_LEFT_TRENCH), poseFromTranslation(FieldConstants.MID_2_BLUE_LEFT_TRENCH)};
+                    return new Pose2d[] { new Pose2d(FieldConstants.BLUE_2_MID_LEFT_TRENCH, currentRotation), new Pose2d(FieldConstants.MID_2_BLUE_LEFT_TRENCH, currentRotation)};
                 }
-                return new Pose2d[] { poseFromTranslation(FieldConstants.MID_2_BLUE_LEFT_TRENCH), poseFromTranslation(FieldConstants.BLUE_2_MID_LEFT_TRENCH)};
+                return new Pose2d[] { new Pose2d(FieldConstants.MID_2_BLUE_LEFT_TRENCH, currentRotation), new Pose2d(FieldConstants.BLUE_2_MID_LEFT_TRENCH, currentRotation)};
             }
             if ( getPose().getX() > FieldConstants.BLUE_LEFT_TRENCH.getX() ) {
-                return new Pose2d[] { poseFromTranslation(FieldConstants.BLUE_2_MID_RIGHT_TRENCH), poseFromTranslation(FieldConstants.MID_2_BLUE_RIGHT_TRENCH)};
+                return new Pose2d[] { new Pose2d(FieldConstants.BLUE_2_MID_RIGHT_TRENCH, currentRotation), new Pose2d(FieldConstants.MID_2_BLUE_RIGHT_TRENCH, currentRotation)};
             }
-            return new Pose2d[] { poseFromTranslation(FieldConstants.MID_2_BLUE_RIGHT_TRENCH), poseFromTranslation(FieldConstants.BLUE_2_MID_RIGHT_TRENCH)};
+            return new Pose2d[] { new Pose2d(FieldConstants.MID_2_BLUE_RIGHT_TRENCH, currentRotation), new Pose2d(FieldConstants.BLUE_2_MID_RIGHT_TRENCH, currentRotation)};
         } else {
             if ( getPose().getY() > FieldConstants.yHalfLine ) {
                 if ( getPose().getX() < FieldConstants.RED_LEFT_TRENCH.getX() ) {
-                    return new Pose2d[] { poseFromTranslation(FieldConstants.RED_2_MID_LEFT_TRENCH),poseFromTranslation(FieldConstants.MID_2_RED_LEFT_TRENCH)};
+                    return new Pose2d[] { new Pose2d(FieldConstants.RED_2_MID_LEFT_TRENCH, currentRotation), new Pose2d(FieldConstants.MID_2_RED_LEFT_TRENCH, currentRotation)};
                 }
-                return new Pose2d[] { poseFromTranslation(FieldConstants.MID_2_RED_LEFT_TRENCH), poseFromTranslation(FieldConstants.RED_2_MID_LEFT_TRENCH)};
+                return new Pose2d[] { new Pose2d(FieldConstants.MID_2_RED_LEFT_TRENCH, currentRotation), new Pose2d(FieldConstants.RED_2_MID_LEFT_TRENCH, currentRotation)};
             }
             if ( getPose().getX() < FieldConstants.RED_LEFT_TRENCH.getX() ) {
-                return new Pose2d[] { poseFromTranslation(FieldConstants.RED_2_MID_RIGHT_TRENCH), poseFromTranslation(FieldConstants.MID_2_RED_RIGHT_TRENCH)};
+                return new Pose2d[] { new Pose2d(FieldConstants.RED_2_MID_RIGHT_TRENCH, currentRotation), new Pose2d(FieldConstants.MID_2_RED_RIGHT_TRENCH, currentRotation)};
             }
-            return new Pose2d[] {poseFromTranslation(FieldConstants.MID_2_RED_RIGHT_TRENCH), poseFromTranslation(FieldConstants.RED_2_MID_RIGHT_TRENCH)};
+            return new Pose2d[] { new Pose2d(FieldConstants.MID_2_RED_RIGHT_TRENCH, currentRotation), new Pose2d(FieldConstants.RED_2_MID_RIGHT_TRENCH, currentRotation)};
         }
     }
 
