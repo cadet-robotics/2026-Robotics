@@ -27,7 +27,7 @@
           {
             "title": "Hub Active",
             "x": 0.0,
-            "y": 128.0,
+            "y": 256.0,
             "width": 256.0,
             "height": 256.0,
             "type": "Boolean Box",
@@ -44,7 +44,7 @@
           {
             "title": "Time Until Next Shift",
             "x": 0.0,
-            "y": 0.0,
+            "y": 128.0,
             "width": 256.0,
             "height": 128.0,
             "type": "Match Time",
@@ -53,8 +53,8 @@
               "period": 0.06,
               "data_type": "double",
               "time_display_mode": "Minutes and Seconds",
-              "red_start_time": 20,
-              "yellow_start_time": 30
+              "red_start_time": 5,
+              "yellow_start_time": 10
             }
           },
           {
@@ -101,6 +101,19 @@
               "topic": "/CameraPublisher/limelight-front",
               "period": 0.06,
               "rotation_turns": 0
+            }
+          },
+          {
+            "title": "Match Phase",
+            "x": 0.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Large Text Display",
+            "properties": {
+              "topic": "/Dashboard/MatchPhase",
+              "period": 0.06,
+              "data_type": "string"
             }
           }
         ]

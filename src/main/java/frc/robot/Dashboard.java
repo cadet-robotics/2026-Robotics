@@ -9,6 +9,7 @@ import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.IntegerPublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.networktables.StringSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -21,6 +22,7 @@ public class Dashboard {
     private static StringSubscriber allianceBackupSelector = dashboardTable.getStringTopic("AllianceBackup").subscribe("Blue");
     private static BooleanPublisher elevatorDownPublisher = dashboardTable.getBooleanTopic("DriveUnderTrench").publish();
     private static BooleanPublisher hubActivePublisher = dashboardTable.getBooleanTopic("HubActive").publish();
+    private static StringPublisher matchPhasePublisher = dashboardTable.getStringTopic("MatchPhase").publish();
     private static DoublePublisher matchPhaseChangePublisher = dashboardTable.getDoubleTopic("PhaseChangeIn").publish();
     private static Field2d field = new Field2d();
 
@@ -56,33 +58,45 @@ public class Dashboard {
 
     public static void matchPhaseChange() {
         double matchTime = DriverStation.getMatchTime();
-        if (160 >= matchTime && matchTime > 140) {
+        if (matchTime > 140) {
             // Autonomous, 20 seconds until next shift
             matchPhaseChangePublisher.set(matchTime - 140);
+            matchPhasePublisher.set("Autonomous");
             return;
         } else if (140 >= matchTime && matchTime > 130) {
             // Transition shift, 10 seconds until shift 1
             matchPhaseChangePublisher.set(matchTime - 130);
+            matchPhasePublisher.set("Transition");
             return;
         } else if (130 >= matchTime && matchTime > 105) {
             // Shift 1, 25 seconds until shift 2
             matchPhaseChangePublisher.set(matchTime - 105); 
+            matchPhasePublisher.set("Shift 1");
             return;
         } else if (105 >= matchTime && matchTime > 80) {
             // Shift 2, 25 seconds until shift 3
             matchPhaseChangePublisher.set(matchTime - 80);
+            matchPhasePublisher.set("Shift 2");
             return;
         } else if (80 >= matchTime && matchTime > 55) {
             // Shift 3, 25 seconds until shift 4
             matchPhaseChangePublisher.set(matchTime - 55);
+            matchPhasePublisher.set("Shift 3");
             return;
         } else if (55 >= matchTime && matchTime > 30) {
             // Shift 4, 25 seconds until endgame
             matchPhaseChangePublisher.set(matchTime - 30);
+            matchPhasePublisher.set("Shift 4");
+            return;
+        } else if (30 >= matchTime && matchTime > 0) {
+            // Endgame, 30 seconds until game ends
+            matchPhaseChangePublisher.set(matchTime);
+            matchPhasePublisher.set("Endgame!");
             return;
         } else {
-            // 30 seconds until game ends
-            matchPhaseChangePublisher.set(matchTime);
+            // Outside of match
+            matchPhasePublisher.set("Outside of match");
+            return;
         }
     }
 
@@ -103,7 +117,6 @@ public class Dashboard {
 
         // We're teleop enabled, compute.
         double matchTime = DriverStation.getMatchTime();
-
         String gameData = DriverStation.getGameSpecificMessage();
         // If we have no game data, we cannot compute, assume hub is active, as its likely early in teleop.
         if (gameData.isEmpty()) {
@@ -122,8 +135,6 @@ public class Dashboard {
         boolean shift1Active = switch (alliance.get()) {
             case Red -> !redInactiveFirst;
             case Blue -> redInactiveFirst; };
-
-        
 
         if (matchTime > 130) {
             // Transition shift, hub is active.
@@ -145,9 +156,12 @@ public class Dashboard {
             // Shift 4
             hubActivePublisher.set(!shift1Active);
             return;
-        } else {
+        } else if (matchTime > 0) {
             // End game, hub always active.
             hubActivePublisher.set(true); 
+        } else {
+            // If we have negative time, we're likely outside of a match, assume hub is active.
+            hubActivePublisher.set(true);
         }
     }
 }
