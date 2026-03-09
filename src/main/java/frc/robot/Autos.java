@@ -224,7 +224,7 @@ public class Autos {
             return Commands.sequence(
                 resetOdom(p1),
                 pathPlannerDtpPath(p1),
-                namedCommands.get("Shoot").get().withTimeout(0.0),
+                namedCommands.get("Shoot").get().withTimeout(6.0),
                 Commands.parallel(
                     pathPlannerDtpPath(p2),
                     namedCommands.get("ClimberUp").get()
