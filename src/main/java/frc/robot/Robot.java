@@ -51,6 +51,9 @@ public class Robot extends TimedRobot {
     Elastic.selectTab("Autonomous");
 
     this.robotContainer = new RobotContainer();
+    
+    // Put CommandScheduler on SmartDashboard for monitoring
+    SmartDashboard.putData("CommandScheduler", CommandScheduler.getInstance());
   }
 
   //runs continuously regardless of mode, execues the command scheduler

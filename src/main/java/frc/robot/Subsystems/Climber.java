@@ -98,6 +98,10 @@ public class Climber extends CSubsystem {
                 // Use position control to move to zero position
                 this.climber_motor.setPosition(Rotation.of(zero_position));
             })
+            .onEnd(()->{
+                climber_motor.stopClosedLoopController();
+                climber_motor_controller.set(0);
+            })
             .isFinished(
                 // Command finishes when position is reached (within tolerance) or limit switch hit
                 isAtPosition(zero_position) || isLimitSwitchPressed());

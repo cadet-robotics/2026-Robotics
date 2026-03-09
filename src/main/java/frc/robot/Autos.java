@@ -11,6 +11,7 @@ import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.path.PathPlannerPath;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.Trajectory.State;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -57,6 +58,34 @@ public class Autos {
         }
     }
 
+    public Pose2d getStartingPoseFromPath(PathPlannerPath path) {
+        if (Dashboard.getAlliance() == Alliance.Blue ) {
+            return path.getStartingHolonomicPose().get();
+        } else {
+            return path.flipPath().getStartingHolonomicPose().get();
+        }
+    }
+
+    public Pose2d getEndPoseFromPath(PathPlannerPath path) {
+        if (Dashboard.getAlliance() == Alliance.Blue ) {
+            List<Pose2d> pathPoints = path.getPathPoses();
+            Rotation2d pointRotation = path.getGoalEndState().rotation();
+            return new Pose2d(pathPoints.get(pathPoints.size() - 1).getTranslation(), pointRotation);
+        } else {
+            List<Pose2d> pathPoints = path.flipPath().getPathPoses();
+            Rotation2d pointRotation = path.flipPath().getGoalEndState().rotation();
+            return new Pose2d(pathPoints.get(pathPoints.size() - 1).getTranslation(), pointRotation);
+        }
+    }
+
+    public Command pathPlannerDtpPath(PathPlannerPath path) {
+        return Commands.sequence(
+            drive_subsystem.driveToTargetPose(getStartingPoseFromPath(path), 0),
+            AutoBuilder.followPath(path),
+            drive_subsystem.driveToTargetPose(getEndPoseFromPath(path), 0)
+        );
+    }
+
     public void addCommand( String name, Supplier<Command> command) {
         namedCommands.put(name, command);
     }
@@ -67,6 +96,7 @@ public class Autos {
         autoChooser.addOption("RightShootClimb", rightTrifecta());
         autoChooser.addOption("RightRefilTrifecta", rightRefilTrifecta());
         autoChooser.addOption("LeftShootClimb", leftTrifecta());
+        autoChooser.addOption("RightAllOfTheMarbles", rightCollectShootClimb());
         autoChooser.addOption("RightShoot", rightShoot());
     }
 
@@ -91,30 +121,15 @@ public class Autos {
     
     public Command rightShoot() {
         try {
-            PathPlannerPath p1 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot"));
+            PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot");
             
             // Build trajectory for visualization
             getTrajectoryOfCombinedPaths(p1);
-            if (Dashboard.getAlliance() == Alliance.Blue ) {
-                drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
-            } else {
-                drive_subsystem.resetOdometry(p1.flipPath().getStartingHolonomicPose().get());
-            }
-            // System.out.println("the angle:"+p1.getStartingHolonomicPose().get().getRotation().getDegrees());
-            // drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
 
             return Commands.sequence(
                 resetOdom(p1),
-                Commands.runOnce(()->drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get()), drive_subsystem),
-                // drive_subsystem.driveToTargetPose(p1.getStartingDifferentialPose(), 0),
-                AutoBuilder.followPath(p1),
-                namedCommands.get("Shoot").get().withTimeout(10)
-                // namedCommands.get("Shoot"),
-                // Commands.parallel(
-                //     AutoBuilder.followPath(p2),
-                //     namedCommands.get("ClimberUp")
-                // ),
-                // namedCommands.get("ClimberDown")
+                pathPlannerDtpPath(p1),
+                namedCommands.get("AimShoot").get().withTimeout(6)
             );
         } catch (Exception e) {
             DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
@@ -124,12 +139,12 @@ public class Autos {
 
     public Command rightCollectShootClimb() {
         try {
-            PathPlannerPath p1 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightStart_RightMid"));
-            PathPlannerPath p2 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightCollectBallsPath"));
-            PathPlannerPath p3 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightBalls_RightMid"));
-            PathPlannerPath p4 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightMid_RightStart"));
-            PathPlannerPath p5 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot"));
-            PathPlannerPath p6 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightShoot_RightClimb"));
+            PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightMid");
+            PathPlannerPath p2 = PathPlannerPath.fromChoreoTrajectory("RightCollectBallsPath");
+            PathPlannerPath p3 = PathPlannerPath.fromChoreoTrajectory("RightBalls_RightMid");
+            PathPlannerPath p4 = PathPlannerPath.fromChoreoTrajectory("RightMid_RightStart");
+            PathPlannerPath p5 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot");
+            PathPlannerPath p6 = PathPlannerPath.fromChoreoTrajectory("RightShoot_RightClimb");
 
             getTrajectoryOfCombinedPaths(p1, p2, p3, p4, p5, p6);
             if (Dashboard.getAlliance() == Alliance.Blue ) {
@@ -140,17 +155,17 @@ public class Autos {
 
             return Commands.sequence(
                 resetOdom(p1),
-                AutoBuilder.followPath(p1),
-                Commands.parallel(
+                pathPlannerDtpPath(p1),
+                Commands.deadline(
                     namedCommands.get("Intake").get(),
-                    AutoBuilder.followPath(p2)
-                ), 
-                AutoBuilder.followPath(p3),
-                AutoBuilder.followPath(p4),
-                AutoBuilder.followPath(p5),
-                namedCommands.get("Shoot").get(),
+                    pathPlannerDtpPath(p2)
+                ).withTimeout(5), 
+                pathPlannerDtpPath(p3),
+                pathPlannerDtpPath(p4),
+                pathPlannerDtpPath(p5),
+                namedCommands.get("AimShoot").get().withTimeout(5),
                 Commands.parallel(
-                    AutoBuilder.followPath(p6),
+                    pathPlannerDtpPath(p6),
                     namedCommands.get("ClimberUp").get()
                 ),
                 namedCommands.get("ClimberDown").get()
@@ -161,19 +176,12 @@ public class Autos {
         }
     }
 
-    public PathPlannerPath handleAlliance(PathPlannerPath path) {
-        // if (Dashboard.getAlliance() == DriverStation.Alliance.Red) {
-        //     PathPlannerPath C= path.flipPath();
-
-        // } else {
-        //     // For blue alliance, mirror the path across the field's center line
-        //     return path;
-        // }
-        return path;
-
-    }
     public Command adjustLeft() {
         return drive_subsystem.driveWithChassisSpeedsSupplier( SwerveInputStream.of(drive_subsystem.getSwerveDrive(), ()->-0.0,()->0.2).allianceRelativeControl(true).withControllerHeadingAxis(()->1,()->0));
+    }
+
+    public Command adjustRight() {
+        return drive_subsystem.driveWithChassisSpeedsSupplier( SwerveInputStream.of(drive_subsystem.getSwerveDrive(), ()->-0.0,()->-0.2).allianceRelativeControl(true).withControllerHeadingAxis(()->1,()->0));
     }
     
     public Command rightRefilTrifecta() {
@@ -184,20 +192,15 @@ public class Autos {
 
             // Build trajectory for visualization
             getTrajectoryOfCombinedPaths(p1, p2, p3);
-            if (Dashboard.getAlliance() == Alliance.Blue ) {
-                drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
-            } else {
-                drive_subsystem.resetOdometry(p1.flipPath().getStartingHolonomicPose().get());
-            }
 
             return Commands.sequence(
                 resetOdom(p1),
-                AutoBuilder.followPath(p1),
+                pathPlannerDtpPath(p1),
                 new WaitCommand(3),
-                AutoBuilder.followPath(p2),
-                namedCommands.get("Shoot").get().withTimeout(5.0),
+                pathPlannerDtpPath(p2),
+                namedCommands.get("AimShoot").get().withTimeout(5.0),
                 Commands.parallel(
-                    AutoBuilder.followPath(p3),
+                    pathPlannerDtpPath(p3),
                     namedCommands.get("ClimberUp").get()
                 ),
                 adjustLeft().withTimeout(0.6)
@@ -212,18 +215,18 @@ public class Autos {
 
     public Command rightTrifecta() {
         try {
-            PathPlannerPath p1 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot"));
-            PathPlannerPath p2 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("RightShoot_RightClimb"));
+            PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot");
+            PathPlannerPath p2 = PathPlannerPath.fromChoreoTrajectory("RightShoot_RightClimb");
 
             // Build trajectory for visualization
             getTrajectoryOfCombinedPaths(p1, p2);
 
             return Commands.sequence(
                 resetOdom(p1),
-                AutoBuilder.followPath(p1),
-                namedCommands.get("Shoot").get().withTimeout(6.0),
+                pathPlannerDtpPath(p1),
+                namedCommands.get("AimShoot").get().withTimeout(6.0),
                 Commands.parallel(
-                    AutoBuilder.followPath(p2),
+                    pathPlannerDtpPath(p2),
                     namedCommands.get("ClimberUp").get()
                 ),
                 adjustLeft().withTimeout(0.6),
@@ -246,18 +249,18 @@ public class Autos {
     }
     public Command leftTrifecta() {
         try {
-            PathPlannerPath p1 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("LeftStart_LeftShoot"));
-            PathPlannerPath p2 = handleAlliance(PathPlannerPath.fromChoreoTrajectory("LeftShoot_LeftClimb"));
+            PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("LeftStart_LeftShoot");
+            PathPlannerPath p2 = PathPlannerPath.fromChoreoTrajectory("LeftShoot_LeftClimb");
             
             // Build trajectory for visualization
             getTrajectoryOfCombinedPaths(p1, p2);
             
             return Commands.sequence(
                 resetOdom(p1),
-                AutoBuilder.followPath(p1),
-                namedCommands.get("Shoot").get()
+                pathPlannerDtpPath(p1),
+                namedCommands.get("AimShoot").get()
                 // Commands.parallel(
-                //     AutoBuilder.followPath(p2),
+                //     pathPlannerDtpPath(p2),
                 //     namedCommands.get("ClimberUp").get()
                 // ),
                 // namedCommands.get("ClimberDown").get()
@@ -266,31 +269,6 @@ public class Autos {
             DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
             return new PathPlannerAuto("Test1");
         }
-    }
-
-    /**
-     * Called periodically while disabled to optionally update any heavy/autonomous preview work.
-     * This will only actually run the disabledPath computation if the choice in the chooser changed
-     * since the last call. Call this from Robot.disabledPeriodic (or via RobotContainer) each
-     * disabled loop so work is only done on selection changes.
-     */
-    public void maybeUpdateDisabledPath() {
-        if (true) {
-            return;
-        }
-        if (autoChooser == null) {
-            return;
-        }
-        Command selected = autoChooser.getSelected();
-        if (selected == lastSelectedCommand) {
-            // no change, do nothing
-            return;
-        }
-        // selection changed; rebuild the auto command which will trigger trajectory building
-        lastSelectedCommand = selected;
-        
-        // Call getAutonomousCommand to trigger the auto building (which calls getTrajectoryOfCombinedPaths)
-        getAutonomousCommand();
     }
 
     public Trajectory getTrajectoryOfCombinedPaths(PathPlannerPath ...paths) {

@@ -789,4 +789,10 @@ public class Drive extends CSubsystem {
         ShootOnTheMove.calculateLeadHeading(getPose(), swerveDrive.getRobotVelocity());
         ShootOnTheMove.publish();
     }
+
+    public Command lockWheels() {
+        return cCommand("DriveSubsystem.LockWheels").onExecute(() -> {
+            swerveDrive.lockPose();
+        });
+    }
 }

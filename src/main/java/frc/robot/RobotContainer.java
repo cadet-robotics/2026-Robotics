@@ -52,11 +52,11 @@ public class RobotContainer {
     drive_subsystem = new Drive(driverController);
     vision_subsystem = drive_subsystem.getVision();
     shooter_subsystem = new Shooter(fuelSim);
-      // Provide shooter with drive reference so sim spawning can be gated to autodrive target
-      shooter_subsystem.setDriveSubsystem(drive_subsystem);
-      intake_subsystem = new Intake(shooter_subsystem, drive_subsystem);
-      // Wire intake into shooter so shooter can request ball removal from the hopper
-      shooter_subsystem.setIntakeSubsystem(intake_subsystem);
+    // Provide shooter with drive reference so sim spawning can be gated to autodrive target
+    shooter_subsystem.setDriveSubsystem(drive_subsystem);
+    intake_subsystem = new Intake(shooter_subsystem, drive_subsystem);
+    // Wire intake into shooter so shooter can request ball removal from the hopper
+    shooter_subsystem.setIntakeSubsystem(intake_subsystem);
     indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem, drive_subsystem );
     climber_subsystem = new Climber();
     shaker_subsystem = new Shaker(indexer_subsystem);
@@ -101,6 +101,7 @@ public class RobotContainer {
 
   private void configureAuto() {
     autos.addCommand("Shoot", this::shootGroup);
+    autos.addCommand("AimShoot", this::aimShootGroup);
     autos.addCommand("ClimberUp", climber_subsystem::climbUp);
     autos.addCommand("ClimberZero", climber_subsystem::climbZero);
     autos.addCommand("ClimberDown", climber_subsystem::climb);
@@ -141,6 +142,9 @@ public class RobotContainer {
     
     // Reset Gyro
     driverController.b().whileTrue(drive_subsystem.resetOdom());
+
+    // Lock Wheels 
+    driverController.x().whileTrue(drive_subsystem.lockWheels());
 
     driverController.leftBumper().and(drive_subsystem::isOnOurSide).whileTrue(
       Commands.parallel(
@@ -287,6 +291,26 @@ public class RobotContainer {
     );
   }
 
+  private Command aimShootGroup(){
+    // TODO check why curve isn't approving of shooting
+    BooleanSupplier doShootFeeding = () -> {
+      return shooter_subsystem.isUpToSpeed();
+    };
+    
+    return Commands.parallel(
+      shooter_subsystem.Shoot(),
+      shaker_subsystem.Shake(),
+      Commands.sequence(
+        Commands.parallel(
+          new WaitUntilCommand(shooter_subsystem::isUpToSpeed)
+        ).withTimeout(3),
+        Commands.parallel(
+          indexer_subsystem.IndexerOut(doShootFeeding),
+          intake_subsystem.IntakeIn()
+        )
+      )
+    );
+  }
   private Command barf(){
     return Commands.parallel(
       intake_subsystem.IntakeBarf(),
