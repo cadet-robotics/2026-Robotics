@@ -100,6 +100,7 @@ public class Autos {
         autoChooser.addOption("RightAllOfTheMarbles", rightCollectShootClimb());
         autoChooser.addOption("RightShoot", rightShoot());
         autoChooser.addOption("MiddleShoot", middleShoot());
+        autoChooser.addOption("MiddleClimbShoot", middleClimbShoot());
     }
 
     /**
@@ -261,6 +262,33 @@ public class Autos {
                 resetOdom(p1),
                 pathPlannerDtpPath(p1),
                 namedCommands.get("AimShoot").get().withTimeout(6)
+            );
+        } catch (Exception e) {
+            DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
+            return new PathPlannerAuto("Test1");
+        }
+        
+    }
+    public Command middleClimbShoot() {
+        try {
+            PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("MidStart_MidShoot");
+            PathPlannerPath p2 = PathPlannerPath.fromChoreoTrajectory("MidShoot_LeftShoot");
+            PathPlannerPath p3 = PathPlannerPath.fromChoreoTrajectory("LeftShoot_LeftClimb");
+            
+            // Build trajectory for visualization
+            getTrajectoryOfCombinedPaths(p1, p2, p3);
+            
+            return Commands.sequence(
+                resetOdom(p1),
+                pathPlannerDtpPath(p1),
+                namedCommands.get("AimShoot").get().withTimeout(6),
+                namedCommands.get("ClimberUp").get(),
+                Commands.parallel(
+                    pathPlannerDtpPath(p2)
+                    
+                ),
+                adjustRight().withTimeout(0.6),
+                namedCommands.get("ClimberDown").get()
             );
         } catch (Exception e) {
             DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
