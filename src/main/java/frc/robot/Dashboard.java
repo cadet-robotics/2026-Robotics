@@ -37,8 +37,12 @@ public class Dashboard {
         return shootRangeOffsetReciever.get();
     }  
 
-    public static void setElevatorStatus(boolean isDown) {
-        elevatorDownPublisher.set(isDown);
+    public static void isElevatorDown(boolean isDown) {
+        if (isDown == true) {
+            elevatorDownPublisher.set(true);
+        } else {
+            elevatorDownPublisher.set(false);
+        }
     }
 
     public static void field2dInit() {
