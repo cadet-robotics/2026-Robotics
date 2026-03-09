@@ -80,9 +80,9 @@ public class Autos {
 
     public Command pathPlannerDtpPath(PathPlannerPath path) {
         return Commands.sequence(
-            drive_subsystem.driveToTargetPose(getStartingPoseFromPath(path), 0),
-            AutoBuilder.followPath(path),
-            drive_subsystem.driveToTargetPose(getEndPoseFromPath(path), 0)
+            //drive_subsystem.driveToTargetPose(getStartingPoseFromPath(path), 0),
+            AutoBuilder.followPath(path)//,
+            //drive_subsystem.driveToTargetPose(getEndPoseFromPath(path), 0)
         );
     }
 
@@ -129,7 +129,7 @@ public class Autos {
             return Commands.sequence(
                 resetOdom(p1),
                 pathPlannerDtpPath(p1),
-                namedCommands.get("AimShoot").get().withTimeout(6)
+                namedCommands.get("Shoot").get().withTimeout(6)
             );
         } catch (Exception e) {
             DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
@@ -224,7 +224,7 @@ public class Autos {
             return Commands.sequence(
                 resetOdom(p1),
                 pathPlannerDtpPath(p1),
-                namedCommands.get("AimShoot").get().withTimeout(6.0),
+                namedCommands.get("Shoot").get().withTimeout(0.0),
                 Commands.parallel(
                     pathPlannerDtpPath(p2),
                     namedCommands.get("ClimberUp").get()
