@@ -196,15 +196,15 @@ public class Autos {
             return Commands.sequence(
                 resetOdom(p1),
                 pathPlannerDtpPath(p1),
-                new WaitCommand(3),
-                pathPlannerDtpPath(p2),
-                namedCommands.get("AimShoot").get().withTimeout(5.0),
+                new WaitCommand(1),
+                AutoBuilder.followPath(p2),
+                namedCommands.get("AimShoot").get().withTimeout(7),
                 Commands.parallel(
                     pathPlannerDtpPath(p3),
                     namedCommands.get("ClimberUp").get()
                 ),
-                adjustLeft().withTimeout(0.6)
-                // namedCommands.get("ClimberDown").get()
+                adjustLeft().withTimeout(0.6),
+                namedCommands.get("ClimberDown").get()
             );
         } catch (Exception e) {
             DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());

@@ -170,9 +170,8 @@ public class Climber extends CSubsystem {
         if (!zeroed && isLimitSwitchPressed()) {
             climber_encoder.setPosition(zero_position);
             zeroed = true;
+            Dashboard.isElevatorDown(true);
         }
-
-         Dashboard.setElevatorStatus(zeroed);
     }
 
     @Override
@@ -180,4 +179,4 @@ public class Climber extends CSubsystem {
         // Update simulation
         climber_motor.simIterate();
     }
-}
+} 
