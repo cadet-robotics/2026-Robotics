@@ -145,7 +145,7 @@ public class RobotContainer {
 
     // Lock Wheels 
     driverController.x().whileTrue(drive_subsystem.lockWheels());
-
+    driverController.y().whileTrue(aimShootGroup());
     driverController.leftBumper().and(drive_subsystem::isOnOurSide).whileTrue(
       Commands.parallel(
         drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream()),
@@ -300,6 +300,7 @@ public class RobotContainer {
     return Commands.parallel(
       shooter_subsystem.Shoot(),
       shaker_subsystem.Shake(),
+      drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildAimingStream()),
       Commands.sequence(
         Commands.parallel(
           new WaitUntilCommand(shooter_subsystem::isUpToSpeed)
