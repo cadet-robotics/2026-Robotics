@@ -258,12 +258,13 @@ public class Autos {
             return Commands.sequence(
                 resetOdom(p1),
                 pathPlannerDtpPath(p1),
-                namedCommands.get("AimShoot").get().withTimeout(3),
+                namedCommands.get("AimShoot").get().withTimeout(5),
                 namedCommands.get("ClimberUp").get(),
                 Commands.parallel(
                     pathPlannerDtpPath(p2)
                     
                 ),
+                adjustRight().withTimeout(0.6),
                 namedCommands.get("ClimberDown").get()
             );
         } catch (Exception e) {
