@@ -166,9 +166,10 @@ public class RobotConstants {
         /** Derivative gain for shooter velocity PID control. */
         public static final double SHOOTER_KD = 0;//5;
 
+
+        // probably actually in meters, ai is dumb
         /** Distance in feet of the middle of the shooting range from the hub */
-        public static final double midRange = 2.8
-        ;
+        public static final double midRange = 2.8;
     }
 
     /**
