@@ -441,7 +441,7 @@ public class Drive extends CSubsystem {
         }
 
         // ShooterSubsystemConstants.midRange is in meters (use directly)
-        double desiredDistanceMeters = ShooterSubsystemConstants.midRange;
+        double desiredDistanceMeters = ShooterSubsystemConstants.midRange + Dashboard.getShootRangeOffset();
 
         // factor = d / ||v||
         double factor = desiredDistanceMeters / dist;
