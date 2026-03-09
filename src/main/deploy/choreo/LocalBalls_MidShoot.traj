@@ -14,7 +14,7 @@
  "params":{
   "waypoints":[
     {"x":{"exp":"LocalBallsEntry.x", "val":1.1256388425827026}, "y":{"exp":"LocalBallsEntry.y", "val":5.864933490753174}, "heading":{"exp":"LocalBallsEntry.heading", "val":3.141592653589793}, "intervals":18, "split":false, "fixTranslation":true, "fixHeading":true, "overrideIntervals":false},
-    {"x":{"exp":"MidShoot.x", "val":1.8190550804138184}, "y":{"exp":"MidShoot.y", "val":3.9874062538146977}, "heading":{"exp":"MidShoot.heading", "val":3.141592653589793}, "intervals":40, "split":false, "fixTranslation":true, "fixHeading":true, "overrideIntervals":false}],
+    {"x":{"exp":"MidShoot.x", "val":1.8190550804138184}, "y":{"exp":"MidShoot.y", "val":3.9874062538146977}, "heading":{"exp":"MidShoot.heading", "val":-3.123496977482088}, "intervals":40, "split":false, "fixTranslation":true, "fixHeading":true, "overrideIntervals":false}],
   "constraints":[
     {"from":"first", "to":null, "data":{"type":"StopPoint", "props":{}}, "enabled":true},
     {"from":"last", "to":null, "data":{"type":"StopPoint", "props":{}}, "enabled":true},

@@ -260,7 +260,7 @@ public class Autos {
             return Commands.sequence(
                 resetOdom(p1),
                 pathPlannerDtpPath(p1),
-                namedCommands.get("AimShoot").get()
+                namedCommands.get("AimShoot").get().withTimeout(6)
             );
         } catch (Exception e) {
             DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
