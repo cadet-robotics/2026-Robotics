@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import frc.robot.Libs.CCommand;
 import frc.robot.Subsystems.Drive;
 import swervelib.SwerveInputStream;
 import swervelib.encoders.SwerveAbsoluteEncoder;
@@ -98,6 +99,7 @@ public class Autos {
         autoChooser.addOption("LeftShootClimb", leftTrifecta());
         autoChooser.addOption("RightAllOfTheMarbles", rightCollectShootClimb());
         autoChooser.addOption("RightShoot", rightShoot());
+        autoChooser.addOption("MiddleShoot", middleShoot());
     }
 
     /**
@@ -246,6 +248,25 @@ public class Autos {
                 drive_subsystem.resetOdometry(path.flipPath().getStartingHolonomicPose().get());
             }
         });
+    }
+
+    public Command middleShoot() {
+        try {
+            PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("MidStart_MidShoot");
+            
+            // Build trajectory for visualization
+            getTrajectoryOfCombinedPaths(p1);
+            
+            return Commands.sequence(
+                resetOdom(p1),
+                pathPlannerDtpPath(p1),
+                namedCommands.get("AimShoot").get()
+            );
+        } catch (Exception e) {
+            DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
+            return new PathPlannerAuto("Test1");
+        }
+        
     }
     public Command leftTrifecta() {
         try {
