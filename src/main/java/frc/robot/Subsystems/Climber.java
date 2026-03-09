@@ -99,8 +99,8 @@ public class Climber extends CSubsystem {
                 this.climber_motor.setPosition(Rotation.of(zero_position));
             })
             .onEnd(()->{
-                climber_motor.stopClosedLoopController();
-                climber_motor_controller.set(0);
+                //climber_motor.stopClosedLoopController();
+                //climber_motor_controller.set(0);
             })
             .isFinished(
                 // Command finishes when position is reached (within tolerance) or limit switch hit
