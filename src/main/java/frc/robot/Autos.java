@@ -80,9 +80,9 @@ public class Autos {
 
     public Command pathPlannerDtpPath(PathPlannerPath path) {
         return Commands.sequence(
-            //drive_subsystem.driveToTargetPose(getStartingPoseFromPath(path), 0),
-            AutoBuilder.followPath(path)//,
-            //drive_subsystem.driveToTargetPose(getEndPoseFromPath(path), 0)
+            drive_subsystem.driveToTargetPose(getStartingPoseFromPath(path), 0),
+            AutoBuilder.followPath(path),
+            drive_subsystem.driveToTargetPose(getEndPoseFromPath(path), 0)
         );
     }
 
