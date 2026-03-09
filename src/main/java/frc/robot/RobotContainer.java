@@ -224,9 +224,10 @@ public class RobotContainer {
     
     // Y button - climb to climbing position (middle position)
     codriverController.povLeft().whileTrue(climber_subsystem.climb());
-    
-    // B button - climb down
-    codriverController.povDown().whileTrue(climber_subsystem.climbZero());
+
+    // B button - climb down\][
+    ]
+    codriverController.povDown().onTrue(climber_subsystem.climbZero());
   }
 
   public Command getAutonomousCommand() {
