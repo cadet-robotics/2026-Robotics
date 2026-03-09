@@ -226,8 +226,7 @@ public class RobotContainer {
     codriverController.povLeft().whileTrue(climber_subsystem.climb());
 
     // B button - climb down\][
-    ]
-    codriverController.povDown().onTrue(climber_subsystem.climbZero());
+    codriverController.povDown().whileTrue(climber_subsystem.climbZero());
   }
 
   public Command getAutonomousCommand() {

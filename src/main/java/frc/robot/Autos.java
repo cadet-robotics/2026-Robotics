@@ -203,8 +203,8 @@ public class Autos {
                     pathPlannerDtpPath(p3),
                     namedCommands.get("ClimberUp").get()
                 ),
-                adjustLeft().withTimeout(0.6)
-                // namedCommands.get("ClimberDown").get()
+                adjustLeft().withTimeout(0.6),
+                namedCommands.get("ClimberDown").get()
             );
         } catch (Exception e) {
             DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
