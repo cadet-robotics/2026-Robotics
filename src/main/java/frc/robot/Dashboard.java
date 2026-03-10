@@ -29,10 +29,20 @@ public class Dashboard {
     private static DoubleSubscriber shootRangeOffsetReciever = dashboardTable.getDoubleTopic("ShootRangeOffset").subscribe(0.0);
     private static Field2d field = new Field2d();
 
+    /**
+     * Gets the manual override state.
+     * 
+     * @return the manual override state
+     */
     public static boolean getManualOverride() {
         return manualOverrideReciever.get();
     }
 
+    /**
+     * Gets the shoot range offset which is used to offset the shooter's drive to curve radius.
+     * 
+     * @return the shoot range offset -1.0 to 1.0
+     */
     public static double getShootRangeOffset() {
         return shootRangeOffsetReciever.get();
     }  
@@ -53,6 +63,11 @@ public class Dashboard {
         return field;
     }
     
+    /**
+     * Gets the alliance of the robot safely, falling back to the alliance backup selector.
+     * 
+     * @return the alliance of the robot
+     */
     public static Alliance getAlliance() {
         Optional<Alliance> shrodingersAlliance = DriverStation.getAlliance();
         if ( shrodingersAlliance.isEmpty() ) {
@@ -67,6 +82,9 @@ public class Dashboard {
         return shrodingersAlliance.get();
     }
 
+    /**
+     * Handles the match state changes based on the match time and who won the autonomous section.
+     */
     public static void matchPhaseChange() {
         double matchTime = DriverStation.getMatchTime();
         if (matchTime > 140) {
@@ -111,6 +129,11 @@ public class Dashboard {
         }
     }
 
+    /**
+     * Returns wither the hub is active or not based on the alliance, match time, and the FMS game data.
+     *
+     * @return wither the hub is active or not
+     */
     public static void isHubActive() {
         Optional<Alliance> alliance = DriverStation.getAlliance();
         // If we have no alliance, we cannot be enabled, therefore no hub.

@@ -51,6 +51,9 @@ public class Indexer extends CSubsystem {
             .onInitialize(() -> indexerState = IndexerState.OFF);
     }
 
+    /**
+     *
+     */
     public CCommand IndexerOut() {
         return cCommand("IndexerOut")
             .onInitialize(() -> {

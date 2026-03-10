@@ -59,6 +59,13 @@ public class Climber extends CSubsystem {
         smc_config
     );
     
+    /**
+     * {@link ConditionalCommand} that sets the climber to the max position.
+     *
+     * Will only execute if the climber has been zeroed.
+     * 
+     * @return the climb up command
+     */
     public ConditionalCommand climbUp() {
         return cCommand("ClimberSubsystem.ClimbUp")
             .onInitialize(() -> {
@@ -74,6 +81,13 @@ public class Climber extends CSubsystem {
             }).onlyIf(()->zeroed);
     }
 
+    /**
+     * {@link ConditionalCommand} that sets the climber to the climb position.
+     *
+     * Will only execute if the climber has been zeroed.
+     * 
+     * @return the climb command
+     */
     public ConditionalCommand climb() {
         return cCommand("ClimberSubsystem.ClimbDown")
             .onInitialize(() -> {
@@ -89,6 +103,11 @@ public class Climber extends CSubsystem {
             }).onlyIf(() -> zeroed); // Only allow climbing if we've been zeroed (to prevent trying to climb up when we don't know where we are)
     }
 
+    /**
+     * {@link CCommand} that sets the climber to the zero/bottom position.
+     * 
+     * @return the climb to zero command
+     */
     public CCommand climbZero() {
         return cCommand("ClimberSubsystem.ClimbDown")
             .onInitialize(() -> {
@@ -167,10 +186,14 @@ public class Climber extends CSubsystem {
         climber_motor.updateTelemetry();
         
         // Reset encoder when limit switch is pressed (auto-zero)
-        if (!zeroed && isLimitSwitchPressed()) {
-            climber_encoder.setPosition(zero_position);
-            zeroed = true;
+        if (isLimitSwitchPressed()) {
             Dashboard.isElevatorDown(true);
+            if (!zeroed) {
+               climber_encoder.setPosition(zero_position);
+               zeroed = true;
+            }
+        } else {
+           Dashboard.isElevatorDown(false);
         }
     }
 

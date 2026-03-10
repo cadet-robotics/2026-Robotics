@@ -68,6 +68,7 @@ public class Shooter extends CSubsystem {
                 .d(RobotConstants.ShooterSubsystemConstants.SHOOTER_KD);
 
     }
+
     /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
     public SmartMotorControllerConfig smc_config = new SmartMotorControllerConfig(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
@@ -116,20 +117,6 @@ public class Shooter extends CSubsystem {
     // Simulation spawn timing
     private long lastSpawnNs = 0;
     private final double shotsPerSecond = 3.0; // configurable rate for sim
-    // Last computed ideal intercept (published continuously)
-    private volatile double lastIdealX = Double.NaN;
-    private volatile double lastIdealY = Double.NaN;
-    private volatile double lastIdealT = Double.NaN;
-
-    /**
-     * Update the last computed ideal intercept pose/time for visualization.
-     * Called by external code (for example RobotContainer) when computing lead shots.
-     */
-    public void setLastIdealPose(double x, double y, double t) {
-        this.lastIdealX = x;
-        this.lastIdealY = y;
-        this.lastIdealT = t;
-    }
 
     /**
      * Constructs a new Shooter subsystem.
@@ -172,15 +159,6 @@ public class Shooter extends CSubsystem {
             return false;
         }
         return this.intakeSubsystem.removeFromHopper();
-    }
-
-    /**
-     * Returns the last computed ideal intercept pose if available.
-     * The pose is in field coordinates and has a zero rotation.
-     */
-    public Optional<Pose2d> getLastIdealPose() {
-        if (Double.isNaN(lastIdealX) || Double.isNaN(lastIdealY)) return Optional.empty();
-        return Optional.of(new Pose2d(lastIdealX, lastIdealY, new edu.wpi.first.math.geometry.Rotation2d(0.0)));
     }
 
     /**
@@ -253,10 +231,6 @@ public class Shooter extends CSubsystem {
                     isUsingStaticSpeed = true;
                     // In simulation, spawn a projectile when shooting starts so visuals match the command
                     if (RobotBase.isSimulation()) {
-                        // approximate muzzle speed = (RPM / 60) * circumference
-                        // spawn timer initialized; actual muzzle speed computed when needed
-                        // elevation 0 rad (flat shot). Adjust if you want lofting.
-                        // prepare continuous spawn timer
                         lastSpawnNs = System.nanoTime();
                     }
                 })
@@ -352,9 +326,6 @@ public class Shooter extends CSubsystem {
 
         // Update telemetry
         shooter_controller.updateTelemetry();
-        
-        // Log whether shooter is up to speed
-        // isUpToSpeed();
     }
 
     /**

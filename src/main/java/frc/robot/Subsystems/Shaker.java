@@ -15,6 +15,11 @@ public class Shaker extends CSubsystem {
         setName("ShakerSubsystem");
     }
 
+    /** 
+     * Gets the current state of the shaker (On or Off).
+     * 
+     * @return the current shaker state
+     */
     public ShakerState getState() {
         return this.state;
     }

@@ -609,34 +609,14 @@ public class Drive extends CSubsystem {
             .headingWhile(true);
     }
 
-    /** 
-     * Builds a {@link SwerveInputStream}
+    /**
+     * A wrapper around a {@link SwerveInputStream} builder that drives to a pose given by a supllier.
+     *
+     * Wil drive to pose unconditionally.
+     * @param pose the pose to drive to
+     * 
+     * @return the SwerveInputStream
      */
-    public SwerveInputStream buildTrenchStream() {
-        return SwerveInputStream.of(
-                swerveDrive, 
-                getTranslationX, 
-                () -> {
-                    Pose2d current = getPose();
-                    Translation2d closestTrench = getClosestTrench();
-                    SmartDashboard.putNumberArray( "ClosestTrench", new double[] { closestTrench.getMeasureX().in(Meters), closestTrench.getMeasureY().in(Meters), 0.0 });
-                    
-                    if (current.getTranslation().getDistance(closestTrench) > 0.8) {
-                        // Do NormalDrive
-                        return getTranslationY.getAsDouble();
-                    }
-
-                    double horizonalDistance = closestTrench.getY() - current.getY();
-                    return Math.min( Math.max( -1.0, horizonalDistance / 0.4 ), 1.0 ); // Clamp between 0 and 1
-                }
-            )
-            .allianceRelativeControl(true)
-            .deadband(0.12)
-            .withControllerRotationAxis(getHeadingX);
-            // .withControllerHeadingAxis(getHeadingX, getHeadingY)
-            // .headingWhile(true);
-    }
-
     public SwerveInputStream genericDriveToPoseStream(Supplier<Pose2d> pose) {
         return baseStream
             .copy()
@@ -644,6 +624,15 @@ public class Drive extends CSubsystem {
             .driveToPoseEnabled(true);
     }
 
+    /**
+     * A wrapper around a {@link SwerveInputStream} builder that drives to a pose given by a supllier.
+     *
+     * Will only drive to pose if the condition is true.
+     * @param pose the pose to drive to
+     * @param condition the condition to check
+     * 
+     * @return the SwerveInputStream
+     */
     public SwerveInputStream genericDriveToPoseStream(Supplier<Pose2d> pose, BooleanSupplier condition) {
         return baseStream
             .copy()
@@ -670,6 +659,12 @@ public class Drive extends CSubsystem {
 
     }
 
+    /**
+     * Gets the closest elevator position to the robot.
+     * This is used for autodriving to the elevator.
+     *
+     * @return the closest elevator position
+     */
     public Pose2d getClosestElevator() {
         // Use safe Dashboard.getAlliance() — no optional handling required
         System.out.println( "Pos: " + getPose().getY() + " Elevator: " + Inches.of(317/2).in(Meters) );
@@ -688,6 +683,11 @@ public class Drive extends CSubsystem {
         return getPose();
     }
 
+    /**
+     * Builds a {@link SwerveInputStream} that drives to the closest elevator position.
+     * 
+     * @return the SwerveInputStream
+     */
     public SwerveInputStream buildDriveToElevator() {
         return genericDriveToPoseStream(() -> { 
             Pose2d closest = getClosestElevator();
@@ -696,6 +696,12 @@ public class Drive extends CSubsystem {
         });
     }
 
+    /**
+     * Builds a {@link Pose2d} with a rotation of 0 from a {@link Translation2d}.
+     * 
+     * @param the translation to convert
+     * @return the created pose
+     */
     public Pose2d poseFromTranslation(Translation2d location) {
         return new Pose2d(location, Rotation2d.kZero);
     }
@@ -703,6 +709,9 @@ public class Drive extends CSubsystem {
     /**
      * Compute the appropriate trench target for the current pose.
      * If opponentSide is true, compute the target on the opponent's side (mirror alliances).
+     *
+     * @param opponentSide whether to compute the target on the opponent's side
+     * @return the trench target poses, the first pose is the helper pose to reach the second without hitting the trench.
      */
     private Pose2d[] computeTrenchTarget(boolean opponentSide) {
         // If this is too hard to understand can be replaced 
@@ -741,8 +750,9 @@ public class Drive extends CSubsystem {
     }
 
     /**
-     * drive through trench on your alliance side
-     * @return
+     * Drives to the other side of the closest trench on your alliance side.
+     *
+     * @return the drive through trench command
      */
     public Command driveThroughTrenchSS() {
         Supplier<Pose2d[]> getTargetLocation = () -> computeTrenchTarget(false);
@@ -757,8 +767,9 @@ public class Drive extends CSubsystem {
     }
 
     /**
-     * drive through trench oponant side
-     * @return
+     * Drives to the other side of the closest trench on the other alliance's side.
+     *
+     * @return the drive through trench command
      */
     public Command driveThroughTrenchOS() {
         Supplier<Pose2d[]> getTargetLocation = () -> computeTrenchTarget(true);
@@ -772,6 +783,13 @@ public class Drive extends CSubsystem {
         return driveToTargetPose(poses[1], 0);
     }
 
+    /** 
+     * A wrapper around a supplier that logs the target pose to the SmartDashboard.
+     *
+     * @param targetGetter the supplier to log
+     * 
+     * @return the supplier
+     */
     public Supplier<Pose2d> autoDriveTargetLogger( Supplier<Pose2d> targetGetter ) {
         return () -> {
             Supplier<Pose2d> supplier = targetGetter;
@@ -790,6 +808,11 @@ public class Drive extends CSubsystem {
         ShootOnTheMove.publish();
     }
 
+    /**
+     * {@link Command} that locks the wheels. (Puts them in an x shape)
+     * 
+     * @return the lock wheels command
+     */
     public Command lockWheels() {
         return cCommand("DriveSubsystem.LockWheels").onExecute(() -> {
             swerveDrive.lockPose();

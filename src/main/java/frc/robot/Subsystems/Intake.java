@@ -81,6 +81,11 @@ public class Intake extends CSubsystem {
         this.driveSubsystem = driveSubsystem;
     }
 
+    /**
+     * A {@link Command} that toggles the intake on and off.
+     * 
+     * @return the command
+     */
     public CCommand intakeToggler() {
         return cCommand().onInitialize(() -> {
             switch(state) {

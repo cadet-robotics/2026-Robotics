@@ -59,6 +59,12 @@ public class Autos {
         }
     }
 
+    /**
+     * Gets the staring pose from a {@link PathPlannerPath} using the current alliance.
+     * 
+     * @param path the path to get the starting pose from
+     * @return the starting pose
+     */
     public Pose2d getStartingPoseFromPath(PathPlannerPath path) {
         if (Dashboard.getAlliance() == Alliance.Blue ) {
             return path.getStartingHolonomicPose().get();
@@ -67,6 +73,12 @@ public class Autos {
         }
     }
 
+    /**
+     * Gets the ending pose from a {@link PathPlannerPath} using the current alliance.
+     * 
+     * @param path the path to get the ending pose from
+     * @return the ending pose
+     */
     public Pose2d getEndPoseFromPath(PathPlannerPath path) {
         if (Dashboard.getAlliance() == Alliance.Blue ) {
             List<Pose2d> pathPoints = path.getPathPoses();
@@ -79,6 +91,12 @@ public class Autos {
         }
     }
 
+    /**
+     * Wraps a follow {@link PathPlannerPath} in a pathplanner drive to pose command for the staring and ending poses.
+     *
+     * @param path the path to follow
+     * @return the seqential command group.
+     */
     public Command pathPlannerDtpPath(PathPlannerPath path) {
         return Commands.sequence(
             drive_subsystem.driveToTargetPose(getStartingPoseFromPath(path), 0),
@@ -87,10 +105,19 @@ public class Autos {
         );
     }
 
+    /**
+     * Adds a named command the the auto's command hashmap.
+     * 
+     * @param name the name of the command
+     * @param command the command to add
+     */
     public void addCommand( String name, Supplier<Command> command) {
         namedCommands.put(name, command);
     }
 
+    /**
+     * Inits all of the autos to the {@link SenableChooser}.
+     */
     public void addAutos() {
         SmartDashboard.putData("Auto Chooser", autoChooser);
         autoChooser.setDefaultOption("Do Nothing", Commands.none());
@@ -122,6 +149,11 @@ public class Autos {
         return new PathPlannerAuto("Dummy1");
     }
     
+    /**
+     * Creates a right shoot auto command
+     * 
+     * @return the right shoot auto command
+     */
     public Command rightShoot() {
         try {
             PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot");
@@ -140,6 +172,12 @@ public class Autos {
         }
     }
 
+    /**
+     * Creates a right collect shoot climb auto command
+     * If we ever use this, I might cry tears of joy and go into shock.
+     * 
+     * @return the right collect shoot climb auto command
+     */
     public Command rightCollectShootClimb() {
         try {
             PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightMid");
@@ -179,14 +217,29 @@ public class Autos {
         }
     }
 
+    /**
+     * Command to drive to the left for aligning onto the ladder.
+     * 
+     * @return the drive to left command
+     */
     public Command adjustLeft() {
         return drive_subsystem.driveWithChassisSpeedsSupplier( SwerveInputStream.of(drive_subsystem.getSwerveDrive(), ()->-0.0,()->0.2).allianceRelativeControl(true).withControllerHeadingAxis(()->1,()->0));
     }
 
+    /**
+     * Command to drive to the right for aligning onto the ladder.
+     * 
+     * @return the drive to right command
+     */
     public Command adjustRight() {
         return drive_subsystem.driveWithChassisSpeedsSupplier( SwerveInputStream.of(drive_subsystem.getSwerveDrive(), ()->-0.0,()->-0.2).allianceRelativeControl(true).withControllerHeadingAxis(()->1,()->0));
     }
     
+    /**
+     * Creates a auto that refills, shoots, and climbs.
+     * 
+     * @return the auto
+     */
     public Command rightRefilTrifecta() {
         try {
             PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("RightStart_HumanPlayerStation");
@@ -216,6 +269,11 @@ public class Autos {
     }
 
 
+    /**
+     * An auto that shoots and climbs.
+     * 
+     * @return the auto
+     */
     public Command rightTrifecta() {
         try {
             PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot");
@@ -241,6 +299,12 @@ public class Autos {
         }
     }
 
+    /**
+     * Resets the odometry of the robot to the starting pose of a path.
+     * 
+     * @param path the path to reset the odometry to
+     * @return the command to reset the odometry
+     */
     public Command resetOdom(PathPlannerPath path) {
         return Commands.runOnce(() -> {
             if (Dashboard.getAlliance() == Alliance.Blue ) {
@@ -251,6 +315,11 @@ public class Autos {
         });
     }
 
+    /**
+     * Creates a middle shoot auto command
+     * 
+     * @return the middle shoot auto command
+     */
     public Command middleShoot() {
         try {
             PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("MidStart_MidShoot");
@@ -269,6 +338,11 @@ public class Autos {
         }
         
     }
+    /**
+     * Creates a middle climb shoot auto command
+     * 
+     * @return the middle climb shoot auto command
+     */
     public Command middleClimbShoot() {
         try {
             PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("MidStart_MidShoot");
@@ -296,6 +370,11 @@ public class Autos {
         }
         
     }
+    /**
+     * An auto that shoots and climbs.
+     * 
+     * @return the auto
+     */
     public Command leftTrifecta() {
         try {
             PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("LeftStart_LeftShoot");
@@ -322,6 +401,12 @@ public class Autos {
         }
     }
 
+    /**
+     * Gets a trajectory from a list of {@link PathPlannerPath}s and logs it to the Dashboard.
+     * 
+     * @param paths the paths to get the trajectory from
+     * @return the trajectory
+     */
     public Trajectory getTrajectoryOfCombinedPaths(PathPlannerPath ...paths) {
         List<State> combinedStates = new ArrayList<>();
         for (PathPlannerPath path : paths) {
