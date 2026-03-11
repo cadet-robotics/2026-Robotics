@@ -8,7 +8,6 @@ import frc.robot.Libs.LimelightHelpers;
 import frc.robot.Subsystems.Drive;
 import limelight.Limelight;
 import limelight.networktables.LimelightResults;
-import limelight.networktables.target.AprilTagFiducial;
 import edu.wpi.first.wpilibj.DriverStation;
 
 import java.util.Optional;

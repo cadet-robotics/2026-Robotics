@@ -5,7 +5,6 @@ import static edu.wpi.first.units.Units.Meter;
 import static edu.wpi.first.units.Units.Meters;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -52,7 +51,6 @@ import swervelib.telemetry.SwerveDriveTelemetry;
  */
 public class Drive extends CSubsystem {
     /** Maximum speed of the robot in meters per second. */
-    // TODO: Configure robot details
     private static final double maxSpeed = 5.5;
     /** The swerve drive object that manages the swerve modules. */
     private SwerveDrive swerveDrive;

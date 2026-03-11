@@ -53,10 +53,10 @@ public class RobotContainer {
     shooter_subsystem = new Shooter(fuelSim);
     // Provide shooter with drive reference so sim spawning can be gated to autodrive target
     shooter_subsystem.setDriveSubsystem(drive_subsystem);
-    intake_subsystem = new Intake(shooter_subsystem, drive_subsystem);
+    intake_subsystem = new Intake();
     // Wire intake into shooter so shooter can request ball removal from the hopper
     shooter_subsystem.setIntakeSubsystem(intake_subsystem);
-    indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem, drive_subsystem );
+    indexer_subsystem = new Indexer();
     climber_subsystem = new Climber();
     shaker_subsystem = new Shaker(indexer_subsystem);
 
@@ -267,7 +267,6 @@ public class RobotContainer {
         return distOk && angleOk;
     };
 
-    // TODO check why curve isn't approving of shooting
     BooleanSupplier doShootFeeding = () -> {
       return shooter_subsystem.isUpToSpeed() 
         && (

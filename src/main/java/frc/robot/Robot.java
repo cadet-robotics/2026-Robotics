@@ -16,7 +16,6 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import swervelib.simulation.ironmaple.simulation.SimulatedArena;
 import frc.robot.Libs.Elastic;
 import frc.robot.Libs.MatchTime;
-import frc.robot.Subsystems.Vision.Vision;
 
 // 2026 field not yet available in Maple Sim - update when released
 // import swervelib.simulation.ironmaple.simulation.seasonspecific.reefscape2025.Arena2025Reefscape;

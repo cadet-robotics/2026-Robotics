@@ -200,12 +200,12 @@ public class ProjectileSimManager {
 
     private static class Projectile {
         double x, y, z;
-        double vx, vy, vz;
+        double vx, vy;
         double age = 0.0;
 
         Projectile(double x, double y, double z, double vx, double vy, double vz) {
             this.x = x; this.y = y; this.z = z;
-            this.vx = vx; this.vy = vy; this.vz = vz;
+            this.vx = vx; this.vy = vy; 
         }
     }
 

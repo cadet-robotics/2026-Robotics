@@ -1,7 +1,6 @@
 package frc.robot.Subsystems;
 
 import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
 
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.SparkMax;
@@ -9,7 +8,6 @@ import com.revrobotics.spark.SparkMax;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Robot;
 import frc.robot.Constants.IntakeState;
-import frc.robot.Constants.ShooterState;
 import frc.robot.Libs.CCommand;
 import frc.robot.Libs.CSubsystem;
 
@@ -23,9 +21,6 @@ public class Intake extends CSubsystem {
 
     /** Target state of the intake mechanism. */
     private IntakeState state = IntakeState.OFF;
-
-    private final Supplier<ShooterState> getShooterState;
-    private final Supplier<Boolean> isShooterUpToSpeed;
     
     private int hopperCount = 0;
     private int hopperMax = 23;
@@ -59,9 +54,6 @@ public class Intake extends CSubsystem {
         return true;
     }
 
-    // Optional Drive dependency for gating intake while shooting
-    private final Drive driveSubsystem;
-
     /**
      * Gets the current state of the intake.
      * 
@@ -73,12 +65,8 @@ public class Intake extends CSubsystem {
      * Constructs a new Intake subsystem.
      * Initializes motor controller, SysId routine, and sets up default command.
      */
-    public Intake(Shooter shooter_subsystem, Drive driveSubsystem) {
+    public Intake() {
         setName("IntakeSubsystem");
-
-        this.getShooterState = shooter_subsystem::getState;
-        this.isShooterUpToSpeed = shooter_subsystem::isUpToSpeed;
-        this.driveSubsystem = driveSubsystem;
     }
 
     /**

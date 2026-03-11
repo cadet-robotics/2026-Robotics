@@ -7,7 +7,6 @@ import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.BooleanSubscriber;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.DoubleSubscriber;
-import edu.wpi.first.networktables.IntegerPublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
@@ -25,7 +24,6 @@ public class Dashboard {
     private static BooleanPublisher hubActivePublisher = dashboardTable.getBooleanTopic("HubActive").publish();
     private static StringPublisher matchPhasePublisher = dashboardTable.getStringTopic("MatchPhase").publish();
     private static DoublePublisher matchPhaseChangePublisher = dashboardTable.getDoubleTopic("PhaseChangeIn").publish();
-    private static DoublePublisher shootRangeOffsetPublisher = dashboardTable.getDoubleTopic("ShootRangeOffset").publish();
     private static DoubleSubscriber shootRangeOffsetReciever = dashboardTable.getDoubleTopic("ShootRangeOffset").subscribe(0.0);
     private static Field2d field = new Field2d();
 
