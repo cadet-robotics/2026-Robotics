@@ -1,6 +1,5 @@
 package frc.robot; 
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,10 +20,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
-import frc.robot.Libs.CCommand;
 import frc.robot.Subsystems.Drive;
 import swervelib.SwerveInputStream;
-import swervelib.encoders.SwerveAbsoluteEncoder;
 
 /**
  * Class for managing autonomous routines.
@@ -33,10 +30,7 @@ import swervelib.encoders.SwerveAbsoluteEncoder;
 public class Autos {
     private SendableChooser<Command> autoChooser;
     private HashMap<String, Supplier<Command>> namedCommands = new HashMap<>();
-    private HashMap<String, PathPlannerPath> paths = new HashMap<>();
-    private HashMap<String, Trajectory> trajectories = new HashMap<>();
     // Track the last selection from the SendableChooser so we only recompute when it changes
-    private Command lastSelectedCommand = null;
 
     private Drive drive_subsystem;
     /**
@@ -120,14 +114,43 @@ public class Autos {
      */
     public void addAutos() {
         SmartDashboard.putData("Auto Chooser", autoChooser);
-        autoChooser.setDefaultOption("Do Nothing", Commands.none());
-        autoChooser.addOption("RightShootClimb", rightTrifecta());
-        autoChooser.addOption("RightRefilTrifecta", rightRefilTrifecta());
-        autoChooser.addOption("LeftShootClimb", leftTrifecta());
-        autoChooser.addOption("RightAllOfTheMarbles", rightCollectShootClimb());
-        autoChooser.addOption("RightShoot", rightShoot());
-        autoChooser.addOption("MiddleShoot", middleShoot());
-        autoChooser.addOption("MiddleClimbShoot", middleClimbShoot());
+        autoChooser.setDefaultOption("Do Nothing", Commands.none().withName("Do Nothing"));
+        autoChooser.addOption("RightShootClimb", rightTrifecta().withName("RightShootClimb"));
+        autoChooser.addOption("RightRefilTrifecta", rightRefilTrifecta().withName("RightRefilTrifecta"));
+        autoChooser.addOption("LeftShootClimb", leftTrifecta().withName("LeftShootClimb"));
+        autoChooser.addOption("RightAllOfTheMarbles", rightCollectShootClimb().withName("RightAllOfTheMarbles"));
+        autoChooser.addOption("RightShoot", rightShoot().withName("RightShoot"));
+        autoChooser.addOption("MiddleShoot", middleShoot().withName("MiddleShoot"));
+        autoChooser.addOption("MiddleClimbShoot", middleClimbShoot().withName("MiddleClimbShoot"));
+        autoChooser.onChange(c -> {
+            switch (c.getName()) {
+                case "Do Nothing":
+                    break;
+                case "RightShootClimb":
+                    rightTrifecta();
+                    break;
+                case "RightRefilTrifecta":
+                    rightRefilTrifecta();
+                    break;
+                case "LeftShootClimb":
+                    leftTrifecta();
+                    break;
+                case "RightAllOfTheMarbles":
+                    rightCollectShootClimb();
+                    break;
+                case "RightShoot":
+                    rightShoot();
+                    break;
+                case "MiddleShoot":
+                    middleShoot();
+                    break;
+                case "MiddleClimbShoot":
+                    middleClimbShoot();
+                    break;
+                default:
+                    break;
+            }
+        });
     }
 
     /**
@@ -357,10 +380,8 @@ public class Autos {
                 pathPlannerDtpPath(p1),
                 namedCommands.get("AimShoot").get().withTimeout(6),
                 namedCommands.get("ClimberUp").get(),
-                Commands.parallel(
-                    pathPlannerDtpPath(p2)
-                    
-                ),
+                pathPlannerDtpPath(p2),
+                pathPlannerDtpPath(p3),
                 adjustRight().withTimeout(0.6),
                 namedCommands.get("ClimberDown").get()
             );
@@ -410,6 +431,9 @@ public class Autos {
     public Trajectory getTrajectoryOfCombinedPaths(PathPlannerPath ...paths) {
         List<State> combinedStates = new ArrayList<>();
         for (PathPlannerPath path : paths) {
+            if (Dashboard.getAlliance() == Alliance.Red) {
+                path = path.flipPath();
+            }
             for (Pose2d pose: path.getPathPoses()) {
                 State state = new State(0, 0, 0, pose, 0);
                 combinedStates.add(state);
