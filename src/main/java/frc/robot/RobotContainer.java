@@ -130,12 +130,6 @@ public class RobotContainer {
 
     // Lock Wheels 
     driverController.x().whileTrue(drive_subsystem.lockWheels());
-    driverController.y().whileTrue(aimShootGroup());
-    driverController.y()
-      .and(noManualOverride)
-      .and(() -> drive_subsystem.isOnOurSide())
-      .onTrue(Commands.runOnce(() -> drive_subsystem.setAimModeActive(true)))
-      .onFalse(Commands.runOnce(() -> drive_subsystem.setAimModeActive(false)));
 
     driverController.leftBumper().and(drive_subsystem::isOnOurSide).whileTrue(
       Commands.parallel(
@@ -144,6 +138,13 @@ public class RobotContainer {
       ))
       .onTrue(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(true)))
       .onFalse(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(false)));
+
+    driverController.rightBumper().whileTrue(aimShootGroup());
+    driverController.rightBumper()
+      .and(noManualOverride)
+      .and(() -> drive_subsystem.isOnOurSide())
+      .onTrue(Commands.runOnce(() -> drive_subsystem.setAimModeActive(true)))
+      .onFalse(Commands.runOnce(() -> drive_subsystem.setAimModeActive(false)));
 
     // driverController.rightBumper().whileTrue(this.intake());
 
