@@ -202,7 +202,6 @@ public class RealVision extends SubsystemBase implements Vision {
         LimelightHelpers.SetRobotOrientation("limelight-rear", yawDegrees, 1, 0, 0, 0, 0);
         
         SmartDashboard.putNumber("Vision/Sending Rotation (deg)", yawDegrees);
-        
         // Try to get pose estimate from front limelight using MegaTag2
         LimelightHelpers.PoseEstimate frontEstimate = 
             LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-front");
