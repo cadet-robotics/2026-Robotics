@@ -122,6 +122,8 @@ public class Autos {
         autoChooser.addOption("RightShoot", rightShoot().withName("RightShoot"));
         autoChooser.addOption("MiddleShoot", middleShoot().withName("MiddleShoot"));
         autoChooser.addOption("MiddleClimbShoot", middleClimbShoot().withName("MiddleClimbShoot"));
+        autoChooser.addOption("rightClimb", rightClimb().withName("RightClimb"));
+        autoChooser.addOption("leftClimb", leftClimb().withName("LeftClimb"));
         autoChooser.onChange(c -> {
             switch (c.getName()) {
                 case "Do Nothing":
@@ -291,6 +293,34 @@ public class Autos {
         }
     }
 
+    /**
+     * An auto that shoots and climbs.
+     * 
+     * @return the auto
+     */
+    public Command rightClimb() {
+        try {
+            PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot");
+            PathPlannerPath p2 = PathPlannerPath.fromChoreoTrajectory("RightShoot_RightClimb");
+
+            // Build trajectory for visualization
+            getTrajectoryOfCombinedPaths(p1, p2);
+
+            return Commands.sequence(
+                resetOdom(p1),
+                pathPlannerDtpPath(p1),
+                Commands.parallel(
+                    pathPlannerDtpPath(p2),
+                    namedCommands.get("ClimberUp").get()
+                ),
+                adjustLeft().withTimeout(0.6),
+                namedCommands.get("ClimberDown").get()
+            );
+        } catch (Exception e) {
+            DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
+            return new PathPlannerAuto("Test1");
+        }
+    }
 
     /**
      * An auto that shoots and climbs.
@@ -422,6 +452,35 @@ public class Autos {
         }
     }
 
+    /**
+     * An auto that shoots and climbs.
+     * 
+     * @return the auto
+     */
+    public Command leftClimb() {
+        try {
+            PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("LeftStart_LeftShoot");
+            PathPlannerPath p2 = PathPlannerPath.fromChoreoTrajectory("LeftShoot_LeftClimb");
+            
+            // Build trajectory for visualization
+            getTrajectoryOfCombinedPaths(p1, p2);
+            
+            return Commands.sequence(
+                resetOdom(p1),
+                pathPlannerDtpPath(p1),
+                namedCommands.get("ClimberUp").get(),
+                Commands.parallel(
+                    pathPlannerDtpPath(p2)
+                    
+                ),
+                adjustRight().withTimeout(0.6),
+                namedCommands.get("ClimberDown").get()
+            );
+        } catch (Exception e) {
+            DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
+            return new PathPlannerAuto("Test1");
+        }
+    }
     /**
      * Gets a trajectory from a list of {@link PathPlannerPath}s and logs it to the Dashboard.
      * 
