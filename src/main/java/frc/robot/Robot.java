@@ -81,7 +81,6 @@ public class Robot extends TimedRobot {
   public void disabledPeriodic() {
       // Delegate disabled-periodic work to RobotContainer so Autos can update previews
       // only when the chooser selection changes.
-      this.robotContainer.disabledPeriodic();
   }
 
   /**

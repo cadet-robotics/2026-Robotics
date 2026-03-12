@@ -76,24 +76,6 @@ public class RobotContainer {
   }
 
   /**
-   * Called from Robot.disabledPeriodic so we can run disabled-mode work for
-   * subsystems and autos. This centralizes the checks so heavy work in Autos
-   * runs only when the chooser selection actually changes.
-   */
-  public void disabledPeriodic() {
-    // Keep vision update behavior consistent with previous Robot.disabledPeriodic
-    if (Robot.isReal()) {
-      if (vision_subsystem.seesAprilTag()) {
-        vision_subsystem.disabledPeriodic();
-      }
-    }
-
-    if (this.autos != null) {
-      // this.autos.maybeUpdateDisabledPath();
-    }
-  }
-
-  /**
    * Adds commands to the auto subsystem. Named commands should be used instead.
    */
   private void configureAuto() {
