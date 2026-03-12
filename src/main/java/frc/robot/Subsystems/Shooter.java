@@ -74,7 +74,7 @@ public class Shooter extends CSubsystem {
             RobotConstants.ShooterSubsystemConstants.SHOOTER_KP, 
             RobotConstants.ShooterSubsystemConstants.SHOOTER_KI, 
             RobotConstants.ShooterSubsystemConstants.SHOOTER_KD)
-        // Feedforward Constants
+        // Feedforwards
         .withFeedforward(new SimpleMotorFeedforward(0,0.108,0))//0.108, 0, 0))
         .withSimFeedforward(new SimpleMotorFeedforward(0, 0, 0))
         // Telemetry name and verbosity level
