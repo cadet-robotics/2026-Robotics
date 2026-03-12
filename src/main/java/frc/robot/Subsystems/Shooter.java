@@ -2,22 +2,15 @@ package frc.robot.Subsystems;
 
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.RPM;
-import static edu.wpi.first.units.Units.Volts;
-
-import java.util.Optional;
 
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.config.SparkFlexConfig;
-import com.revrobotics.spark.config.SparkMaxConfig;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -68,6 +61,7 @@ public class Shooter extends CSubsystem {
                 .d(RobotConstants.ShooterSubsystemConstants.SHOOTER_KD);
 
     }
+
     /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
     public SmartMotorControllerConfig smc_config = new SmartMotorControllerConfig(this)
         .withControlMode(SmartMotorControllerConfig.ControlMode.CLOSED_LOOP)
@@ -116,20 +110,6 @@ public class Shooter extends CSubsystem {
     // Simulation spawn timing
     private long lastSpawnNs = 0;
     private final double shotsPerSecond = 3.0; // configurable rate for sim
-    // Last computed ideal intercept (published continuously)
-    private volatile double lastIdealX = Double.NaN;
-    private volatile double lastIdealY = Double.NaN;
-    private volatile double lastIdealT = Double.NaN;
-
-    /**
-     * Update the last computed ideal intercept pose/time for visualization.
-     * Called by external code (for example RobotContainer) when computing lead shots.
-     */
-    public void setLastIdealPose(double x, double y, double t) {
-        this.lastIdealX = x;
-        this.lastIdealY = y;
-        this.lastIdealT = t;
-    }
 
     /**
      * Constructs a new Shooter subsystem.
@@ -175,15 +155,6 @@ public class Shooter extends CSubsystem {
     }
 
     /**
-     * Returns the last computed ideal intercept pose if available.
-     * The pose is in field coordinates and has a zero rotation.
-     */
-    public Optional<Pose2d> getLastIdealPose() {
-        if (Double.isNaN(lastIdealX) || Double.isNaN(lastIdealY)) return Optional.empty();
-        return Optional.of(new Pose2d(lastIdealX, lastIdealY, new edu.wpi.first.math.geometry.Rotation2d(0.0)));
-    }
-
-    /**
      * Gets the current state of the shooter.
      * 
      * @return the current shooter state
@@ -207,11 +178,11 @@ public class Shooter extends CSubsystem {
             double currentVelocityRPM = shooter_motor_controller.getEncoder().getVelocity();
             
             // Get target velocity based on current state
-            double targetVelocityRPM;
+            // double targetVelocityRPM;
             if (state == ShooterState.On) {
-                targetVelocityRPM = 50;
+                // targetVelocityRPM = 50;
             } else if (state == ShooterState.Backwards) {
-                targetVelocityRPM = -50;
+                // targetVelocityRPM = -50;
             } else {
                 return false;
             }
@@ -253,10 +224,6 @@ public class Shooter extends CSubsystem {
                     isUsingStaticSpeed = true;
                     // In simulation, spawn a projectile when shooting starts so visuals match the command
                     if (RobotBase.isSimulation()) {
-                        // approximate muzzle speed = (RPM / 60) * circumference
-                        // spawn timer initialized; actual muzzle speed computed when needed
-                        // elevation 0 rad (flat shot). Adjust if you want lofting.
-                        // prepare continuous spawn timer
                         lastSpawnNs = System.nanoTime();
                     }
                 })
@@ -352,9 +319,6 @@ public class Shooter extends CSubsystem {
 
         // Update telemetry
         shooter_controller.updateTelemetry();
-        
-        // Log whether shooter is up to speed
-        // isUpToSpeed();
     }
 
     /**

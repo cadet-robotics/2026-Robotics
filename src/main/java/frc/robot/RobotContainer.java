@@ -16,7 +16,6 @@ import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.IntakeState;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Libs.FuelSim;
@@ -54,10 +53,10 @@ public class RobotContainer {
     shooter_subsystem = new Shooter(fuelSim);
     // Provide shooter with drive reference so sim spawning can be gated to autodrive target
     shooter_subsystem.setDriveSubsystem(drive_subsystem);
-    intake_subsystem = new Intake(shooter_subsystem, drive_subsystem);
+    intake_subsystem = new Intake();
     // Wire intake into shooter so shooter can request ball removal from the hopper
     shooter_subsystem.setIntakeSubsystem(intake_subsystem);
-    indexer_subsystem = new Indexer( shooter_subsystem, intake_subsystem, drive_subsystem );
+    indexer_subsystem = new Indexer();
     climber_subsystem = new Climber();
     shaker_subsystem = new Shaker(indexer_subsystem);
 
@@ -65,11 +64,6 @@ public class RobotContainer {
       drive_subsystem.driveWithChassisSpeedsSupplier(
         drive_subsystem.buildRelativeTurningStream()
       ));
-
-    // SmartDashboard.putNumberArray("BlueRightClimb", new double[] {FieldConstants.BLUE_RIGHT_CLIMB_POSITION.getX(), FieldConstants.BLUE_RIGHT_CLIMB_POSITION.getY(), FieldConstants.BLUE_RIGHT_CLIMB_POSITION.getRotation().getRadians()});
-    // SmartDashboard.putNumberArray("BlueLeftClimb", new double[] {FieldConstants.BLUE_LEFT_CLIMB_POSITION.getX(), FieldConstants.BLUE_LEFT_CLIMB_POSITION.getY(), FieldConstants.BLUE_LEFT_CLIMB_POSITION.getRotation().getRadians()});
-    // SmartDashboard.putNumberArray("RedRightClimb", new double[] {FieldConstants.RED_RIGHT_CLIMB_POSITION.getX(), FieldConstants.RED_RIGHT_CLIMB_POSITION.getY(), FieldConstants.RED_RIGHT_CLIMB_POSITION.getRotation().getRadians()});
-    // SmartDashboard.putNumberArray("RedLeftClimb", new double[] {FieldConstants.RED_LEFT_CLIMB_POSITION.getX(), FieldConstants.RED_LEFT_CLIMB_POSITION.getY(), FieldConstants.RED_LEFT_CLIMB_POSITION.getRotation().getRadians()});
 
     if ( Robot.isSimulation() ) {
       configureSim();
@@ -82,23 +76,8 @@ public class RobotContainer {
   }
 
   /**
-   * Called from Robot.disabledPeriodic so we can run disabled-mode work for
-   * subsystems and autos. This centralizes the checks so heavy work in Autos
-   * runs only when the chooser selection actually changes.
+   * Adds commands to the auto subsystem. Named commands should be used instead.
    */
-  public void disabledPeriodic() {
-    // Keep vision update behavior consistent with previous Robot.disabledPeriodic
-    if (Robot.isReal()) {
-      if (vision_subsystem.seesAprilTag()) {
-        vision_subsystem.disabledPeriodic();
-      }
-    }
-
-    if (this.autos != null) {
-      // this.autos.maybeUpdateDisabledPath();
-    }
-  }
-
   private void configureAuto() {
     autos.addCommand("Shoot", this::shootGroup);
     autos.addCommand("AimShoot", this::aimShootGroup);
@@ -110,6 +89,9 @@ public class RobotContainer {
     autos.addAutos();
   }
 
+  /**
+   * Configures the fuel simulator if the robot is launched in sim mode.
+   */
   private void configureSim() {
     fuelSim = new FuelSim("FuelSim");
     fuelSim.registerRobot(
@@ -135,6 +117,9 @@ public class RobotContainer {
     fuelSim.start(); // enables the simulation to run (updateSim must still be called periodically)
   }
 
+  /**
+   * Configures all of the robot's controller input bindings.
+   */
   private void configureBindings() {
     BooleanSupplier noManualOverride = () -> !Dashboard.getManualOverride();
 
@@ -145,7 +130,7 @@ public class RobotContainer {
 
     // Lock Wheels 
     driverController.x().whileTrue(drive_subsystem.lockWheels());
-    driverController.y().whileTrue(aimShootGroup());
+
     driverController.leftBumper().and(drive_subsystem::isOnOurSide).whileTrue(
       Commands.parallel(
         drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream()),
@@ -154,6 +139,13 @@ public class RobotContainer {
       .onTrue(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(true)))
       .onFalse(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(false)));
 
+    driverController.rightBumper().whileTrue(aimShootGroup());
+    driverController.rightBumper()
+      .and(noManualOverride)
+      .and(() -> drive_subsystem.isOnOurSide())
+      .onTrue(Commands.runOnce(() -> drive_subsystem.setAimModeActive(true)))
+      .onFalse(Commands.runOnce(() -> drive_subsystem.setAimModeActive(false)));
+
     // driverController.rightBumper().whileTrue(this.intake());
 
     driverController.leftTrigger()
@@ -161,36 +153,17 @@ public class RobotContainer {
         drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDefaultStream())
       );
 
-    // Cuts the speed of the bot in half for more precise maneuvering
-    // driverController.rightTrigger()
-    //   .whileTrue(
-    //     drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildHalfDriveStream())
-    //   );
-    // right trigger - shoot forwards, but only when robot is on our side of the field
-    // Inform Drive when aim mode is active so indexer/intake can require being aimed before feeding
-    // driverController.rightTrigger()
-    //   .and(noManualOverride)
-    //   .and(() -> drive_subsystem.isOnOurSide())
-    //   .onTrue(Commands.runOnce(() -> drive_subsystem.setAimModeActive(true)));
-    
-    // driverController.rightTrigger()
-    //   .and(noManualOverride)
-    //   .and(() -> drive_subsystem.isOnOurSide())
-    //   .onFalse(Commands.runOnce(() -> drive_subsystem.setAimModeActive(false)));
-    
-    // driverController.rightTrigger()
-    //   .and(() -> drive_subsystem.isOnOurSide())
-    //   .and(noManualOverride)
-    //   .whileTrue(new ParallelCommandGroup(this.shootGroup(), drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildAimingStream())));
-    
-    // driverController.rightTrigger()
-    //   .and(() -> !drive_subsystem.isOnOurSide())
-    //   .and(noManualOverride)
-    //   .whileTrue(this.shootGroup());
+    // Cuts the speed of the bot in half for more precise maneuvering (only when robot is on our side of the field)
+    driverController.rightTrigger()
+      .whileTrue(
+        drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildHalfDriveStream())
+      );
     
     // Commands for auto driving through trenches
     driverController.povUp().whileTrue(new DeferredCommand(drive_subsystem::driveThroughTrenchSS, Set.of(drive_subsystem)));
     driverController.povDown().whileTrue(new DeferredCommand(drive_subsystem::driveThroughTrenchOS, Set.of(drive_subsystem)));  
+
+    // A single cycle from the center > hub > center
     driverController.povLeft()
       .and(noManualOverride)
       .whileTrue( Commands.sequence(
@@ -225,19 +198,34 @@ public class RobotContainer {
     // Y button - climb to climbing position (middle position)
     codriverController.povLeft().whileTrue(climber_subsystem.climb());
 
-    // B button - climb down\][
+    // B button - climb down
     codriverController.povDown().whileTrue(climber_subsystem.climbZero());
     
   }
 
+  /**
+   * Gets the autonomous command.
+   * 
+   * @return the autonomous command
+   */
   public Command getAutonomousCommand() {
     return this.autos.getAutonomousCommand();
   }
 
+  /**
+   * Gets the vision subsystem.
+   * 
+   * @return the vision subsystem
+   */
   public Vision getVision() {
     return this.vision_subsystem;
   }
 
+  /**
+   * Builds the main shoot group command which handles the shooter, intake, and indexer.
+   * 
+   * @return the main shoot group command
+   */
   private Command shootGroup(){
     BooleanSupplier manualOverride = () -> Dashboard.getManualOverride();
 
@@ -262,7 +250,6 @@ public class RobotContainer {
         return distOk && angleOk;
     };
 
-    // TODO check why curve isn't approving of shooting
     BooleanSupplier doShootFeeding = () -> {
       return shooter_subsystem.isUpToSpeed() 
         && (
@@ -292,8 +279,12 @@ public class RobotContainer {
     );
   }
 
+  /**
+   * Build the aim shoot group command which handles everything found in {@link #shootGroup()} and also aims the robot towards the hub.
+   *
+   * @return the aim shoot group command
+   */
   private Command aimShootGroup(){
-    // TODO check why curve isn't approving of shooting
     BooleanSupplier doShootFeeding = () -> {
       return shooter_subsystem.isUpToSpeed();
     };
@@ -313,6 +304,12 @@ public class RobotContainer {
       )
     );
   }
+
+  /**
+   * Builds the barf command which is used to barf the balls out of the hopper.
+   * 
+   * @return the barf command
+   */
   private Command barf(){
     return Commands.parallel(
       intake_subsystem.IntakeBarf(),
@@ -325,6 +322,11 @@ public class RobotContainer {
     );
   }
 
+  /**
+   * Builds the intake command which is used to intake the balls into the hopper.
+   * 
+   * @return the intake command
+   */
   private Command intake(){
     return Commands.parallel(
       intake_subsystem.IntakeIn(),

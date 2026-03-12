@@ -1,13 +1,11 @@
 // blog.eeshwark.com/blog/shooting-on-fly
 package frc.robot.Libs;
 
-import static edu.wpi.first.units.Units.RPM;
-
 import java.util.Optional;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
+// import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.DoublePublisher;
@@ -15,7 +13,7 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.units.measure.AngularVelocity;
-import frc.robot.Constants.RobotConstants.FieldConstants;
+// import frc.robot.Constants.RobotConstants.FieldConstants;
 
 public class ShootOnTheMove {
 
@@ -51,28 +49,28 @@ public class ShootOnTheMove {
     }
 
     public static void calculateLeadHeading(Pose2d robotPose, ChassisSpeeds robotSpeeds) {
-        Translation2d hubPose = FieldConstants.hubPosition.get();
+        // Translation2d hubPose = FieldConstants.hubPosition.get();
 
-        double targetX = hubPose.getX() - robotPose.getX();
-        double targetY = hubPose.getY() - robotPose.getY();
-        Translation2d targetPosition = new Translation2d( targetX, targetY );
+        // double targetX = hubPose.getX() - robotPose.getX();
+        // double targetY = hubPose.getY() - robotPose.getY();
+        // Translation2d targetPosition = new Translation2d( targetX, targetY );
     
-        double distance = targetPosition.getNorm();
-        double idealSpeeds = calculateIdealHorizontalSpeed(distance);
+        // double distance = targetPosition.getNorm();
+        // double idealSpeeds = calculateIdealHorizontalSpeed(distance);
         
-        double releaseAngle = 80; // The angle of incline of a shot. Must actually be found.
-        double idealSpeeds_Horizontal = idealSpeeds * Math.cos(Math.toRadians(releaseAngle));
+        // double releaseAngle = 80; // The angle of incline of a shot. Must actually be found.
+        // double idealSpeeds_Horizontal = idealSpeeds * Math.cos(Math.toRadians(releaseAngle));
 
-        Translation2d targetVector = targetPosition.div(distance).times(idealSpeeds_Horizontal);
+        // Translation2d targetVector = targetPosition.div(distance).times(idealSpeeds_Horizontal);
         
-        Translation2d robotVelocity = new Translation2d(robotSpeeds.vxMetersPerSecond, robotSpeeds.vyMetersPerSecond);
-        Translation2d shotVector = targetVector.div(distance).minus(robotVelocity);
+        // Translation2d robotVelocity = new Translation2d(robotSpeeds.vxMetersPerSecond, robotSpeeds.vyMetersPerSecond);
+        // Translation2d shotVector = targetVector.div(distance).minus(robotVelocity);
 
-        double robotHeading = shotVector.getAngle().getDegrees();
-        heading = Optional.of(Rotation2d.fromDegrees(robotHeading));
+        // double robotHeading = shotVector.getAngle().getDegrees();
+        // heading = Optional.of(Rotation2d.fromDegrees(robotHeading));
 
-        double requiredSpeed = shotVector.getNorm();
-        double shooterRPM_ = calculateShooterRPM(requiredSpeed);
-        shooterRPM = Optional.of(RPM.of(shooterRPM_));
+        // double requiredSpeed = shotVector.getNorm();
+        // double shooterRPM_ = calculateShooterRPM(requiredSpeed);
+        // shooterRPM = Optional.of(RPM.of(shooterRPM_));
     }
 }

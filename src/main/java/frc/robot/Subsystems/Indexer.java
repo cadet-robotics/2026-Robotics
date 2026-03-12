@@ -17,13 +17,6 @@ public class Indexer extends CSubsystem {
     /** Motor controller for the indexer mechanism. */
     private final SparkMax indexerMotorController = new SparkMax(20, SparkLowLevel.MotorType.kBrushless);
 
-    /** Reference to the shooter subsystem. */
-    private Shooter shooterSubsystem;
-    /** Reference to the intake subsystem. */
-    private Intake intakeSubsystem;
-    /** Reference to drive subsystem for gating while-shooting behavior. */
-    private Drive driveSubsystem;
-
     /** Current state of the indexer. */
     private IndexerState indexerState = IndexerState.OFF;
 
@@ -33,12 +26,8 @@ public class Indexer extends CSubsystem {
      * @param shooterSubsystem the shooter subsystem instance
      * @param intakeSubsystem the intake subsystem instance
      */
-    public Indexer( Shooter shooterSubsystem, Intake intakeSubsystem, Drive driveSubsystem ) {
+    public Indexer() {
         setName("IndexerSubsystem");
-
-        this.shooterSubsystem = shooterSubsystem;
-        this.intakeSubsystem = intakeSubsystem;
-        this.driveSubsystem = driveSubsystem;
     }
 
     /**
@@ -51,6 +40,9 @@ public class Indexer extends CSubsystem {
             .onInitialize(() -> indexerState = IndexerState.OFF);
     }
 
+    /**
+     *
+     */
     public CCommand IndexerOut() {
         return cCommand("IndexerOut")
             .onInitialize(() -> {
