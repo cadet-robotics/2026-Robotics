@@ -75,7 +75,7 @@ public class Shooter extends CSubsystem {
             RobotConstants.ShooterSubsystemConstants.SHOOTER_KI, 
             RobotConstants.ShooterSubsystemConstants.SHOOTER_KD)
         // Feedforward Constants
-        .withFeedforward(new SimpleMotorFeedforward(0,0,0))//0.108, 0, 0))
+        .withFeedforward(new SimpleMotorFeedforward(0,0.108,0))//0.108, 0, 0))
         .withSimFeedforward(new SimpleMotorFeedforward(0, 0, 0))
         // Telemetry name and verbosity level
         .withTelemetry("ShooterMotor",SmartMotorControllerConfig.TelemetryVerbosity.HIGH)
@@ -93,7 +93,7 @@ public class Shooter extends CSubsystem {
     /** Configuration for the flywheel mechanism including diameter and mass. */
     public FlyWheelConfig shooter_config = new FlyWheelConfig(smc)
         .withDiameter(Inches.of(4))  // Example: 4 inch diameter flywheel
-        .withMass(Pounds.of(1));      // Example: 1 pound flywheel
+        .withMass(Pounds.of(4));      // Example: 1 pound flywheel
     /** Flywheel controller for managing shooter wheel velocity. */
     public FlyWheel shooter_controller = new FlyWheel(shooter_config);
     

@@ -159,11 +159,11 @@ public class RobotConstants {
         // public static final double SHOOTER_KD = 5.0;
 
         /** Proportional gain for shooter velocity PID control. */
-        public static final double SHOOTER_KP = 1.5;
+        public static final double SHOOTER_KP = 0.125;
         /** Integral gain for shooter velocity PID control. */
         public static final double SHOOTER_KI = 0.0;
         /** Derivative gain for shooter velocity PID control. */
-        public static final double SHOOTER_KD = 0;//5;
+        public static final double SHOOTER_KD = 5;//5;
 
 
         // probably actually in meters, ai is dumb
