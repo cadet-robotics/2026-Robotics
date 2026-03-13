@@ -10,12 +10,14 @@ import static edu.wpi.first.units.Units.Meters;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.IntakeState;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Libs.FuelSim;
@@ -122,6 +124,9 @@ public class RobotContainer {
    */
   private void configureBindings() {
     BooleanSupplier noManualOverride = () -> !Dashboard.getManualOverride();
+    Trigger withingShootingTolerence = new Trigger(() -> drive_subsystem.isAtMidDistance() && drive_subsystem.isAimedAtHub(Math.toRadians(6.0)))
+      .onTrue(Commands.runOnce(() -> codriverController.setRumble(RumbleType.kBothRumble, 0.1)))
+      .onFalse(Commands.runOnce(() -> codriverController.setRumble(RumbleType.kBothRumble, 0.0)));
 
     driverController.a().whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToElevator()));
     
@@ -139,7 +144,7 @@ public class RobotContainer {
       .onTrue(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(true)))
       .onFalse(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(false)));
 
-    driverController.rightBumper().whileTrue(aimShootGroup());
+    driverController.rightBumper().whileTrue(shootGroup());
     driverController.rightBumper()
       .and(noManualOverride)
       .and(() -> drive_subsystem.isOnOurSide())
@@ -190,7 +195,7 @@ public class RobotContainer {
     codriverController.rightBumper().whileTrue(this.intake());
 
     //Right Trigger - manual shoot
-    codriverController.rightTrigger().whileTrue(this.shootGroup());
+    codriverController.rightTrigger().whileTrue(this.aimShootGroup());
 
     // Climber controls on codriver X, Y, and B
     codriverController.povUp().whileTrue(climber_subsystem.climbUp());

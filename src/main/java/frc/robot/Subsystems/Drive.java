@@ -25,6 +25,8 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.trajectory.Trajectory.State;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Dashboard;
@@ -412,6 +414,38 @@ public class Drive extends CSubsystem {
         double yDistance = Math.abs(currentPose.getY() - allianceHub.getY());
         
         return Math.toDegrees(Math.PI - (((Math.PI / 2) - currentPose.getRotation().getRadians()) + ((Math.PI / 2) - Math.atan( yDistance / xDistance ))));
+    }
+
+    /**
+     * Returns true if the robot's translation is within +/- tolMeters of the configured
+     * mid shooting distance from the alliance hub. Uses the Translation2d distance API.
+     *
+     * @param tolMeters tolerance in meters
+     * @return true when within tolerance, false otherwise or if an error occurs
+     */
+    public boolean isAtMidDistance(double tolMeters) {
+        try {
+            Translation2d hub = FieldConstants.hubPosition.get();
+            double currentDist = getPose().getTranslation().getDistance(hub);
+            double desired = ShooterSubsystemConstants.midRange + Dashboard.getShootRangeOffset();
+
+            return Math.abs(currentDist - desired) <= tolMeters;
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
+    /**
+     * Convenience overload using a default tolerance of 0.05 meters.
+     * @return true when within 0.05 m of mid distance
+     */
+    public boolean isAtMidDistance() {
+        return isAtMidDistance(0.1);
+    }
+
+    /**
+    public boolean withingMidDistanceTolerance() {
+        double distance = getPose().getTranslation().getDistance(FieldConstants)
     }
 
     /**
@@ -804,6 +838,65 @@ public class Drive extends CSubsystem {
 
         ShootOnTheMove.calculateLeadHeading(getPose(), swerveDrive.getRobotVelocity());
         ShootOnTheMove.publish();
+
+        // Detect transition into teleop and publish the curve once when teleop starts.
+        // Only while teleop is active do we check the dashboard shoot-range offset
+        // and republish the curve when it changes.
+        try {
+            boolean isTeleop = DriverStation.isTeleopEnabled();
+            if (isTeleop && !wasTeleop) {
+                // Teleop just started; publish immediately
+                publishCurveTrajectory();
+            }
+
+            if (isTeleop) {
+                // If the shoot-range offset on the dashboard changes while in teleop,
+                // update the curve trajectory.
+                double currentOffset = Dashboard.getShootRangeOffset();
+                if (Double.isNaN(this.lastPublishedShootRangeOffset) || Math.abs(currentOffset - this.lastPublishedShootRangeOffset) > 1e-6) {
+                    publishCurveTrajectory();
+                    this.lastPublishedShootRangeOffset = currentOffset;
+                }
+            }
+
+            wasTeleop = isTeleop;
+        } catch (Exception ex) {
+        }
+    }
+
+    // Track the last value we published so we can update when Dashboard value changes
+    private volatile double lastPublishedShootRangeOffset = Double.NaN;
+    // Track whether teleop was active during the last periodic call so we can
+    // detect the transition into teleop and publish the curve once.
+    private volatile boolean wasTeleop = false;
+
+    /**
+     * Samples points from the curve function (getClosestPointOnCurve) and publishes
+     * the resulting trajectory to the Field2d on the Dashboard. This replaces the
+     * current trajectory visualization with the drive-to-curve arc used by the
+     * drive subsystem.
+     *
+     * If called frequently it's relatively cheap (only creates a small Trajectory),
+     * but callers should avoid extremely high-frequency updates.
+     */
+    public void publishCurveTrajectory() {
+        try {
+            // Sample offsets across the full controller range (-1..1)
+            final int samples = 41; // odd gives center point at 0
+            java.util.List<State> states = new java.util.ArrayList<>(samples);
+            for (int i = 0; i < samples; ++i) {
+                double t = (double) i / (samples - 1); // 0..1
+                double offset = (t * 2.0) - 1.0; // -1..1
+                Pose2d p = getClosestPointOnCurve(offset);
+                // Create a simple state carrying the pose (velocity/curvature unused for visualization)
+                states.add(new State(0.0, 0.0, 0.0, p, 0.0));
+            }
+            Trajectory traj = new Trajectory(states);
+            Dashboard.getField2d().getObject("traj").setTrajectory(traj);
+        } catch (Exception ex) {
+            // Don't allow dashboard issues to affect drive periodic
+            DriverStation.reportWarning("Failed to publish curve trajectory: " + ex.getMessage(), false);
+        }
     }
 
     /**
