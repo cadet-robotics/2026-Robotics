@@ -27,6 +27,7 @@ public class Dashboard {
     private static DoubleSubscriber shootRangeOffsetReciever = dashboardTable.getDoubleTopic("ShootRangeOffset").subscribe(0.0);
     // Shooter RPM setpoint receiver (in RPM). Use SmartDashboard topic "Shooter/SetpointRPM".
     private static DoubleSubscriber shooterSetpointReciever = dashboardTable.getDoubleTopic("Shooter/SetpointRPM").subscribe(0.0);
+    private static DoublePublisher askdlaksdjaslkjd = dashboardTable.getDoubleTopic("Shooter/SetpointRPM").publish();
     private static Field2d field = new Field2d();
 
     /**

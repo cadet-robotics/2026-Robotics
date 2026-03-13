@@ -200,10 +200,10 @@ public class Shooter extends CSubsystem {
                 // Get current velocity from the motor controller encoder
                 double currentVelocityRPM = shooter_motor_controller.getEncoder().getVelocity();
                 try { 
-                    double targetVelocityRPM = shooter_controller.getMechanismSetpointVelocity().get().in(RPM);
+                    double targetVelocityRPM = shooter_controller.getMechanismSetpointVelocity().get().in(RPM) / 60;
                     
                     // Check if shooter is within 2% of target speed
-                    double tolerance = Math.abs(targetVelocityRPM * 0.02);
+                    double tolerance = Math.abs(targetVelocityRPM * 0.05);
                     return Math.abs(currentVelocityRPM - targetVelocityRPM) <= tolerance;
                 } catch (Exception e) {
                     System.out.println("Sinful, I know");

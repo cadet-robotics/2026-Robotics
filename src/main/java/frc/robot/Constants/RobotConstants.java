@@ -159,7 +159,7 @@ public class RobotConstants {
         // public static final double SHOOTER_KD = 5.0;
 
         /** Proportional gain for shooter velocity PID control. */
-        public static final double SHOOTER_KP = 0.125;
+        public static final double SHOOTER_KP = 0.128;
         /** Integral gain for shooter velocity PID control. */
         public static final double SHOOTER_KI = 0.0;
         /** Derivative gain for shooter velocity PID control. */
@@ -192,7 +192,7 @@ public class RobotConstants {
         /** Zero/retracted position of the climber (rotations). */
         public static final double ZERO_POSITION = 0;
         /** Climbing position of the climber - between zero and max (rotations). Tune on robot. */
-        public static final double CLIMB_POSITION = 11.0;
+        public static final double CLIMB_POSITION = 10.5;
         /** Maximum extended position of the climber (rotations). Tune on robot. */
         public static final double MAX_POSITION = 18.23;
     }
