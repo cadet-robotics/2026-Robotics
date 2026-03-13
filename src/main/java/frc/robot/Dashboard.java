@@ -44,7 +44,7 @@ public class Dashboard {
      * @return the shoot range offset -1.0 to 1.0
      */
     public static double getShootRangeOffset() {
-        return shootRangeOffsetReciever.get();
+        return shootRangeOffsetReciever.get(0.0);
     }  
 
     public static void isElevatorDown(boolean isDown) {
