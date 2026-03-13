@@ -249,13 +249,6 @@ public class Autos {
         PathPlannerPath p5 = PathPlannerPath.fromChoreoTrajectory("RightStart_RightShoot");
         PathPlannerPath p6 = PathPlannerPath.fromChoreoTrajectory("RightShoot_RightClimb");
 
-        getTrajectoryOfCombinedPaths(p1, p2, p3, p4, p5, p6);
-        if (Dashboard.getAlliance() == Alliance.Blue) {
-            drive_subsystem.resetOdometry(p1.getStartingHolonomicPose().get());
-        } else {
-            drive_subsystem.resetOdometry(p1.flipPath().getStartingHolonomicPose().get());
-        }
-
         return Commands.sequence(
                 resetOdom(p1),
                 pathPlannerDtpPath(p1),
