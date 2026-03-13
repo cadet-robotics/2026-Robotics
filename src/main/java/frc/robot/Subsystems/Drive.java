@@ -92,10 +92,10 @@ public class Drive extends CSubsystem {
         boolean blueAlliance = Dashboard.getAlliance() == Alliance.Blue;
         Pose2d startingPose = blueAlliance ? new Pose2d(new Translation2d(Meter.of(3),
                 Meter.of(4)),
-                Rotation2d.fromDegrees(0))
+                Rotation2d.fromDegrees(180))
                 : new Pose2d(new Translation2d(Meter.of(16),
                         Meter.of(4)),
-                        Rotation2d.fromDegrees(180));
+                        Rotation2d.fromDegrees(0));
 
         configureSwerveObjects(startingPose);
 
