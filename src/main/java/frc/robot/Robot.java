@@ -11,6 +11,7 @@ import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import swervelib.simulation.ironmaple.simulation.SimulatedArena;
@@ -45,6 +46,12 @@ public class Robot extends TimedRobot {
     }
     
     Dashboard.field2dInit();
+    // Suppress joystick/controller connection warnings (useful when controllers are intentionally disconnected)
+    try {
+      DriverStation.silenceJoystickConnectionWarning(true);
+    } catch (Throwable t) {
+      // If the WPILib version in use doesn't provide this method, ignore silently.
+    }
     WebServer.start(5800, Filesystem.getDeployDirectory().getPath());
     CameraServer.startAutomaticCapture();
     Elastic.selectTab("Autonomous");
