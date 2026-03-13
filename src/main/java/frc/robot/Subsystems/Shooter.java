@@ -194,7 +194,7 @@ public class Shooter extends CSubsystem {
             // Check if within tolerance
             // boolean atSpeed = currentVelocityRPM >= 50;
 
-            return currentVelocityRPM >= 50;
+            return currentVelocityRPM >= 2800/60;
         } else {
             if (state == ShooterState.On) {
                 // Get current velocity from the motor controller encoder
@@ -239,13 +239,13 @@ public class Shooter extends CSubsystem {
                     shooter_motor_controller.setVoltage(0);
                     lastSpawnNs = 0;
                     isUsingStaticSpeed = true;
-                })
-                .isFinished(() -> {
-                    if (Robot.isSimulation()) {
-                        return intakeSubsystem.getHopperCount() == 0; // if hopper is empty
-                    }
-                    return false; // Some method to stop shooting irl, most likely current
                 });
+                // .isFinished(() -> {
+                    // if (Robot.isSimulation()) {
+                    //     return intakeSubsystem.getHopperCount() == 0; // if hopper is empty
+                    // }
+                    // return false; // Some method to stop shooting irl, most likely current
+                // });
     }
 
     /**
@@ -273,13 +273,13 @@ public class Shooter extends CSubsystem {
                     shooter_motor_controller.setVoltage(0);
                     lastSpawnNs = 0;
                     isUsingStaticSpeed = true;
-                })
-                .isFinished(() -> {
-                    if (Robot.isSimulation()) {
-                        return intakeSubsystem.getHopperCount() == 0; // if hopper is empty
-                    }
-                    return false; // Some method to stop shooting irl, most likely current
                 });
+                // .isFinished(() -> {
+                    // if (Robot.isSimulation()) {
+                    //     return intakeSubsystem.getHopperCount() == 0; // if hopper is empty
+                    // }
+                    // return false; // Some method to stop shooting irl, most likely current
+                // });
     }
 
     /**
@@ -309,13 +309,13 @@ public class Shooter extends CSubsystem {
                     state = ShooterState.Off;
                     smc.stopClosedLoopController();
                     shooter_motor_controller.setVoltage(0);
-                })
-                .isFinished(() -> {
-                    if (Robot.isSimulation()) {
-                        return intakeSubsystem.getHopperCount() == 0; // if hopper is empty
-                    }
-                    return false; // Some method to stop shooting irl, most likely current
                 });
+                // .isFinished(() -> {
+                    // if (Robot.isSimulation()) {
+                    //     return intakeSubsystem.getHopperCount() == 0; // if hopper is empty
+                    // }
+                    // return false; // Some method to stop shooting irl, most likely current
+                // });
     }
     /**
      * Creates a command to run the shooter backwards.
