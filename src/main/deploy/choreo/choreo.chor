@@ -19,6 +19,20 @@
      "val":0.0
     }
    },
+   "InvertedRightStart":{
+    "x":{
+     "exp":"RightStart.x",
+     "val":3.7302165031433105
+    },
+    "y":{
+     "exp":"RightStart.y",
+     "val":0.5470569133758545
+    },
+    "heading":{
+     "exp":"0 deg",
+     "val":0.0
+    }
+   },
    "LeftBalls":{
     "x":{
      "exp":"LeftBallsCollectEnd.x",

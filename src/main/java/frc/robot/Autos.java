@@ -139,6 +139,7 @@ public class Autos {
         autoChooser.setDefaultOption("Do Nothing", Commands.none().withName("Do Nothing"));
         autoChooser.addOption("RightShootClimb", autoWrapper(this::rightTrifecta).withName("RightShootClimb"));
         autoChooser.addOption("RightRefilTrifecta", autoWrapper(this::rightRefilTrifecta).withName("RightRefilTrifecta"));
+        autoChooser.addOption("InvertedRightRefilTrifecta", autoWrapper(this::invertedRightRefilTrifecta).withName("InvertedRightRefilTrifecta"));
         autoChooser.addOption("LeftShootClimb", autoWrapper(this::leftTrifecta).withName("LeftShootClimb"));
         autoChooser.addOption("RightAllOfTheMarbles", autoWrapper(this::rightCollectShootClimb).withName("RightAllOfTheMarbles"));
         autoChooser.addOption("RightShoot", autoWrapper(this::rightShoot).withName("RightShoot"));
@@ -188,6 +189,9 @@ public class Autos {
                     break;
                 case "LeftClimb":
                     autoWrapper(this::leftClimb);
+                    break;
+                case "InvertedRightRefilTrifecta":
+                    autoWrapper(this::invertedRightRefilTrifecta);
                     break;
                 default:
                     break;
@@ -294,6 +298,32 @@ public class Autos {
      */
     public Command rightRefilTrifecta() throws Exception {
         PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("RightStart_HumanPlayerStation");
+        PathPlannerPath p2 = PathPlannerPath.fromChoreoTrajectory("HumanPlayerStation_RightShoot");
+        PathPlannerPath p3 = PathPlannerPath.fromChoreoTrajectory("RightShoot_RightClimb");
+
+        // Build trajectory for visualization
+        getTrajectoryOfCombinedPaths(p1, p2, p3);
+
+        return Commands.sequence(
+                resetOdom(p1),
+                pathPlannerDtpPath(p1),
+                new WaitCommand(1),
+                AutoBuilder.followPath(p2),
+                namedCommands.get("AimShoot").get().withTimeout(7),
+                Commands.parallel(
+                        pathPlannerDtpPath(p3),
+                        namedCommands.get("ClimberUp").get()),
+                adjustLeft().withTimeout(0.6),
+                namedCommands.get("ClimberDown").get());
+    }
+
+    /**
+     * Creates a auto that refills, shoots, and climbs.
+     * 
+     * @return the auto
+     */
+    public Command invertedRightRefilTrifecta() throws Exception {
+        PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("InvertedRightStart_HumanPlayerStation");
         PathPlannerPath p2 = PathPlannerPath.fromChoreoTrajectory("HumanPlayerStation_RightShoot");
         PathPlannerPath p3 = PathPlannerPath.fromChoreoTrajectory("RightShoot_RightClimb");
 
