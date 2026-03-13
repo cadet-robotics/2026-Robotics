@@ -14,6 +14,7 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.Dashboard;
 import frc.robot.Robot;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Constants.RobotConstants.FieldConstants;
@@ -198,11 +199,16 @@ public class Shooter extends CSubsystem {
             if (state == ShooterState.On) {
                 // Get current velocity from the motor controller encoder
                 double currentVelocityRPM = shooter_motor_controller.getEncoder().getVelocity();
-                double targetVelocityRPM = ShooterSubsystemConstants.forwardsOnSpeeds.in(edu.wpi.first.units.Units.RPM);
-                
-                // Check if shooter is within 2% of target speed
-                double tolerance = Math.abs(targetVelocityRPM * 0.02);
-                return Math.abs(currentVelocityRPM - targetVelocityRPM) <= tolerance;
+                try { 
+                    double targetVelocityRPM = shooter_controller.getMechanismSetpointVelocity().get().in(RPM);
+                    
+                    // Check if shooter is within 2% of target speed
+                    double tolerance = Math.abs(targetVelocityRPM * 0.02);
+                    return Math.abs(currentVelocityRPM - targetVelocityRPM) <= tolerance;
+                } catch (Exception e) {
+                    System.out.println("Sinful, I know");
+                    return false;
+                }
             } else {
                 return false;
             }
@@ -226,6 +232,40 @@ public class Shooter extends CSubsystem {
                     if (RobotBase.isSimulation()) {
                         lastSpawnNs = System.nanoTime();
                     }
+                })
+                .onEnd(() -> {
+                    state = ShooterState.Off;
+                    smc.stopClosedLoopController();
+                    shooter_motor_controller.setVoltage(0);
+                    lastSpawnNs = 0;
+                    isUsingStaticSpeed = true;
+                })
+                .isFinished(() -> {
+                    if (Robot.isSimulation()) {
+                        return intakeSubsystem.getHopperCount() == 0; // if hopper is empty
+                    }
+                    return false; // Some method to stop shooting irl, most likely current
+                });
+    }
+
+    /**
+     * Creates a command to start the shooter at full speed.
+     * 
+     * @return command that runs shooter at full forward speed
+     */
+    public CCommand manualSetpointShoot() {
+        return cCommand("StartShooting")
+                .onInitialize(() -> {
+                    smc.startClosedLoopController();
+                    state = ShooterState.On;
+                    isUsingStaticSpeed = false;
+                    // In simulation, spawn a projectile when shooting starts so visuals match the command
+                    if (RobotBase.isSimulation()) {
+                        lastSpawnNs = System.nanoTime();
+                    }
+                })
+                .onExecute(() -> {
+                    shooter_controller.setMechanismVelocitySetpoint(RPM.of(Dashboard.getShooterSetpointRPM()));
                 })
                 .onEnd(() -> {
                     state = ShooterState.Off;

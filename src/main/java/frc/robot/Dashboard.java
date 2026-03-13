@@ -25,6 +25,8 @@ public class Dashboard {
     private static StringPublisher matchPhasePublisher = dashboardTable.getStringTopic("MatchPhase").publish();
     private static DoublePublisher matchPhaseChangePublisher = dashboardTable.getDoubleTopic("PhaseChangeIn").publish();
     private static DoubleSubscriber shootRangeOffsetReciever = dashboardTable.getDoubleTopic("ShootRangeOffset").subscribe(0.0);
+    // Shooter RPM setpoint receiver (in RPM). Use SmartDashboard topic "Shooter/SetpointRPM".
+    private static DoubleSubscriber shooterSetpointReciever = dashboardTable.getDoubleTopic("Shooter/SetpointRPM").subscribe(0.0);
     private static Field2d field = new Field2d();
 
     /**
@@ -59,6 +61,14 @@ public class Dashboard {
 
     public static Field2d getField2d() {
         return field;
+    }
+
+    /**
+     * Gets the shooter RPM setpoint from the dashboard (topic: "Shooter/SetpointRPM").
+     * Returns the subscribed value or 0.0 if none is provided.
+     */
+    public static double getShooterSetpointRPM() {
+        return shooterSetpointReciever.get(0.0);
     }
     
     /**
