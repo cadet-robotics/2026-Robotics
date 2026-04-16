@@ -26,7 +26,9 @@ public class Dashboard {
     private static DoublePublisher matchPhaseChangePublisher = dashboardTable.getDoubleTopic("PhaseChangeIn").publish();
     private static DoubleSubscriber shootRangeOffsetReciever = dashboardTable.getDoubleTopic("ShootRangeOffset").subscribe(0.0);
     // Shooter RPM setpoint receiver (in RPM). Use SmartDashboard topic "Shooter/SetpointRPM".
-    private static DoubleSubscriber shooterSetpointReciever = dashboardTable.getDoubleTopic("Shooter/SetpointRPM").subscribe(0.0);
+    private static DoubleSubscriber shooterSetpointReciever = dashboardTable.getDoubleTopic("SetpointRPM").subscribe(0.0);
+    // Publisher to ensure the shooter setpoint is visible on the network table
+    private static DoublePublisher shooterSetpointPublisher = dashboardTable.getDoubleTopic("SetpointRPM").publish();
     private static Field2d field = new Field2d();
 
     /**
@@ -57,6 +59,14 @@ public class Dashboard {
 
     public static void field2dInit() {
         SmartDashboard.putData("Dashboard/Field", field);
+        // Ensure the shooter setpoint entry exists on NetworkTables and SmartDashboard for tuning
+        try {
+            shooterSetpointPublisher.set(shooterSetpointReciever.get(0.0));
+        } catch (Exception ex) {
+            // ignore publisher issues during early init
+        }
+        // Also put a SmartDashboard entry for visibility in Shuffleboard/SmartDashboard
+        SmartDashboard.putNumber("Shooter/SetpointRPM", shooterSetpointReciever.get(0.0));
     }
 
     public static Field2d getField2d() {

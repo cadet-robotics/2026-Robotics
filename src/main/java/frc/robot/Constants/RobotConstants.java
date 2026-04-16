@@ -159,7 +159,7 @@ public class RobotConstants {
         // public static final double SHOOTER_KD = 5.0;
 
         /** Proportional gain for shooter velocity PID control. */
-        public static final double SHOOTER_KP = 0.125;
+        public static final double SHOOTER_KP = 0.128;
         /** Integral gain for shooter velocity PID control. */
         public static final double SHOOTER_KI = 0.0;
         /** Derivative gain for shooter velocity PID control. */
@@ -169,6 +169,11 @@ public class RobotConstants {
         // probably actually in meters, ai is dumb
         /** Distance in feet of the middle of the shooting range from the hub */
         public static final double midRange = 2.8;
+        /**
+         * Threshold for the color sensor proximity reading to consider a ball present in the hopper.
+         * The REV ColorSensorV3 returns a proximity value (higher => closer). Tune this value on the robot.
+         */
+        public static final int BALL_PROXIMITY_THRESHOLD = 200;
     }
 
     /**

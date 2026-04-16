@@ -6,6 +6,7 @@ import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.RPM;
 
+import com.revrobotics.ColorSensorV3;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel;
 import com.revrobotics.spark.config.SparkFlexConfig;
@@ -14,6 +15,8 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.I2C.Port;
 import frc.robot.Dashboard;
 import frc.robot.Robot;
 import frc.robot.Constants.RobotConstants;
@@ -100,6 +103,23 @@ public class Shooter extends CSubsystem {
     
     /** Reference to the fuel simulation manager (optional - null on robot/hardware). */
     private final FuelSim fuelSim;
+
+    private final ColorSensorV3 ballSensor = new ColorSensorV3(Port.kOnboard);
+    // Timestamp of the last moment a ball was detected by the color sensor (ns)
+    private volatile long lastBallSeenNs = 0;
+    // Last proximity reading from the color sensor (higher => closer). Updated in periodic().
+    private static volatile int lastProximity = -1;
+
+    /**
+     * Returns the most recent proximity reading from the color sensor.
+     * Public static so other subsystems (e.g., Drive) can read the value without
+     * needing a subsystem reference.
+     *
+     * @return proximity value or -1 if not yet available
+     */
+    public static int getLastProximity() {
+        return lastProximity;
+    }
 
     /** Optional reference to the Intake subsystem so Shooter can request ball removal from hopper. */
     private frc.robot.Subsystems.Intake intakeSubsystem = null;
@@ -200,10 +220,10 @@ public class Shooter extends CSubsystem {
                 // Get current velocity from the motor controller encoder
                 double currentVelocityRPM = shooter_motor_controller.getEncoder().getVelocity();
                 try { 
-                    double targetVelocityRPM = shooter_controller.getMechanismSetpointVelocity().get().in(RPM);
+                    double targetVelocityRPM = shooter_controller.getMechanismSetpointVelocity().get().in(RPM) / 60;
                     
                     // Check if shooter is within 2% of target speed
-                    double tolerance = Math.abs(targetVelocityRPM * 0.02);
+                    double tolerance = Math.abs(targetVelocityRPM * 0.05);
                     return Math.abs(currentVelocityRPM - targetVelocityRPM) <= tolerance;
                 } catch (Exception e) {
                     System.out.println("Sinful, I know");
@@ -239,13 +259,13 @@ public class Shooter extends CSubsystem {
                     shooter_motor_controller.setVoltage(0);
                     lastSpawnNs = 0;
                     isUsingStaticSpeed = true;
+                })
+                .isFinished(() -> {
+                    if (Robot.isSimulation()) {
+                        return intakeSubsystem.getHopperCount() == 0; // if hopper is empty
+                    }
+                    return false; // Some method to stop shooting irl, most likely current
                 });
-                // .isFinished(() -> {
-                    // if (Robot.isSimulation()) {
-                    //     return intakeSubsystem.getHopperCount() == 0; // if hopper is empty
-                    // }
-                    // return false; // Some method to stop shooting irl, most likely current
-                // });
     }
 
     /**
@@ -273,13 +293,13 @@ public class Shooter extends CSubsystem {
                     shooter_motor_controller.setVoltage(0);
                     lastSpawnNs = 0;
                     isUsingStaticSpeed = true;
+                })
+                .isFinished(() -> {
+                    if (Robot.isSimulation()) {
+                        return intakeSubsystem.getHopperCount() == 0; // if hopper is empty
+                    }
+                    return false; // Some method to stop shooting irl, most likely current
                 });
-                // .isFinished(() -> {
-                    // if (Robot.isSimulation()) {
-                    //     return intakeSubsystem.getHopperCount() == 0; // if hopper is empty
-                    // }
-                    // return false; // Some method to stop shooting irl, most likely current
-                // });
     }
 
     /**
@@ -309,13 +329,49 @@ public class Shooter extends CSubsystem {
                     state = ShooterState.Off;
                     smc.stopClosedLoopController();
                     shooter_motor_controller.setVoltage(0);
+                })
+                .isFinished(() -> {
+                    if (Robot.isSimulation()) {
+                        return intakeSubsystem.getHopperCount() == 0; // if hopper is empty
+                    } else {
+                        return false;
+                    }
                 });
-                // .isFinished(() -> {
-                    // if (Robot.isSimulation()) {
-                    //     return intakeSubsystem.getHopperCount() == 0; // if hopper is empty
-                    // }
-                    // return false; // Some method to stop shooting irl, most likely current
-                // });
+    }
+
+    public boolean noBalls() {
+        if (!ballSensor.isConnected()) {
+            return false;
+        }
+        // Read proximity from the color sensor. REV's ColorSensorV3 returns an
+        // integer proximity where larger values indicate closer objects.
+        int proximity = 0;
+        try {
+            proximity = ballSensor.getProximity();
+        } catch (Exception ex) {
+            // If reading fails, assume we can't detect; return false (not sure)
+            return false;
+        }
+
+        // ballPresent when proximity is at-or-above the configured threshold
+        boolean ballPresent = proximity >= RobotConstants.ShooterSubsystemConstants.BALL_PROXIMITY_THRESHOLD;
+
+        long now = System.nanoTime();
+        if (ballPresent) {
+            // update last seen timestamp and report that balls are present
+            lastBallSeenNs = now;
+            return false;
+        }
+
+        // If we've never seen a ball yet, start the timer now and consider balls present
+        if (lastBallSeenNs == 0) {
+            lastBallSeenNs = now;
+            return false;
+        }
+
+        // If no ball has been seen for at least 1 second, report no balls
+        final long ONE_SECOND_NS = 1_000_000_000L;
+        return (now - lastBallSeenNs) >= ONE_SECOND_NS;
     }
     /**
      * Creates a command to run the shooter backwards.
@@ -359,6 +415,39 @@ public class Shooter extends CSubsystem {
 
         // Update telemetry
         shooter_controller.updateTelemetry();
+        // Update the cached proximity so other subsystems can read it from a static accessor
+        try {
+            lastProximity = ballSensor.isConnected() ? ballSensor.getProximity() : -1;
+        } catch (Exception ex) {
+            lastProximity = -1;
+        }
+
+        // Also log color sensor data (RGB and IR) to SmartDashboard for debugging/tuning
+        try {
+            if (ballSensor.isConnected()) {
+                var color = ballSensor.getColor();
+                SmartDashboard.putNumber("Sensors/HopperColorR", color.red);
+                SmartDashboard.putNumber("Sensors/HopperColorG", color.green);
+                SmartDashboard.putNumber("Sensors/HopperColorB", color.blue);
+                // IR value (if available) and proximity
+                try {
+                    SmartDashboard.putNumber("Sensors/HopperIR", ballSensor.getIR());
+                } catch (Throwable t) {
+                    // Some firmware versions may not expose IR - ignore
+                }
+                SmartDashboard.putNumber("Sensors/HopperProximityCached", lastProximity);
+                SmartDashboard.putBoolean("Sensors/HopperBallPresent", lastProximity >= RobotConstants.ShooterSubsystemConstants.BALL_PROXIMITY_THRESHOLD);
+            } else {
+                SmartDashboard.putNumber("Sensors/HopperColorR", -1);
+                SmartDashboard.putNumber("Sensors/HopperColorG", -1);
+                SmartDashboard.putNumber("Sensors/HopperColorB", -1);
+                SmartDashboard.putNumber("Sensors/HopperIR", -1);
+                SmartDashboard.putNumber("Sensors/HopperProximityCached", -1);
+                SmartDashboard.putBoolean("Sensors/HopperBallPresent", false);
+            }
+        } catch (Exception ex) {
+            // don't let dashboard logging affect periodic
+        }
     }
 
     /**

@@ -839,6 +839,14 @@ public class Drive extends CSubsystem {
         ShootOnTheMove.calculateLeadHeading(getPose(), swerveDrive.getRobotVelocity());
         ShootOnTheMove.publish();
 
+        // Publish hopper proximity (distance sensor) reading so it appears on the dashboard.
+        try {
+            int prox = frc.robot.Subsystems.Shooter.getLastProximity();
+            SmartDashboard.putNumber("Sensors/HopperProximity", prox);
+        } catch (Exception ex) {
+            // ignore if shooter/proximity not available
+        }
+
         // Detect transition into teleop and publish the curve once when teleop starts.
         // Only while teleop is active do we check the dashboard shoot-range offset
         // and republish the curve when it changes.
