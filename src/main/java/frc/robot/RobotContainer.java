@@ -138,6 +138,7 @@ public class RobotContainer {
     driverController.y().whileTrue(manualRPMShootGroup());
 
 
+    driverController.y().whileTrue(intake());
     driverController.leftBumper().and(drive_subsystem::isOnOurSide).whileTrue(
       Commands.parallel(
         drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream()),
@@ -331,6 +332,25 @@ public class RobotContainer {
       );
   }
 
+   private Command manualShootGroup(){
+    BooleanSupplier doShootFeeding = () -> {
+      return shooter_subsystem.isUpToSpeed();
+    };
+    
+    return Commands.parallel(
+      shooter_subsystem.Shoot(),
+      shaker_subsystem.Shake(),
+      Commands.sequence(
+        Commands.parallel(
+          new WaitUntilCommand(shooter_subsystem::isUpToSpeed)
+        ).withTimeout(3),
+        Commands.parallel(
+          indexer_subsystem.IndexerOut(doShootFeeding),
+          intake_subsystem.IntakeIn()
+        )
+      )
+    );
+  }
   /**
    * Builds the barf command which is used to barf the balls out of the hopper.
    * 

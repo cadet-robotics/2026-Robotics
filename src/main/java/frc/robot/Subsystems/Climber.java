@@ -116,6 +116,11 @@ public class Climber extends CSubsystem {
             .onExecute(() -> {
                 // Use position control to move to zero position
                 this.climber_motor.setPosition(Rotation.of(zero_position));
+                if (limitSwitch.get()) {
+                    climber_motor.stopClosedLoopController();
+                } else {
+                    climber_motor.startClosedLoopController();
+                }
             })
             .onEnd(()->{
                 //climber_motor.stopClosedLoopController();

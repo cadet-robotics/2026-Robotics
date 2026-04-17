@@ -287,7 +287,7 @@ public class Autos {
      */
     public Command adjustRight() {
         return drive_subsystem.driveWithChassisSpeedsSupplier(
-                SwerveInputStream.of(drive_subsystem.getSwerveDrive(), () -> -0.0, () -> -0.2)
+                SwerveInputStream.of(drive_subsystem.getSwerveDrive(), () -> -0.05, () -> -0.2)
                         .allianceRelativeControl(true).withControllerHeadingAxis(() -> 1, () -> 0));
     }
 

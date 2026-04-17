@@ -91,7 +91,7 @@ public class Drive extends CSubsystem {
         }
 
         // Temp starting positions for sim — use safe Dashboard.getAlliance() which provides a fallback
-        boolean blueAlliance = Dashboard.getAlliance() == Alliance.Blue;
+        boolean blueAlliance = false; //  Dashboard.getAlliance() == Alliance.Blue;
         Pose2d startingPose = blueAlliance ? new Pose2d(new Translation2d(Meter.of(3),
                 Meter.of(4)),
                 Rotation2d.fromDegrees(180))
@@ -835,7 +835,7 @@ public class Drive extends CSubsystem {
     public void periodic() {
         logSelf();
         Dashboard.getField2d().setRobotPose(getPose());
-
+        SmartDashboard.putNumber("Drive/DistanceToHub", this.getPose().getTranslation().getDistance(FieldConstants.hubPosition.get()));
         ShootOnTheMove.calculateLeadHeading(getPose(), swerveDrive.getRobotVelocity());
         ShootOnTheMove.publish();
 
