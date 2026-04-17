@@ -14,6 +14,7 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.I2C.Port;
@@ -65,6 +66,8 @@ public class Shooter extends CSubsystem {
                 .d(RobotConstants.ShooterSubsystemConstants.SHOOTER_KD);
 
     }
+
+    private AngularVelocity targetRPM = RPM.of(1000);
 
     /** Configuration for the smart motor controller including PID, feedforward, and gearing. */
     public SmartMotorControllerConfig smc_config = new SmartMotorControllerConfig(this)
@@ -273,9 +276,10 @@ public class Shooter extends CSubsystem {
      * 
      * @return command that runs shooter at full forward speed
      */
-    public CCommand manualSetpointShoot() {
+    public CCommand manualSetpointShoot(int rpm) {
         return cCommand("StartShooting")
                 .onInitialize(() -> {
+                    targetRPM = RPM.of(rpm);
                     smc.startClosedLoopController();
                     state = ShooterState.On;
                     isUsingStaticSpeed = false;
@@ -285,7 +289,7 @@ public class Shooter extends CSubsystem {
                     }
                 })
                 .onExecute(() -> {
-                    shooter_controller.setMechanismVelocitySetpoint(RPM.of(Dashboard.getShooterSetpointRPM()));
+                    shooter_controller.setMechanismVelocitySetpoint(targetRPM);
                 })
                 .onEnd(() -> {
                     state = ShooterState.Off;
