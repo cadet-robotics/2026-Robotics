@@ -21,7 +21,6 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.IntakeState;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Libs.FuelSim;
-import frc.robot.Subsystems.Climber;
 import frc.robot.Subsystems.Drive;
 import frc.robot.Subsystems.Indexer;
 import frc.robot.Subsystems.Intake;
@@ -37,7 +36,6 @@ public class RobotContainer {
   private final Intake intake_subsystem;
   private final Indexer indexer_subsystem;
   private final Shooter shooter_subsystem;
-  private final Climber climber_subsystem;
   private final Shaker shaker_subsystem;
 
   public FuelSim fuelSim;
@@ -59,7 +57,6 @@ public class RobotContainer {
     // Wire intake into shooter so shooter can request ball removal from the hopper
     shooter_subsystem.setIntakeSubsystem(intake_subsystem);
     indexer_subsystem = new Indexer();
-    climber_subsystem = new Climber();
     shaker_subsystem = new Shaker(indexer_subsystem);
 
     drive_subsystem.setDefaultCommand(
@@ -83,9 +80,6 @@ public class RobotContainer {
   private void configureAuto() {
     autos.addCommand("Shoot", this::shootGroup);
     autos.addCommand("AimShoot", this::aimShootGroup);
-    autos.addCommand("ClimberUp", climber_subsystem::climbUp);
-    autos.addCommand("ClimberZero", climber_subsystem::climbZero);
-    autos.addCommand("ClimberDown", climber_subsystem::climb);
     autos.addCommand("Barf", this::barf);
     autos.addCommand("Intake", this::intake);
     autos.addAutos();
@@ -188,8 +182,6 @@ public class RobotContainer {
   
       
     //Co Driver Controls
-    codriverController.a().whileTrue(climber_subsystem.manualClimbUpVoltage());
-    codriverController.b().whileTrue(climber_subsystem.manualClimbDownVoltage());
 
     // Left bumper - barf balls out of the hopper/intake
     codriverController.leftBumper().whileTrue(this.barf());
@@ -199,16 +191,6 @@ public class RobotContainer {
 
     //Right Trigger - manual shoot
     codriverController.rightTrigger().whileTrue(this.aimShootGroup());
-
-    // Climber controls on codriver X, Y, and B
-    codriverController.povUp().whileTrue(climber_subsystem.climbUp());
-    
-    // Y button - climb to climbing position (middle position)
-    codriverController.povLeft().whileTrue(climber_subsystem.climb());
-
-    // B button - climb down
-    codriverController.povDown().whileTrue(climber_subsystem.climbZero());
-    
   }
 
   /**
