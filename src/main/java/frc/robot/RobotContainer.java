@@ -220,7 +220,7 @@ public class RobotContainer {
     BooleanSupplier manualOverride = () -> Dashboard.getManualOverride();
 
     BooleanSupplier angleDriveApprovesOfShooting = () ->
-      drive_subsystem.isAimModeActive() && (Dashboard.getManualOverride() || drive_subsystem.isAimedAtHub(Math.toRadians(6)));
+      !drive_subsystem.isAimModeActive() || (drive_subsystem.isAimModeActive() && (Dashboard.getManualOverride() || drive_subsystem.isAimedAtHub(Math.toRadians(6))));
 
     BooleanSupplier curveDriveApprovesOfShooting = () -> {
         if (manualOverride.getAsBoolean()) {
