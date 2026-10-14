@@ -22,11 +22,6 @@
 - Back Pose detected
 - Latest Back Pose
 
-# Climber/ 
-- Position
-- Position Setpoint
-- Mode
-
 # Shaker/
 - Running
 
