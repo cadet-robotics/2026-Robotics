@@ -78,7 +78,7 @@ public class RobotContainer {
    * Adds commands to the auto subsystem. Named commands should be used instead.
    */
   private void configureAuto() {
-    autos.addCommand("Shoot", this::shootGroup);
+    autos.addCommand("Shoot", () -> { return shootGroup(true);});
     autos.addCommand("AimShoot", this::aimShootGroup);
     autos.addCommand("Barf", this::barf);
     autos.addCommand("Intake", this::intake);
@@ -136,12 +136,12 @@ public class RobotContainer {
     driverController.leftBumper().and(drive_subsystem::isOnOurSide).whileTrue(
       Commands.parallel(
         drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream()),
-        this.shootGroup()
+        this.shootGroup(false)
       ))
       .onTrue(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(true)))
       .onFalse(Commands.runOnce(() -> drive_subsystem.setDriveToPoseActive(false)));
 
-    driverController.rightBumper().whileTrue(shootGroup());
+    driverController.rightBumper().whileTrue(shootGroup(false));
     driverController.rightBumper()
       .and(noManualOverride)
       .and(() -> drive_subsystem.isOnOurSide())
@@ -174,7 +174,7 @@ public class RobotContainer {
         new DeferredCommand(() -> drive_subsystem.driveToTargetPose(drive_subsystem.getClosestPointOnCurve(0), 0), Set.of(drive_subsystem)),
         Commands.parallel(
           drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToCurveStream()),
-          this.shootGroup()
+          this.shootGroup(false)
         ).withTimeout(10.0),
         new InstantCommand(() -> drive_subsystem.setDriveToPoseActive(false)),
         new DeferredCommand( drive_subsystem::driveThroughTrenchSS, Set.of(drive_subsystem))
@@ -216,7 +216,7 @@ public class RobotContainer {
    * 
    * @return the main shoot group command
    */
-  private Command shootGroup(){
+  private Command shootGroup(boolean override){
     BooleanSupplier manualOverride = () -> Dashboard.getManualOverride();
 
     BooleanSupplier angleDriveApprovesOfShooting = () ->
@@ -242,7 +242,7 @@ public class RobotContainer {
 
     BooleanSupplier doShootFeeding = () -> {
       return shooter_subsystem.isUpToSpeed() 
-        && (
+        && ((
           (
             // We don't check for correct pose or angle when not using either mode
             ((angleDriveApprovesOfShooting.getAsBoolean() || !drive_subsystem.isAimModeActive()) 
@@ -251,7 +251,7 @@ public class RobotContainer {
           // Manual override stops from requiring pose or angle while in those modes
           || manualOverride.getAsBoolean()
         )
-      );
+      ) || override);
     };
     
     return Commands.parallel(
