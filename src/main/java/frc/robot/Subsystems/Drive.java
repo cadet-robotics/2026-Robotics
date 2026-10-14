@@ -415,12 +415,6 @@ public class Drive extends CSubsystem {
         });
     }
 
-    /**
-     * Creates a command that drives to a climb position.
-     * 
-     * @return command that drives to closest climb position
-     */
-
     // Calculate the distance that the robot is from our alliance's HUB
     public double hubDistance() {
         Translation2d allianceHub = FieldConstants.hubPosition.get();
@@ -718,43 +712,6 @@ public class Drive extends CSubsystem {
         }
         return FieldConstants.BLUE_RIGHT_TRENCH;
 
-    }
-
-    /**
-     * Gets the closest elevator position to the robot.
-     * This is used for autodriving to the elevator.
-     *
-     * @return the closest elevator position
-     */
-    public Pose2d getClosestElevator() {
-        // Use safe Dashboard.getAlliance() — no optional handling required
-        System.out.println( "Pos: " + getPose().getY() + " Elevator: " + Inches.of(317/2).in(Meters) );
-        switch( Dashboard.getAlliance() ) {
-            case Blue:
-                if ( getPose().getY() > Inches.of(317/2).in(Meters) ) {
-                    return FieldConstants.BLUE_LEFT_CLIMB_POSITION;
-                }
-                return FieldConstants.BLUE_RIGHT_CLIMB_POSITION;
-            case Red:
-                if ( getPose().getY() > Inches.of(317/2).in(Meters) ) {
-                    return FieldConstants.RED_LEFT_CLIMB_POSITION;
-                }
-                return FieldConstants.RED_RIGHT_CLIMB_POSITION;
-        }
-        return getPose();
-    }
-
-    /**
-     * Builds a {@link SwerveInputStream} that drives to the closest elevator position.
-     * 
-     * @return the SwerveInputStream
-     */
-    public SwerveInputStream buildDriveToElevator() {
-        return genericDriveToPoseStream(() -> { 
-            Pose2d closest = getClosestElevator();
-            SmartDashboard.putNumberArray("BestElevator", new double[] {closest.getX(), closest.getY(), closest.getRotation().getDegrees()});
-            return closest;
-        });
     }
 
     /**

@@ -234,24 +234,6 @@
               "color": 4278238420,
               "line_width": 2.0
             }
-          },
-          {
-            "title": "temperature",
-            "x": 768.0,
-            "y": 0.0,
-            "width": 384.0,
-            "height": 384.0,
-            "type": "Graph",
-            "properties": {
-              "topic": "/Mechanisms/Climber Motor/motor/temperature",
-              "period": 0.033,
-              "data_type": "double",
-              "time_displayed": 160.0,
-              "min_value": 0.0,
-              "max_value": 140.0,
-              "color": 4278238420,
-              "line_width": 2.0
-            }
           }
         ]
       }

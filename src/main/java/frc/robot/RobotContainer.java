@@ -122,8 +122,6 @@ public class RobotContainer {
       .onTrue(Commands.runOnce(() -> codriverController.setRumble(RumbleType.kBothRumble, 0.1)))
       .onFalse(Commands.runOnce(() -> codriverController.setRumble(RumbleType.kBothRumble, 0.0)));
 
-    driverController.a().whileTrue(drive_subsystem.driveWithChassisSpeedsSupplier(drive_subsystem.buildDriveToElevator()));
-    
     // Reset Gyro
     driverController.b().whileTrue(drive_subsystem.resetOdom());
 

@@ -53,15 +53,6 @@ public class RobotConstants {
             return Dashboard.getAlliance() == Alliance.Blue ? BLUE_HUB_POSITION : RED_HUB_POSITION;
         };
         
-        /** Blue alliance rightside climb position (x, y, Rotation2d) in inches and degrees. */
-        public static final Pose2d BLUE_RIGHT_CLIMB_POSITION = new Pose2d(Inches.of(36.6075), Inches.of(129.5065), Rotation2d.fromRadians(0));
-        /** Blue alliance leftside climb position (x, y, Rotation2d) in inches and degrees. */
-        public static final Pose2d BLUE_LEFT_CLIMB_POSITION = new Pose2d(Inches.of(44.0925), Inches.of(177.7335), Rotation2d.fromRadians(Math.PI));
-        /** Red alliance rightside climb position (x, y, Rotation2d) in inches and degrees. */
-        public static final Pose2d RED_RIGHT_CLIMB_POSITION = new Pose2d(Inches.of(600.7075), Inches.of(135.5065), Rotation2d.fromRadians(0));
-        /** Red alliance leftside climb position (x, y, Rotation2d) in inches and degrees. */
-        public static final Pose2d RED_LEFT_CLIMB_POSITION = new Pose2d(Inches.of(608.1925), Inches.of(208.4335), Rotation2d.fromRadians(Math.PI));
-
         // Center of Trench positions for blue and red alliance, 
         public static final Translation2d BLUE_LEFT_TRENCH = new Translation2d(Inches.of(182), Inches.of(317-25));
         public static final Translation2d BLUE_RIGHT_TRENCH = new Translation2d(Inches.of(182), Inches.of(25));
@@ -187,18 +178,5 @@ public class RobotConstants {
         public static final AngularVelocity backwardsOnSpeeds = RPM.of(1000);
         /** Manual slow speed in RPM for manual control. */
         public static final AngularVelocity manualSpeed = RPM.of(1000);
-    }
-
-    /**
-     * Constants for the climber subsystem.
-     * Defines position limits for the climbing mechanism.
-     */
-    public static final class ClimberSubsystemConstants {
-        /** Zero/retracted position of the climber (rotations). */
-        public static final double ZERO_POSITION = 0;
-        /** Climbing position of the climber - between zero and max (rotations). Tune on robot. */
-        public static final double CLIMB_POSITION = 10.5;
-        /** Maximum extended position of the climber (rotations). Tune on robot. */
-        public static final double MAX_POSITION = 18.23;
     }
 }
