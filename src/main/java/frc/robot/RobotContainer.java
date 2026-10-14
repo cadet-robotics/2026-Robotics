@@ -203,6 +203,14 @@ public class RobotContainer {
   }
 
   /**
+   * Updates autonomous previews while disabled (e.g. mirrors the selected auto's trajectory
+   * to the correct alliance side once the alliance is known).
+   */
+  public void disabledPeriodic() {
+    this.autos.updatePreview();
+  }
+
+  /**
    * Gets the vision subsystem.
    * 
    * @return the vision subsystem

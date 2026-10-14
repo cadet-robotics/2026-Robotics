@@ -8,13 +8,13 @@ import java.util.function.Supplier;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.util.FlippingUtil;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.Trajectory.State;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -30,7 +30,9 @@ import swervelib.SwerveInputStream;
 public class Autos {
     private SendableChooser<Command> autoChooser;
     private HashMap<String, Supplier<Command>> namedCommands = new HashMap<>();
-    // Track the last selection from the SendableChooser so we only recompute when it changes
+    // The most recently built auto trajectory, stored in blue-alliance origin so it can be
+    // mirrored and republished at run time once the alliance is known.
+    private Trajectory previewTrajectory;
 
     private Drive drive_subsystem;
     /**
@@ -76,35 +78,29 @@ public class Autos {
     }
 
     /**
-     * Gets the staring pose from a {@link PathPlannerPath} using the current alliance.
+     * Gets the starting pose from a {@link PathPlannerPath} in blue-alliance origin
+     * coordinates. PathPlanner mirrors this at command run time based on the current
+     * alliance, so the alliance does not need to be known when the command is built.
      * 
      * @param path the path to get the starting pose from
-     * @return the starting pose
+     * @return the starting pose in blue alliance origin coordinates
      */
     public Pose2d getStartingPoseFromPath(PathPlannerPath path) {
-        if (Dashboard.getAlliance() == Alliance.Blue ) {
-            return path.getStartingHolonomicPose().get();
-        } else {
-            return path.flipPath().getStartingHolonomicPose().get();
-        }
+        return path.getStartingHolonomicPose().get();
     }
 
     /**
-     * Gets the ending pose from a {@link PathPlannerPath} using the current alliance.
+     * Gets the ending pose from a {@link PathPlannerPath} in blue-alliance origin
+     * coordinates. PathPlanner mirrors this at command run time based on the current
+     * alliance, so the alliance does not need to be known when the command is built.
      * 
      * @param path the path to get the ending pose from
-     * @return the ending pose
+     * @return the ending pose in blue alliance origin coordinates
      */
     public Pose2d getEndPoseFromPath(PathPlannerPath path) {
-        if (Dashboard.getAlliance() == Alliance.Blue ) {
-            List<Pose2d> pathPoints = path.getPathPoses();
-            Rotation2d pointRotation = path.getGoalEndState().rotation();
-            return new Pose2d(pathPoints.get(pathPoints.size() - 1).getTranslation(), pointRotation);
-        } else {
-            List<Pose2d> pathPoints = path.flipPath().getPathPoses();
-            Rotation2d pointRotation = path.flipPath().getGoalEndState().rotation();
-            return new Pose2d(pathPoints.get(pathPoints.size() - 1).getTranslation(), pointRotation);
-        }
+        List<Pose2d> pathPoints = path.getPathPoses();
+        Rotation2d pointRotation = path.getGoalEndState().rotation();
+        return new Pose2d(pathPoints.get(pathPoints.size() - 1).getTranslation(), pointRotation);
     }
 
     /**
@@ -115,9 +111,9 @@ public class Autos {
      */
     public Command pathPlannerDtpPath(PathPlannerPath path) {
         return Commands.sequence(
-            drive_subsystem.driveToTargetPose(getStartingPoseFromPath(path), 0),
+            drive_subsystem.driveToTargetPoseFlipped(getStartingPoseFromPath(path), 0),
             AutoBuilder.followPath(path),
-            drive_subsystem.driveToTargetPose(getEndPoseFromPath(path), 0)
+            drive_subsystem.driveToTargetPoseFlipped(getEndPoseFromPath(path), 0)
         );
     }
 
@@ -139,7 +135,6 @@ public class Autos {
         autoChooser.setDefaultOption("Do Nothing", Commands.none().withName("Do Nothing"));
         autoChooser.addOption("RightShootClimb", autoWrapper(this::rightTrifecta).withName("RightShootClimb"));
         autoChooser.addOption("RightRefilTrifecta", autoWrapper(this::rightRefilTrifecta).withName("RightRefilTrifecta"));
-        autoChooser.addOption("InvertedRightRefilTrifecta", autoWrapper(this::invertedRightRefilTrifecta).withName("InvertedRightRefilTrifecta"));
         autoChooser.addOption("LeftShootClimb", autoWrapper(this::leftTrifecta).withName("LeftShootClimb"));
         autoChooser.addOption("RightAllOfTheMarbles", autoWrapper(this::rightCollectShootClimb).withName("RightAllOfTheMarbles"));
         autoChooser.addOption("RightShoot", autoWrapper(this::rightShoot).withName("RightShoot"));
@@ -150,53 +145,6 @@ public class Autos {
         autoChooser.addOption("MiddleLeftClimb", autoWrapper(this::middleLeftClimb).withName("MiddleLeftClimb"));
         autoChooser.addOption("rightClimb", autoWrapper(this::rightClimb).withName("RightClimb"));
         autoChooser.addOption("leftClimb", autoWrapper(this::leftClimb).withName("LeftClimb"));
-        autoChooser.onChange(c -> {
-            switch (c.getName()) {
-                case "Do Nothing":
-                    break;
-                case "RightShootClimb":
-                    autoWrapper(this::rightTrifecta);
-                    break;
-                case "RightRefilTrifecta":
-                    autoWrapper(this::rightRefilTrifecta);
-                    break;
-                case "LeftShootClimb":
-                    autoWrapper(this::leftTrifecta);
-                    break;
-                case "RightAllOfTheMarbles":
-                    autoWrapper(this::rightCollectShootClimb);
-                    break;
-                case "RightShoot":
-                    autoWrapper(this::rightShoot);
-                    break;
-                case "MiddleShoot":
-                    autoWrapper(this::middleShoot);
-                    break;
-                case "MiddleShootRightClimb":
-                    autoWrapper(this::middleShootRightClimb);
-                    break;
-                case "MiddleShootLeftClimb":
-                    autoWrapper(this::middleShootLeftClimb);
-                    break;
-                case "MiddleRightClimb":
-                    autoWrapper(this::middleRightClimb);
-                    break;
-                case "MiddleLeftClimb":
-                    autoWrapper(this::middleLeftClimb);
-                    break;
-                case "RightClimb":
-                    autoWrapper(this::rightClimb);
-                    break;
-                case "LeftClimb":
-                    autoWrapper(this::leftClimb);
-                    break;
-                case "InvertedRightRefilTrifecta":
-                    autoWrapper(this::invertedRightRefilTrifecta);
-                    break;
-                default:
-                    break;
-            }
-        });
     }
 
     /**
@@ -318,32 +266,6 @@ public class Autos {
     }
 
     /**
-     * Creates a auto that refills, shoots, and climbs.
-     * 
-     * @return the auto
-     */
-    public Command invertedRightRefilTrifecta() throws Exception {
-        PathPlannerPath p1 = PathPlannerPath.fromChoreoTrajectory("InvertedRightStart_HumanPlayerStation");
-        PathPlannerPath p2 = PathPlannerPath.fromChoreoTrajectory("HumanPlayerStation_RightShoot");
-        PathPlannerPath p3 = PathPlannerPath.fromChoreoTrajectory("RightShoot_RightClimb");
-
-        // Build trajectory for visualization
-        getTrajectoryOfCombinedPaths(p1, p2, p3);
-
-        return Commands.sequence(
-                resetOdom(p1),
-                pathPlannerDtpPath(p1),
-                new WaitCommand(1),
-                AutoBuilder.followPath(p2),
-                namedCommands.get("AimShoot").get().withTimeout(7),
-                Commands.parallel(
-                        pathPlannerDtpPath(p3),
-                        namedCommands.get("ClimberUp").get()),
-                adjustLeft().withTimeout(0.6),
-                namedCommands.get("ClimberDown").get());
-    }
-
-    /**
      * An auto that shoots and climbs.
      * 
      * @return the auto
@@ -392,17 +314,15 @@ public class Autos {
     /**
      * Resets the odometry of the robot to the starting pose of a path.
      * 
+     * The path is authored in blue-alliance origin coordinates; PathPlanner mirrors it
+     * at command run time based on the current alliance, so the alliance does not need
+     * to be known when the command is built.
+     * 
      * @param path the path to reset the odometry to
      * @return the command to reset the odometry
      */
     public Command resetOdom(PathPlannerPath path) {
-        return Commands.runOnce(() -> {
-            if (Dashboard.getAlliance() == Alliance.Blue) {
-                drive_subsystem.resetOdometry(path.getStartingHolonomicPose().get());
-            } else {
-                drive_subsystem.resetOdometry(path.flipPath().getStartingHolonomicPose().get());
-            }
-        });
+        return AutoBuilder.resetOdom(path.getStartingHolonomicPose().get());
     }
 
     /**
@@ -572,19 +492,54 @@ public class Autos {
     public Trajectory getTrajectoryOfCombinedPaths(PathPlannerPath ...paths) {
         List<State> combinedStates = new ArrayList<>();
         for (PathPlannerPath path : paths) {
-            if (Dashboard.getAlliance() == Alliance.Red) {
-                path = path.flipPath();
-            }
             for (Pose2d pose: path.getPathPoses()) {
                 State state = new State(0, 0, 0, pose, 0);
                 combinedStates.add(state);
             }
         }
         Trajectory combined = new Trajectory(combinedStates);
-        
-        // Automatically publish the trajectory to the field for visualization
-        Dashboard.getField2d().getObject("traj").setTrajectory(combined);
-        
+
+        // Store the blue-origin trajectory and publish it; publishPreview() mirrors it at
+        // run time based on the current alliance.
+        previewTrajectory = combined;
+        publishPreview();
+
         return combined;
+    }
+
+    /**
+     * Republishes the stored preview trajectory mirrored for the current alliance. Called
+     * during the disabled period so the field preview matches the side the robot will run on.
+     */
+    public void updatePreview() {
+        publishPreview();
+    }
+
+    /**
+     * Publishes {@link #previewTrajectory} to the Field2d, mirroring each pose when
+     * PathPlanner reports that paths should be flipped for the current alliance.
+     */
+    private void publishPreview() {
+        if (previewTrajectory == null) {
+            return;
+        }
+        try {
+            Trajectory toPublish = previewTrajectory;
+            if (AutoBuilder.shouldFlip()) {
+                List<State> flippedStates = new ArrayList<>(previewTrajectory.getStates().size());
+                for (State state : previewTrajectory.getStates()) {
+                    flippedStates.add(new State(
+                        state.timeSeconds,
+                        state.velocityMetersPerSecond,
+                        state.accelerationMetersPerSecondSq,
+                        FlippingUtil.flipFieldPose(state.poseMeters),
+                        state.curvatureRadPerMeter));
+                }
+                toPublish = new Trajectory(flippedStates);
+            }
+            Dashboard.getField2d().getObject("traj").setTrajectory(toPublish);
+        } catch (Exception e) {
+            DriverStation.reportWarning("Failed to publish auto preview: " + e.getMessage(), false);
+        }
     }
 }

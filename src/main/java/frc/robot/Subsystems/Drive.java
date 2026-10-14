@@ -91,7 +91,7 @@ public class Drive extends CSubsystem {
         }
 
         // Temp starting positions for sim — use safe Dashboard.getAlliance() which provides a fallback
-        boolean blueAlliance = false; //  Dashboard.getAlliance() == Alliance.Blue;
+        boolean blueAlliance = Dashboard.getAlliance() == Alliance.Blue;
         Pose2d startingPose = blueAlliance ? new Pose2d(new Translation2d(Meter.of(3),
                 Meter.of(4)),
                 Rotation2d.fromDegrees(180))
@@ -346,6 +346,32 @@ public class Drive extends CSubsystem {
     }
 
     /**
+     * Command to drive to a target pose that is authored in blue-alliance field coordinates.
+     * The pose is mirrored automatically at command run time based on the current alliance
+     * via PathPlanner's shouldFlipPath supplier, so the alliance does not need to be known
+     * when the command is constructed. This is important because the driver station may not
+     * report an alliance until after the robot program has started.
+     * 
+     * @param bluePose The target pose in blue alliance origin coordinates
+     * @param endVelocity The desired velocity at the end of the path (m/s)
+     * @return Command that pathfinds to the flipped target pose
+     */
+    public Command driveToTargetPoseFlipped(Pose2d bluePose, double endVelocity) {
+        PathConstraints constraints = new PathConstraints(
+            swerveDrive.getMaximumChassisVelocity(),
+            4.0,
+            swerveDrive.getMaximumChassisAngularVelocity(),
+            Math.PI * 11
+        );
+
+        return AutoBuilder.pathfindToPoseFlipped(
+            bluePose,
+            constraints,
+            endVelocity
+        );
+    }
+
+    /**
      * Command to drive to a target pose using PathPlanner's pathfinding.
      * Supplier version for dynamic targets.
      * 
@@ -379,8 +405,10 @@ public class Drive extends CSubsystem {
     }
 
     public CCommand resetOdom() {
-        Rotation2d correctOffset = Dashboard.getAlliance() == Alliance.Blue ? Rotation2d.kZero : Rotation2d.k180deg;
         return cCommand("DriveSubsystem.ResetOdom").onInitialize(() -> {
+            // Resolve the alliance at run time, since the driver station may not have
+            // reported it yet when this command was constructed.
+            Rotation2d correctOffset = Dashboard.getAlliance() == Alliance.Blue ? Rotation2d.kZero : Rotation2d.k180deg;
             Pose2d newPose = new Pose2d( swerveDrive.getPose().getX(), swerveDrive.getPose().getY(), correctOffset );
             swerveDrive.resetOdometry(newPose);
             SmartDashboard.putString("Drive/Odometry Reset", "Odometry reset to (0, 0, 0)");
@@ -589,8 +617,9 @@ public class Drive extends CSubsystem {
         return baseStream.copy()
             .withControllerHeadingAxis(getHeadingXSafe, getHeadingYSafe)
             .headingWhile(ShootOnTheMove.heading.isPresent())
-            // Fallback
-            .aim(FieldConstants.hubPose.get())
+            // Fallback: pass the supplier so the alliance hub is resolved at run time,
+            // not when the auto/command is constructed (before the DS reports an alliance).
+            .aim(FieldConstants.hubPose)
             .aimWhile(ShootOnTheMove.heading.isEmpty())
             .aimHeadingOffset(Rotation2d.k180deg)
             .aimHeadingOffset(ShootOnTheMove.heading.isEmpty());
