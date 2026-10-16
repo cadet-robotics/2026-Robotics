@@ -19,7 +19,6 @@ import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.IntakeState;
-import frc.robot.Constants.RobotConstants;
 import frc.robot.Libs.FuelSim;
 import frc.robot.Subsystems.Drive;
 import frc.robot.Subsystems.Indexer;
@@ -229,13 +228,10 @@ public class RobotContainer {
         if (!drive_subsystem.isDriveToPoseActive()) {
           return true;
         }
-        // When autodrive is active, allow shooting only if the robot's distance
-        // to the hub is within a tolerance of the midRange used to generate the curve.
-        double midRange = RobotConstants.ShooterSubsystemConstants.midRange;
-        double posTol = midRange * 0.05; // 5% tolerance around midRange
-        double hubDist = drive_subsystem.getPose().getTranslation().getDistance(
-            RobotConstants.FieldConstants.hubPosition.get());
-        boolean distOk = Math.abs(hubDist - midRange) <= posTol;
+        // When autodrive is active, allow shooting only if the robot is at the same offset-adjusted
+        // distance the drive-to-curve target uses AND is pointing at the hub. Using the shared
+        // isAtMidDistance() keeps this gate in sync with the dashboard ShootRangeOffset.
+        boolean distOk = drive_subsystem.isAtMidDistance();
         boolean angleOk = drive_subsystem.isAimedAtHub(Math.toRadians(6.0));
         return distOk && angleOk;
     };
