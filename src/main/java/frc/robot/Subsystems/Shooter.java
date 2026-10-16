@@ -477,14 +477,12 @@ public class Shooter extends CSubsystem {
                             // If we're pointing at the hub within 3°, always allow spawn.
                             allowSpawn = true;
                         } else if (this.driveSubsystem.isDriveToPoseActive()) {
-                            // When autodrive is active, require the robot's distance to the hub be within a
-                            // tolerance of the configured midRange used to generate the drive-to-curve target
+                            // When autodrive is active, require the robot's distance to the hub be
+                            // within the shared tolerance of the offset-adjusted shooting distance
                             // AND require the robot to be pointing at the hub within 3 degrees.
-                            double midRange = RobotConstants.ShooterSubsystemConstants.midRange;
-                            double posTol = midRange * 0.05; // 5% tolerance around midRange
-                            double hubDist = this.driveSubsystem.getPose().getTranslation().getDistance(
-                            RobotConstants.FieldConstants.hubPosition.get());
-                            boolean distOk = Math.abs(hubDist - midRange) <= posTol;
+                            // Using isAtMidDistance() keeps this in sync with the dashboard
+                            // ShootRangeOffset and the drive-to-curve target.
+                            boolean distOk = this.driveSubsystem.isAtMidDistance();
                             boolean angleOk = this.driveSubsystem.isAimedAtHub(Math.toRadians(6.0));
                             allowSpawn = distOk && angleOk;
                         } else {

@@ -439,8 +439,19 @@ public class Drive extends CSubsystem {
     }
 
     /**
-     * Returns true if the robot's translation is within +/- tolMeters of the configured
-     * mid shooting distance from the alliance hub. Uses the Translation2d distance API.
+     * The desired distance from the alliance hub to shoot from, in meters. This is the configured
+     * {@link ShooterSubsystemConstants#midRange} plus the dashboard range offset so the operator can
+     * compensate for a shot that drifts long or short.
+     *
+     * @return the offset-adjusted desired shooting distance, in meters
+     */
+    public double getDesiredShootingDistance() {
+        return ShooterSubsystemConstants.midRange + Dashboard.getShootRangeOffset();
+    }
+
+    /**
+     * Returns true if the robot's translation is within +/- tolMeters of the offset-adjusted desired
+     * shooting distance from the alliance hub. Uses the Translation2d distance API.
      *
      * @param tolMeters tolerance in meters
      * @return true when within tolerance, false otherwise or if an error occurs
@@ -449,20 +460,23 @@ public class Drive extends CSubsystem {
         try {
             Translation2d hub = FieldConstants.hubPosition.get();
             double currentDist = getPose().getTranslation().getDistance(hub);
-            double desired = ShooterSubsystemConstants.midRange + Dashboard.getShootRangeOffset();
 
-            return Math.abs(currentDist - desired) <= tolMeters;
+            return ShooterSubsystemConstants.isWithinShootingDistance(
+                currentDist, Dashboard.getShootRangeOffset(), tolMeters);
         } catch (Exception ex) {
             return false;
         }
     }
 
     /**
-     * Convenience overload using a default tolerance of 0.05 meters.
-     * @return true when within 0.05 m of mid distance
+     * Convenience overload using the shared shooting-distance tolerance so the drive-to-curve target,
+     * the shoot gate, and the sim spawn gate all agree.
+     *
+     * @return true when within {@link ShooterSubsystemConstants#shootingDistanceToleranceMeters} of the
+     *         desired shooting distance
      */
     public boolean isAtMidDistance() {
-        return isAtMidDistance(0.1);
+        return isAtMidDistance(ShooterSubsystemConstants.shootingDistanceToleranceMeters);
     }
 
     /**
@@ -495,7 +509,7 @@ public class Drive extends CSubsystem {
         }
 
         // ShooterSubsystemConstants.midRange is in meters (use directly)
-        double desiredDistanceMeters = ShooterSubsystemConstants.midRange + Dashboard.getShootRangeOffset();
+        double desiredDistanceMeters = getDesiredShootingDistance();
 
         // factor = d / ||v||
         double factor = desiredDistanceMeters / dist;
@@ -833,36 +847,21 @@ public class Drive extends CSubsystem {
             // ignore if shooter/proximity not available
         }
 
-        // Detect transition into teleop and publish the curve once when teleop starts.
-        // Only while teleop is active do we check the dashboard shoot-range offset
-        // and republish the curve when it changes.
+        // Republish the drive-to-curve preview whenever the dashboard range offset changes so the
+        // operator sees the effect immediately, in any robot mode (not just teleop).
         try {
-            boolean isTeleop = DriverStation.isTeleopEnabled();
-            if (isTeleop && !wasTeleop) {
-                // Teleop just started; publish immediately
+            double currentOffset = Dashboard.getShootRangeOffset();
+            if (Double.isNaN(this.lastPublishedShootRangeOffset)
+                    || Math.abs(currentOffset - this.lastPublishedShootRangeOffset) > 1e-6) {
                 publishCurveTrajectory();
+                this.lastPublishedShootRangeOffset = currentOffset;
             }
-
-            if (isTeleop) {
-                // If the shoot-range offset on the dashboard changes while in teleop,
-                // update the curve trajectory.
-                double currentOffset = Dashboard.getShootRangeOffset();
-                if (Double.isNaN(this.lastPublishedShootRangeOffset) || Math.abs(currentOffset - this.lastPublishedShootRangeOffset) > 1e-6) {
-                    publishCurveTrajectory();
-                    this.lastPublishedShootRangeOffset = currentOffset;
-                }
-            }
-
-            wasTeleop = isTeleop;
         } catch (Exception ex) {
         }
     }
 
     // Track the last value we published so we can update when Dashboard value changes
     private volatile double lastPublishedShootRangeOffset = Double.NaN;
-    // Track whether teleop was active during the last periodic call so we can
-    // detect the transition into teleop and publish the curve once.
-    private volatile boolean wasTeleop = false;
 
     /**
      * Samples points from the curve function (getClosestPointOnCurve) and publishes

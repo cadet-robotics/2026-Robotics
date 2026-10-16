@@ -160,6 +160,34 @@ public class RobotConstants {
         // probably actually in meters, ai is dumb
         /** Distance in feet of the middle of the shooting range from the hub */
         public static final double midRange = 2.8;
+
+        /** Fractional tolerance around the desired shooting distance used to gate shooting. */
+        public static final double midRangeToleranceFraction = 0.05;
+
+        /**
+         * Absolute tolerance (meters) around the desired shooting distance. Every shooting gate must
+         * use this value so the drive-to-curve target and the shoot gate always agree.
+         */
+        public static final double shootingDistanceToleranceMeters = midRange * midRangeToleranceFraction;
+
+        /**
+         * Returns true when the robot's distance to the hub is within {@code toleranceMeters} of the
+         * desired shooting distance ({@link #midRange} plus the dashboard range offset).
+         *
+         * <p>This is the single source of truth for "am I at the right distance to shoot". It must be
+         * shared by the drive-to-curve target, the shooter feed gate, and the sim spawn gate so that
+         * changing the dashboard offset moves all of them together.
+         *
+         * @param hubDistanceMeters current distance from the robot to the alliance hub, in meters
+         * @param rangeOffsetMeters dashboard range offset, in meters (may be negative)
+         * @param toleranceMeters allowed absolute error, in meters
+         * @return true when within tolerance of the offset-adjusted desired distance
+         */
+        public static boolean isWithinShootingDistance(
+                double hubDistanceMeters, double rangeOffsetMeters, double toleranceMeters) {
+            return Math.abs(hubDistanceMeters - (midRange + rangeOffsetMeters)) <= toleranceMeters;
+        }
+
         /**
          * Threshold for the color sensor proximity reading to consider a ball present in the hopper.
          * The REV ColorSensorV3 returns a proximity value (higher => closer). Tune this value on the robot.
